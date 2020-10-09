@@ -14,7 +14,7 @@ $ git --recursive clone https://github.com/ThalesGroup/cva6-softcore-contest.git
  
 ```
 $ cd cva6-softcore-contest
-$ git --apply 0001-coremark-modification.patch
+$ git apply 0001-coremark-modification.patch
 ```
 
 # Prerequisites
