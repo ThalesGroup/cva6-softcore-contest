@@ -55,3 +55,6 @@
 [submodule "tb/common_verification"]
 	path = tb/common_verification
 	url = https://github.com/pulp-platform/common_verification.git
+[submodule "sw/app/coremark"]
+	path = sw/app/coremark
+	url = https://github.com/eembc/coremark
