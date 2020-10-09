@@ -610,6 +610,11 @@ package ariane_pkg;
                                                  // we want jump accordingly e.g.: +4, +2
     } scoreboard_entry_t;
 
+    // ---------------
+    // MMU instanciation
+    // ---------------
+     localparam bit MMU_PRESENT = 1'b0;  // MMU is present
+
     // --------------------
     // Atomics
     // --------------------

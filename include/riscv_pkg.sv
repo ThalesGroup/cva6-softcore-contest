@@ -28,7 +28,7 @@ package riscv;
        ModeSv64 = 11
     } vm_mode_t;
 
-    localparam XLEN = 64;
+    localparam XLEN = 32;
 
     // Warning: When using STD_CACHE, configuration must be PLEN=56 and VLEN=64
     // Warning: VLEN must be superior or equal to PLEN
@@ -633,8 +633,17 @@ package riscv;
         return {csr, 5'h0, 3'h2, dest, 7'h73};
     endfunction
 
+    function automatic logic [31:0] branch(logic [4:0] src2, logic [4:0] src1, logic [2:0] funct3, logic [11:0] offset);
+        // OpCode Branch
+        return {offset[11], offset[9:4], src2, src1, funct3, offset[3:0], offset[10], 7'b11_000_11};
+    endfunction
+
     function automatic logic [31:0] ebreak ();
         return 32'h00100073;
+    endfunction
+
+    function automatic logic [31:0] wfi ();
+        return 32'h10500073;
     endfunction
 
     function automatic logic [31:0] nop ();
