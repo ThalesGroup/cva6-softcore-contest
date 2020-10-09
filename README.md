@@ -8,6 +8,15 @@ Checkout the repository and initialize all submodules
 ```
 $ git --recursive clone https://github.com/ThalesGroup/cva6-softcore-contest.git
 ```
+
+ Coremark application has been customized for the contest, for using coremark application, run :
+
+ 
+```
+$ cd cva6-softcore-contest
+$ git --apply 0001-coremark-modification.patch
+```
+
 # Prerequisites
 
 
