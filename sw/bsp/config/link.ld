@@ -9,16 +9,16 @@
 /* This linker script is adapted from the default linker script for upstream
    RISC-V GCC.  It has been modified for use in verification of CORE-V cores.
 */
-// Additional contributions by:
-//         Sebastien Jacq - sjthales on github.com
-//
-// Description: linkerscript for the CV32A6 platform
-//
-// =========================================================================== //
-// Revisions  :
-// Date        Version  Author       Description
-// 2020-10-06  0.1      S.Jacq       modification of the Test for CV32A6 softcore
-// =========================================================================== //
+/* Additional contributions by:
+           Sebastien Jacq - sjthales on github.com
+
+   Description: linkerscript for the CV32A6 platform
+
+   =========================================================================== 
+   Revisions  :
+   Date        Version  Author       Description
+   2020-10-06  0.1      S.Jacq       modification of the Test for CV32A6 softcore
+   =========================================================================== */
 
 OUTPUT_FORMAT("elf32-littleriscv", "elf32-littleriscv",
 	      "elf32-littleriscv")
