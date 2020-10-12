@@ -4,6 +4,8 @@ A set of software applications is available in `app` directory.
 ## Applications
 These applications are used to give an estimation of the computation performance of the CVA6 architecture.
 
+The Coremark score will be used to rank teams. All applications must run correctly to validate your results in the contest.
+
 These software applications are compiled in baremetal using the **BSP (Board Support Package)** in the bsp directory.
 
 - **Coremark** : Complete  benchmark for testing the computing power of a processor. It generates a score called Coremark.
@@ -41,4 +43,6 @@ The **BSP** is a low-level software package that supports the hardware platform.
 - **Config**: It contains the linker script and fpga_platform_config.h file which defines some constant relating to the FPGA platform.
 - **Drivers**: it contains all peripheral driver. For now, there is only the UART driver.
 - **Hal**: Hardware Abstract Layer contains the runtime system interrupt vectors, system calls.
+
+As of Oct. 12<sup>th</sup>, 2020, applications and the BSP have been tested on a ZCU102 board, but not yet on the Z7-20 board.
 
