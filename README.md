@@ -36,9 +36,10 @@ $ make newlib
 When the installation is achieved, do not forget to add $RISCV/bin to your PATH.
 
 ## Questa tool
-Questa sim **version 10.7** has been used for simulations.
+Questa Prime **version 10.7** has been used for simulations.
 
 ## Vitis/Vivado setting up
+This section will be completed in a next release (the so-called "2<sup>nd</sup> kit" planned early December 2020).
 For the contest, CVA6 processor will be implemented on Zybo 7-20 board from Digilent. This board consists of Zynq 7 FPGA from Xilinx. 
 To do so, **Vitis 2020.1** environment from Xilinx need to be installed.
 
