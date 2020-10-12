@@ -45,7 +45,7 @@ To do so, **Vitis 2020.1** environment from Xilinx need to be installed.
 
 Furthermore, Digilent provides board files for each development board.
 
-This files ease the creating of new projects with automated configuration of several complicated components such as Zynq Processing System and memory interfaces.
+This files ease the creation of new projects with automated configuration of several complicated components such as Zynq Processing System and memory interfaces.
 
 All guidelines to install **vitis 2020.1** and **Zybo 7-20** board files are explained to the following link:
 https://reference.digilentinc.com/reference/programmable-logic/guides/installation
@@ -87,7 +87,7 @@ In the first time, synthesis and place and route are carried in out of context m
 
 That allows to have an estimation of the logical resources used by the CVA6 in the FPGA fabric as well as the maximal frequency of CVA6 architecture.
 
-These both metrics are majors for a computation architecture.
+They are both major metrics for a computation architecture.
 
 Command to run for synthesis and place and route in out of context mode:
 ```
