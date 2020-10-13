@@ -103,7 +103,7 @@ Dhrystones per Second:
 ```
 and for coremark application, result at the end of simulation is displayed as following:
 ```
-
+CoreMark 1.0 :
 ```
 
 CVA6 software environment is detailed into `sw/app` directory.
