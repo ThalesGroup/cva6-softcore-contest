@@ -9,7 +9,7 @@ Checkout the repository and initialize all submodules:
 $ git --recursive clone https://github.com/ThalesGroup/cva6-softcore-contest.git
 ```
 
-> As of Nov. 12<sup>th</sup>, 2020, we are working hard to solve an alleged performance regression of CVA6 vs. an older versions. You'll be updated when it's solved.
+> As of October 12th, 2020, we are working hard to solve an alleged performance regression of CVA6 vs. an older versions. You'll be updated when it's solved.
 
  CoreMark application has been customized for the contest, for using CoreMark application, run:
 
@@ -41,7 +41,7 @@ When the installation is achieved, do not forget to add $RISCV/bin to your PATH.
 
 ## Questa tool
 Questa Prime **version 10.7** has been used for simulations.
-Other simuluation tools and versions can be used but will receive no support from the organization team.
+Other simulation tools and versions can be used but will receive no support from the organization team.
 
 ## Vitis/Vivado setting up
 This section will be completed in a next release (planned early December 2020).
@@ -54,6 +54,8 @@ This files ease the creation of new projects with automated configuration of sev
 
 All guidelines to install **vitis 2020.1** and **Zybo Z7-20** board files are explained to the following link:
 https://reference.digilentinc.com/reference/programmable-logic/guides/installation
+
+**be careful about your linux distribution and the supported version of Vitis 2020.1 environment**
 
 If you have not yet done so, start provisioning the following:
 
@@ -92,6 +94,17 @@ Questa tool will open with waveform window. Some signals will be displayed; you 
 Moreover, all `printf` used in software application will be displayed into the **transcript** window of Questa Sim and save into **uart** file to the root directory.
 
 > Simulation may take lot of time, so you need to be patient to have results.
+
+Simulation is programmed to run 10000000 cycles but the result is displayed before the end of simulation.
+
+For Dhrystone application, at the end of the simulation, Dhrystone result is diplayed as following:
+```
+Dhrystones per Second: 
+```
+and for coremark application, result at the end of simulation is displayed as following:
+```
+
+```
 
 CVA6 software environment is detailed into `sw/app` directory.
 
