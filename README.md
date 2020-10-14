@@ -130,3 +130,4 @@ $ make cva6_ooc CLK_PERIOD_NS=20 BATCH_MODE=0
 This command generates synthesis and place and route reports in **fpga/reports_cva6_ooc_synth** and **fpga/reports_cva6_ooc_impl**.
 
 
+
