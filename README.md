@@ -6,7 +6,7 @@ https://cva6.readthedocs.io/en/latest/
 
 Checkout the repository and initialize all submodules:
 ```
-$ git --recursive clone https://github.com/ThalesGroup/cva6-softcore-contest.git
+$ git clone --recursive https://github.com/ThalesGroup/cva6-softcore-contest.git
 ```
 
 > As of October 12th, 2020, we are working hard to solve an alleged performance regression of CVA6 vs. an older versions. You'll be updated when it's solved.
