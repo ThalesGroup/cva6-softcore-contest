@@ -9,9 +9,7 @@ Checkout the repository and initialize all submodules:
 $ git clone --recursive https://github.com/ThalesGroup/cva6-softcore-contest.git
 ```
 
-> As of October 12th, 2020, we are working hard to solve an alleged performance regression of CVA6 vs. an older versions. You'll be updated when it's solved.
-
- CoreMark application has been customized for the contest, for using CoreMark application, run:
+CoreMark application has been customized for the contest, for using CoreMark application, run:
 
  
 ```
@@ -42,6 +40,8 @@ When the installation is achieved, do not forget to add $RISCV/bin to your PATH.
 ## Questa tool
 Questa Prime **version 10.7** has been used for simulations.
 Other simulation tools and versions can be used but will receive no support from the organization team.
+
+Performances **must** be measured using the Questa simulator.
 
 ## Vitis/Vivado setting up
 This section will be completed in a next release (planned early December 2020).
