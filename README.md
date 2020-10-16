@@ -26,7 +26,9 @@ And finally, do not forget to check all the details of the contest at [https://g
 The tool chain is available to this link: https://github.com/riscv/riscv-gnu-toolchain
 At first, you have to get the sources of the RISCV GNU toolchain:
 ```
-$ git clone --recursive https://github.com/riscv/riscv-gnu-toolchain
+$ git clone --recursive https://github.com/riscv/riscv-gnu-toolchain 
+$ cd riscv-gnu-toolchain 
+$ git checkout ed53ae7a71dfc6df1940c2255aea5bf542a9c422
 ```
 Next, you have to install all standard packages needed to build the toolchain depending on your Linux distribution.
 Before installing the tool chain, it is important to define the environment variable RISCV=”path where the tool chain will be installed”.
