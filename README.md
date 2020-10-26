@@ -34,10 +34,14 @@ Next, you have to install all standard packages needed to build the toolchain de
 Before installing the tool chain, it is important to define the environment variable RISCV=”path where the tool chain will be installed”.
 Then, you have to set up the compiler by running the following command:
 ```
+$ export RISCV=/path/to/install/riscv/compilators
 $ ./configure --prefix=$RISCV --disable-linux --with-cmodel=medany --with-arch=rv32ima
 $ make newlib 
 ```
 When the installation is achieved, do not forget to add $RISCV/bin to your PATH.
+```
+$ export PATH=/path/to/compilators/directory/bin
+```
 
 ## Questa tool
 Questa Prime **version 10.7** has been used for simulations.
