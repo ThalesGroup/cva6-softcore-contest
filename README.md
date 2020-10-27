@@ -40,7 +40,7 @@ $ make newlib
 ```
 When the installation is achieved, do not forget to add $RISCV/bin to your PATH.
 ```
-$ export PATH=$PATH:/path/to/compilators/directory/bin
+$ export PATH=$PATH:$RISCV/bin
 ```
 
 ## Questa tool
