@@ -1,4 +1,4 @@
-open_hw
+open_hw_manager
 connect_hw_server
 current_hw_target [get_hw_targets -filter {NAME!~"localhost:3121/xilinx_tcf/Digilent/210249A85F9B"}]
 open_hw_target
