@@ -233,16 +233,19 @@ Below is described steps to run Coremark application on CV32A6 FPGA platform, st
 ## Get started with Coremark application
 
 1. First, make sure the digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBAUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
-
+![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/master/docs/pictures/20201204_150708.jpg)
 2. compile coremark application in `sw/app`
 3. Generate the bitstream of the FPGA platform:
 ```
 $ make cva6_fpga
 ```
-4. When bistream is generated, switch on Zybo board and run:
+4. When bitstream is generated, switch on Zybo board and run:
 ```
 $ make program_cva6_fpga
 ```
+When is loaded led `done` is lighting.
+![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/master/docs/pictures/20201204_160542.jpg)
+
 5. then, in a terminal, launch **OpenOCD**:
 ```
 $ openocd -f fpga/openocd_digilent_hs2.cfg
