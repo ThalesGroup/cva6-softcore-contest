@@ -35,7 +35,7 @@
  * Platform frequency
  */
 
-#define FPGA_UART_0_FREQUENCY 50000000
+#define FPGA_UART_0_FREQUENCY 25000000
 
 
 /***************************************************************************//**

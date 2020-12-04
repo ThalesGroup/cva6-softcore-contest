@@ -29,15 +29,46 @@
 
 VIVADO ?= vivado
 
+work-dir := work-fpga
+bit := $(work-dir)/cva6_fpga.bit
+
+ip-dir := xilinx
+ips := xlnx_blk_mem_gen.xci  \
+       xlnx_axi_clock_converter.xci  \
+       xlnx_axi_dwidth_converter_dm_master.xci \
+       xlnx_axi_dwidth_converter_dm_slave.xci \
+       xlnx_clk_gen.xci             
+
 all: $(cva6_ooc)
 
 cva6_ooc: 
 ifeq ($(BATCH_MODE), 1)
 	$(VIVADO) -mode batch -source  scripts/run_cva6_ooc.tcl
 else
-	$(VIVADO) -source  scripts/run_cva6_ooc.tcl	
+	$(VIVADO) -source scripts/run_cva6_ooc.tcl	
 endif
 
+cva6_fpga: $(ips)
+ifeq ($(BATCH_MODE), 1)
+	mkdir -p $(work-dir)
+	$(VIVADO) -mode batch -source scripts/run_cva6_fpga.tcl
+else
+	$(VIVADO) -source scripts/run_cva6_fpga.tcl	
+endif
+
+program_cva6_fpga:
+ifeq ($(BATCH_MODE), 1)
+	$(VIVADO) -mode batch -source scripts/program_cva6_fpga.tcl
+else
+	$(VIVADO) -source scripts/program_cva6_fpga.tcl	
+endif
+
+
+$(ips): %.xci :
+	mkdir -p $(work-dir)
+	@echo Generating $(@F)
+	@cd $(ip-dir)/$(basename $(@F)) && make clean && make
+	@cp $(ip-dir)/$(basename $(@F))/ip/$(@F) $@
 
 clean:
 	rm -rf 	*.log \
@@ -45,15 +76,25 @@ clean:
 		*.str \
 		*.mif \
 		*.xpr \
+		*.xci \
 		cva6_ooc.cache \
 		cva6_ooc.hw \
 		cva6_ooc.ip_user_files \
 		cva6_ooc.sim \
 		cva6_ooc.runs \
 		cva6_ooc.hbs \
+		cva6_fpga.cache \
+		cva6_fpga.hw \
+		cva6_fpga.ip_user_files \
+		cva6_fpga.sim \
+		cva6_fpga.runs \
+		cva6_fpga.hbs \
 		.Xil \
 		reports_cva6_ooc_synth \
-		reports_cva6_ooc_impl 
+		reports_cva6_ooc_impl \
+		reports_cva6_fpga_synth \
+		reports_cva6_fpga_impl \
+		$(work-dir)
 
 
 .PHONY:

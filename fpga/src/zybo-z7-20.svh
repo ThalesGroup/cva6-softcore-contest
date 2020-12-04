@@ -9,3 +9,6 @@
 
 // write-through cache
 `define WT_DCACHE
+
+// debug probe
+//`define LAUTERBACH_DEBUG_PROBE
