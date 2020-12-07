@@ -77,13 +77,13 @@ If you have not yet done so, start provisioning the following:
 
 ## OpenOCD
 
-To be able to run and debug software applications on CVA6, you need to install OpenOCD tool.
+To be able to run and debug software applications on CVA6, you need to install the OpenOCD tool.
 OpenOCD is a free and open-source software distributed under the GPL-2.0 license.
 It provides on-chip programming and debugging support with a layered architecture of JTAG interface and TAP support.
 
 Global documentation on OpenOCD is available at https://github.com/ThalesGroup/pulpino-compliant-debug/tree/pulpino-dbg/doc/riscv-debug-notes/pdfs
 
-Theses documents aim at providing help about OpenOCD and RISC-V debug.
+These documents aim at providing help about OpenOCD and RISC-V debug.
 
 Before setting up OpenOCD, other tools are needed:
 - make
@@ -114,7 +114,7 @@ $ cd riscv-openocd
 ```
 $ mkdir build
 ```
-- Launch the bootstrap scipt:
+- Launch the bootstrap script:
 ```
 $ ./bootstrap
 ```
@@ -161,13 +161,13 @@ Bus 005 Device 003: ID 0403:6014 Future Technology Devices International, Ltd FT
 
 # Simulation get started
 When the development environment is set up, it is now possible to run a simulation.
-Some software applications are available into the sw/app directory. Especially, there are benchmark applications such as Dhrystone and Coremark and other test applications.
+Some software applications are available into the sw/app directory. Especially, there are benchmark applications such as Dhrystone and CoreMark and other test applications.
 
 To simulate a software application on CVA6 processor, run the following command:
 ```
 $ make sim APP=’application to run’
 ```
-For instance, if you want to run Coremark application, you will have to run :
+For instance, if you want to run the CoreMark application, you will have to run :
 ```
 $ make sim APP=coremark
 ```
@@ -224,33 +224,33 @@ This command generates synthesis and place and route reports in **fpga/reports_c
 
 # FPGA platform
 
-A FPGA platform emulating **CV32A6** (CVA6 in 32b flavor) has been implemented on **Zybo Z7-20** board.
+A FPGA platform prototyping **CV32A6** (CVA6 in 32-bit flavor) has been implemented on **Zybo Z7-20** board.
 
-This platform consists of a CV32A6 processor, a JTAG interface to run and debug software applications and a UART interface to display strings on hyperterminal.
+This platform integrates a CV32A6 processor, a JTAG interface to run and debug software applications and a UART interface to display strings on a hyperterminal.
 
-Below is described steps to run Coremark application on CV32A6 FPGA platform, steps are the same for Dhrystone application and others software applications.
+Below are described steps to run Coremark application on CV32A6 FPGA platform, steps are the same for Dhrystone application and other software applications.
 
 ## Get started with Coremark application
 
-1. First, make sure the digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
+1. First, make sure the Digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
 ![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/master/docs/pictures/20201204_150708.jpg)
 2. Compile Coremark application in `sw/app`. Commands to compile Coremark application are described in `sw/app` directory.
 3. Generate the bitstream of the FPGA platform:
 ```
 $ make cva6_fpga
 ```
-4. When bitstream is generated, switch on Zybo board and run:
+4. When the bitstream is generated, switch on Zybo board and run:
 ```
 $ make program_cva6_fpga
 ```
-When bitstream is loaded green led `done` is lighting.
+When the bitstream is loaded, the green LED `done` lights up.
 ![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/master/docs/pictures/20201204_160542.jpg)
 
 5. Then, in a terminal, launch **OpenOCD**:
 ```
 $ openocd -f fpga/openocd_digilent_hs2.cfg
 ```
-If it is succesful, you should see:
+If it is successful, you should see:
 ```
 Open On-Chip Debugger 0.10.0+dev-00832-gaec5cca (2019-12-10-14:21)
 Licensed under GNU GPL v2
@@ -272,7 +272,7 @@ Info : Listening on port 4444 for telnet connections
 ```
 $ riscv32-unknown-elf-gdb sw/app/coremark.riscv
 ```
-you must use gdb of the RISC-V toolchain. If it is succesful, you should see:
+you must use the gdb from the RISC-V toolchain. If it is successful, you should see:
 ```
 GNU gdb (GDB) 9.1
 Copyright (C) 2020 Free Software Foundation, Inc.
@@ -300,7 +300,7 @@ if it is successful, you should see the gdb connection in **openocd**:
 ```
 Info : accepting 'gdb' connection on tcp/3333
 ```
-8. In **gdb**, load **coremark.riscv** to CV32A6 FPGA platform by command **load**:
+8. In **gdb**, load **coremark.riscv** to CV32A6 FPGA platform by the **load** command:
 ```
 (gdb) load
 Loading section .vectors, size 0x80 lma 0x80000000
@@ -322,12 +322,11 @@ Continuing.
 (gdb) 
 ```
 
-10. On hyperterminal configured on /dev/ttyUSB0 11520-8-N-1, you should see:
+10. On the hyperterminal configured on /dev/ttyUSB0 11520-8-N-1, you should see:
 ```
 2K performance run parameters for coremark.
 
 ....
 
-CoreMark 1.0 : 
+CoreMark 1.0 : [the CoreMark score
 ```
-
