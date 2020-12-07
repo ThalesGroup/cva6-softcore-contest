@@ -137,7 +137,7 @@ $ export PATH=$PATH:<path to riscv-openocd>/build/bin
 It is necessary to add a udev rule to use the cable.
 OpenOCD provides a file containing the rule we need. Copy it into /etc/udev/rules.d/
 ```
-$ sudo cp <path to riscv-openocd>/contrib/60-openocd.rules /etc/udev/rules.d
+$ sudo cp <path to riscv-openocd>/build/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
 ```
 The file is also available here: https://github.com/riscv/riscv-openocd/blob/riscv/contrib/60-openocd.rules
 The particular entry about the HS2 cable is :
