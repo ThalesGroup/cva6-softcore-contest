@@ -222,7 +222,7 @@ $ make cva6_ooc CLK_PERIOD_NS=20 BATCH_MODE=0
 This command generates synthesis and place and route reports in **fpga/reports_cva6_ooc_synth** and **fpga/reports_cva6_ooc_impl**.
 
 
-# FPGA emulation
+# FPGA platform
 
 A FPGA platform emulating **CV32A6** (CVA6 in 32b flavor) has been implemented on **Zybo Z7-20** board.
 
@@ -234,7 +234,7 @@ Below is described steps to run Coremark application on CV32A6 FPGA platform, st
 
 1. First, make sure the digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBAUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
 ![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/master/docs/pictures/20201204_150708.jpg)
-2. compile coremark application in `sw/app`
+2. Compile coremark application in `sw/app`
 3. Generate the bitstream of the FPGA platform:
 ```
 $ make cva6_fpga
@@ -243,14 +243,14 @@ $ make cva6_fpga
 ```
 $ make program_cva6_fpga
 ```
-When is loaded led `done` is lighting.
+When bitstream is loaded green led `done` is lighting.
 ![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/master/docs/pictures/20201204_160542.jpg)
 
-5. then, in a terminal, launch **OpenOCD**:
+5. Then, in a terminal, launch **OpenOCD**:
 ```
 $ openocd -f fpga/openocd_digilent_hs2.cfg
 ```
-If it is succesful, you should see something like that:
+If it is succesful, you should see:
 ```
 Open On-Chip Debugger 0.10.0+dev-00832-gaec5cca (2019-12-10-14:21)
 Licensed under GNU GPL v2
@@ -292,15 +292,15 @@ Type "apropos word" to search for commands related to "word"...
 Reading symbols from sw/app/coremark.riscv...
 (gdb) 
 ```
-7. In gdb, you need to connect gdb to openocd:
+7. In **gdb**, you need to connect gdb to openocd:
 ```
 (gdb) target remote :3333
 ```
-if it is successful, you should see the gdb connection in openocd:
+if it is successful, you should see the gdb connection in **openocd**:
 ```
 Info : accepting 'gdb' connection on tcp/3333
 ```
-8. In gdb, load **coremark.riscv** to CV32A6 FPGA platform:
+8. In **gdb**, load **coremark.riscv** to CV32A6 FPGA platform by command **load**:
 ```
 (gdb) load
 Loading section .vectors, size 0x80 lma 0x80000000
@@ -315,7 +315,7 @@ Start address 0x80000080, load size 110712
 Transfer rate: 63 KB/sec, 7908 bytes/write.
 ```
 
-9. At last, in gdb, you can run the coremark application by command `c`:
+9. At last, in **gdb**, you can run the coremark application by command `c`:
 ```
 (gdb) c
 Continuing.

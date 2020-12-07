@@ -1,18 +1,33 @@
+// Copyright (c) 2020 Thales.
+// Copyright and related rights are licensed under the Solderpad Hardware
+// License, Version 0.51 (the "License"); you may not use this file except in
+// compliance with the License.  You may obtain a copy of the License at
+// http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
+// or agreed to in writing, software, hardware and materials distributed under
+// this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
+//
+// Author: Sebastien Jacq Thales Research & Technology
+// Date: 07/12/2020
+//
+// Additional contributions by:
+//         Sebastien Jacq - sjthales on github.com
+//
+// Description: Zybo z7-20 FPGA platform level testbench module.
+//
+// =========================================================================== //
+// Revisions  :
+// Date        Version  Author       Description
+// 2020-12-07  0.1      S.Jacq       Testbench to test Zybo z7-20 FPGA platform
+// =========================================================================== //
+
+
 `timescale 1ns/1ps
 
 
 import ariane_pkg::*;
-//import uvm_pkg::*;
 import jtag_pkg::*;
-//import pulp_tap_pkg::*;
-
-//`include "uvm_macros.svh"
-
-//`define MAIN_MEM(P) dut.i_sram.genblk1[0].i_ram.Mem_DP[(``P``)]
-
-//import "DPI-C" function read_elf(input string filename);
-//import "DPI-C" function byte get_section(output longint address, output longint len);
-//import "DPI-C" context function byte read_section(input longint address, inout byte buffer[]);
 
 
 `define EXIT_SUCCESS  0
@@ -88,19 +103,19 @@ int                   exit_status = `EXIT_ERROR;
 
   cva6_zybo_z7_20 DUT(
     .clk_sys(clk_i),
-    .cpu_reset       (rst_i),             //input  logic         cpu_reset   ,
+    .cpu_reset       (rst_i),   
   
 
     // jtag
-    .trst_n          (jtag_TRSTn),   //input logic      trst_n      ,
-    .tck             (jtag_TCK),     //input  logic        tck         ,
-    .tms             (jtag_TMS),     //input  logic        tms         ,
-    .tdi             (jtag_TDI),     //input  logic        tdi         ,
-    .tdo             (jtag_TDO_data),//output wire         tdo         ,
+    .trst_n          (jtag_TRSTn),
+    .tck             (jtag_TCK),
+    .tms             (jtag_TMS),
+    .tdi             (jtag_TDI),
+    .tdo             (jtag_TDO_data),
   
     //uart
-    .rx              (rx),         //input  logic        rx          ,
-    .tx              (tx)             //output logic        tx
+    .rx              (rx), 
+    .tx              (tx) 
 ); 
 
 
@@ -146,7 +161,6 @@ uart_bus
         automatic logic [9:0]  FC_CORE_ID = {5'd0,5'd0};
 
         $display("[TB] %t - Asserting hard reset", $realtime);
-        //rst_ni = 1'b0;
         rst_i = 1'b1;
         
         #200ns
@@ -181,14 +195,14 @@ uart_bus
     
         debug_mode_if.set_hartsel(FC_CORE_ID, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
 
-   $display("[TB] %t - Halting the Core", $realtime);
-    debug_mode_if.halt_harts(s_tck, s_tms, s_trstn, s_tdi, s_tdo);
+        $display("[TB] %t - Halting the Core", $realtime);
+        debug_mode_if.halt_harts(s_tck, s_tms, s_trstn, s_tdi, s_tdo);
     
-   $display("[TB] %t - reading gpr 0x1000 ", $realtime);
-    debug_mode_if.read_reg_abstract_cmd(16'h1000, gpr, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
+        $display("[TB] %t - reading gpr 0x1000 ", $realtime);
+        debug_mode_if.read_reg_abstract_cmd(16'h1000, gpr, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
 
-   $display("[TB] %t - reading gpr 0x1001 ", $realtime);
-    debug_mode_if.read_reg_abstract_cmd(16'h1001, gpr, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
+        $display("[TB] %t - reading gpr 0x1001 ", $realtime);
+        debug_mode_if.read_reg_abstract_cmd(16'h1001, gpr, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
 
 
        debug_mode_if.test_read_sbcs(s_tck, s_tms, s_trstn, s_tdi, s_tdo);
@@ -197,14 +211,12 @@ uart_bus
 
         // use debug module to load binary
         debug_mode_if.load_L2_ini(num_stim, stimuli, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
-        //debug_mode_if.load_L2_ariane(num_stim, stimuli, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
 
-    
+   
         // write dpc to addr_i so that we know where we resume
          debug_mode_if.write_reg_abstract_cmd(riscv::CSR_DPC,  BEGIN_MEM_INSTR,
                                      s_tck, s_tms, s_trstn, s_tdi, s_tdo);
 
-    
         // we have set dpc and loaded the binary, we can go now
         $display("[TB] %t - Resuming the CORE", $realtime);
         debug_mode_if.resume_harts(s_tck, s_tms, s_trstn, s_tdi, s_tdo);

@@ -1,26 +1,40 @@
-
+// Copyright (c) 2020 Thales.
+// Copyright and related rights are licensed under the Solderpad Hardware
+// License, Version 0.51 (the "License"); you may not use this file except in
+// compliance with the License.  You may obtain a copy of the License at
+// http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
+// or agreed to in writing, software, hardware and materials distributed under
+// this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
+//
+// Author: Sebastien Jacq Thales Research & Technology
+// Date: 07/12/2017
+//
+// Additional contributions by:
+//         Sebastien Jacq - sjthales on github.com
+//
+// Description: Zybo z7-20 FPGA platform top module.
+//
+// =========================================================================== //
+// Revisions  :
+// Date        Version  Author       Description
+// 2020-12-07  0.1      S.Jacq       Top module of Zybo z7-20 FPGA platform
+// =========================================================================== //
 
 module cva6_zybo_z7_20 (
 
-//  input  logic          USER_SI570_P,
-//  input  logic          USER_SI570_N,
-
-input  logic          clk_sys,
-
-  input  logic         cpu_reset   ,
-//  output logic [ 7:0]  led         ,
-//  input  logic [ 7:0]  sw          ,
-
-
+  input  logic     clk_sys   ,
+  input  logic     cpu_reset ,
 
   // common part
-   input logic      trst_n      ,
-  input  logic        tck         ,
-  input  logic        tms         ,
-  input  logic        tdi         ,
-  output wire         tdo         ,
-  input  logic        rx          ,
-  output logic        tx
+  input logic      trst_n    ,
+  input  logic     tck       ,
+  input  logic     tms       ,
+  input  logic     tdi       ,
+  output wire      tdo       ,
+  input  logic     rx        ,
+  output logic     tx
 );
 // 24 MByte in 8 byte words
 localparam NumWords = (24 * 1024 * 1024) / 8;
@@ -110,10 +124,6 @@ rstgen i_rstgen_main (
 );
 
 
-
-//assign rst_n = ndmreset_n;
-//assign rst = ~ndmreset_n;
-
 assign rst_n = ~cpu_reset;
 assign rst = cpu_reset;
 
@@ -188,7 +198,6 @@ dmi_jtag  #(
     .dmi_resp_i           ( debug_resp           ),
     .tck_i                ( tck    ),
     .tms_i                ( tms    ),
-    //.trst_ni              ( trst_n ),
     .trst_ni              ( dmi_trst_n ),
     .td_i                 ( tdi    ),
     .td_o                 ( tdo    ),
@@ -259,7 +268,6 @@ axi2mem #(
 ) i_dm_axi2mem (
     .clk_i      ( clk                       ),
     .rst_ni     ( rst_n                     ),
-//    .slave      ( master[ariane_soc::Debug] ),
     .slave      ( master_to_dm[0] ),
     .req_o      ( dm_slave_req              ),
     .we_o       ( dm_slave_we               ),
@@ -276,108 +284,93 @@ assign master_to_dm[0].w_user = '0;
 assign master_to_dm[0].ar_user = '0;
 
 assign master_to_dm[0].aw_id = dm_axi_m_req.aw.id;
-//assign master_to_dm[0].b_id = dm_axi_m_resp.b.id;
-//assign dm_axi_m_resp.b.id = master_to_dm[0].b_id;
 assign master_to_dm[0].ar_id = dm_axi_m_req.ar.id;
-//assign master_to_dm[0].r_id = dm_axi_m_resp.r.id;
-//assign dm_axi_m_resp.r.id = master_to_dm[0].r_id;
 
 assign master[ariane_soc::Debug].r_user ='0;
 assign master[ariane_soc::Debug].b_user ='0;
 
-//assign master[ariane_soc::Debug].b_id = master_to_dm[0].b_id;
-//assign master[ariane_soc::Debug].r_id = master_to_dm[0].r_id;
-
 
 
 xlnx_axi_dwidth_converter_dm_slave  i_axi_dwidth_converter_dm_slave( 
-    .s_axi_aclk(clk),// : in STD_LOGIC;
-    .s_axi_aresetn(ndmreset_n),// : in STD_LOGIC;
-    .s_axi_awid(master[ariane_soc::Debug].aw_id),// : in STD_LOGIC_VECTOR ( 4 downto 0 );
-    .s_axi_awaddr(master[ariane_soc::Debug].aw_addr[31:0]),// : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    .s_axi_awlen(master[ariane_soc::Debug].aw_len),// : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    .s_axi_awsize(master[ariane_soc::Debug].aw_size),// : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    .s_axi_awburst(master[ariane_soc::Debug].aw_burst),// : in STD_LOGIC_VECTOR ( 1 downto 0 );
-    .s_axi_awlock(master[ariane_soc::Debug].aw_lock),// : in STD_LOGIC_VECTOR ( 0 to 0 );
-    .s_axi_awcache(master[ariane_soc::Debug].aw_cache),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_awprot(master[ariane_soc::Debug].aw_prot),// : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    .s_axi_awregion(master[ariane_soc::Debug].aw_region),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_awqos(master[ariane_soc::Debug].aw_qos),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_awvalid(master[ariane_soc::Debug].aw_valid),// : in STD_LOGIC;
-    .s_axi_awready(master[ariane_soc::Debug].aw_ready),// : out STD_LOGIC;
-    .s_axi_wdata(master[ariane_soc::Debug].w_data),// : in STD_LOGIC_VECTOR ( 63 downto 0 );
-    .s_axi_wstrb(master[ariane_soc::Debug].w_strb),// : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    .s_axi_wlast(master[ariane_soc::Debug].w_last),// : in STD_LOGIC;
-    .s_axi_wvalid(master[ariane_soc::Debug].w_valid),// : in STD_LOGIC;
-    .s_axi_wready(master[ariane_soc::Debug].w_ready),// : out STD_LOGIC;
-    .s_axi_bid(master[ariane_soc::Debug].b_id),// : out STD_LOGIC_VECTOR ( 4 downto 0 );
-    //.s_axi_bid(),// : out STD_LOGIC_VECTOR ( 4 downto 0 );
-    .s_axi_bresp(master[ariane_soc::Debug].b_resp),// : out STD_LOGIC_VECTOR ( 1 downto 0 );
-    .s_axi_bvalid(master[ariane_soc::Debug].b_valid),// : out STD_LOGIC;
-    .s_axi_bready(master[ariane_soc::Debug].b_ready),// : in STD_LOGIC;
-    .s_axi_arid(master[ariane_soc::Debug].ar_id),// : in STD_LOGIC_VECTOR ( 4 downto 0 );
-    .s_axi_araddr(master[ariane_soc::Debug].ar_addr[31:0]),// : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    .s_axi_arlen(master[ariane_soc::Debug].ar_len),// : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    .s_axi_arsize(master[ariane_soc::Debug].ar_size),// : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    .s_axi_arburst(master[ariane_soc::Debug].ar_burst),// : in STD_LOGIC_VECTOR ( 1 downto 0 );
-    .s_axi_arlock(master[ariane_soc::Debug].ar_lock),// : in STD_LOGIC_VECTOR ( 0 to 0 );
-    .s_axi_arcache(master[ariane_soc::Debug].ar_cache),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_arprot(master[ariane_soc::Debug].ar_prot),// : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    .s_axi_arregion(master[ariane_soc::Debug].ar_region),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_arqos(master[ariane_soc::Debug].ar_qos),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_arvalid(master[ariane_soc::Debug].ar_valid),// : in STD_LOGIC;
-    .s_axi_arready(master[ariane_soc::Debug].ar_ready),// : out STD_LOGIC;
-    .s_axi_rid(master[ariane_soc::Debug].r_id),// : out STD_LOGIC_VECTOR ( 4 downto 0 );
-    //.s_axi_rid(),// : out STD_LOGIC_VECTOR ( 4 downto 0 );
-    .s_axi_rdata(master[ariane_soc::Debug].r_data),// : out STD_LOGIC_VECTOR ( 63 downto 0 );
-    .s_axi_rresp(master[ariane_soc::Debug].r_resp),// : out STD_LOGIC_VECTOR ( 1 downto 0 );
-    .s_axi_rlast(master[ariane_soc::Debug].r_last),// : out STD_LOGIC;
-    .s_axi_rvalid(master[ariane_soc::Debug].r_valid),// : out STD_LOGIC;
-    .s_axi_rready(master[ariane_soc::Debug].r_ready),// : in STD_LOGIC;
-    .m_axi_awaddr(master_to_dm[0].aw_addr),// : out STD_LOGIC_VECTOR ( 31 downto 0 );
-    .m_axi_awlen(master_to_dm[0].aw_len),// : out STD_LOGIC_VECTOR ( 7 downto 0 );
-    .m_axi_awsize(master_to_dm[0].aw_size),// : out STD_LOGIC_VECTOR ( 2 downto 0 );
-    .m_axi_awburst(master_to_dm[0].aw_burst),// : out STD_LOGIC_VECTOR ( 1 downto 0 );
-    .m_axi_awlock(master_to_dm[0].aw_lock),// : out STD_LOGIC_VECTOR ( 0 to 0 );
-    .m_axi_awcache(master_to_dm[0].aw_cache),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_awprot(master_to_dm[0].aw_prot),// : out STD_LOGIC_VECTOR ( 2 downto 0 );
-    .m_axi_awregion(master_to_dm[0].aw_region),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_awqos(master_to_dm[0].aw_qos),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_awvalid(master_to_dm[0].aw_valid),// : out STD_LOGIC;
-    .m_axi_awready(master_to_dm[0].aw_ready),// : in STD_LOGIC;
-    .m_axi_wdata(master_to_dm[0].w_data ),// : out STD_LOGIC_VECTOR ( 31 downto 0 );
-    .m_axi_wstrb(master_to_dm[0].w_strb),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_wlast(master_to_dm[0].w_last),// : out STD_LOGIC;
-    .m_axi_wvalid(master_to_dm[0].w_valid),// : out STD_LOGIC;
-    .m_axi_wready(master_to_dm[0].w_ready),// : in STD_LOGIC;
-    .m_axi_bresp(master_to_dm[0].b_resp),// : in STD_LOGIC_VECTOR ( 1 downto 0 );
-    .m_axi_bvalid(master_to_dm[0].b_valid),// : in STD_LOGIC;
-    .m_axi_bready(master_to_dm[0].b_ready),// : out STD_LOGIC;
-    .m_axi_araddr(master_to_dm[0].ar_addr),// : out STD_LOGIC_VECTOR ( 31 downto 0 );
-    .m_axi_arlen(master_to_dm[0].ar_len),// : out STD_LOGIC_VECTOR ( 7 downto 0 );
-    .m_axi_arsize(master_to_dm[0].ar_size),// : out STD_LOGIC_VECTOR ( 2 downto 0 );
-    .m_axi_arburst(master_to_dm[0].ar_burst),// : out STD_LOGIC_VECTOR ( 1 downto 0 );
-    .m_axi_arlock(master_to_dm[0].ar_lock),// : out STD_LOGIC_VECTOR ( 0 to 0 );
-    .m_axi_arcache(master_to_dm[0].ar_cache),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_arprot(master_to_dm[0].ar_prot),// : out STD_LOGIC_VECTOR ( 2 downto 0 );
-    .m_axi_arregion(master_to_dm[0].ar_region),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_arqos(master_to_dm[0].ar_qos),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_arvalid(master_to_dm[0].ar_valid),// : out STD_LOGIC;
-    .m_axi_arready(master_to_dm[0].ar_ready),// : in STD_LOGIC;
-    .m_axi_rdata(master_to_dm[0].r_data),// : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    .m_axi_rresp(master_to_dm[0].r_resp),// : in STD_LOGIC_VECTOR ( 1 downto 0 );
-    .m_axi_rlast(master_to_dm[0].r_last),// : in STD_LOGIC;
-    .m_axi_rvalid(master_to_dm[0].r_valid),// : in STD_LOGIC;
-    .m_axi_rready(master_to_dm[0].r_ready)// : out STD_LOGIC
+    .s_axi_aclk(clk),
+    .s_axi_aresetn(ndmreset_n),
+    .s_axi_awid(master[ariane_soc::Debug].aw_id),
+    .s_axi_awaddr(master[ariane_soc::Debug].aw_addr[31:0]),
+    .s_axi_awlen(master[ariane_soc::Debug].aw_len),
+    .s_axi_awsize(master[ariane_soc::Debug].aw_size),
+    .s_axi_awburst(master[ariane_soc::Debug].aw_burst),
+    .s_axi_awlock(master[ariane_soc::Debug].aw_lock),
+    .s_axi_awcache(master[ariane_soc::Debug].aw_cache),
+    .s_axi_awprot(master[ariane_soc::Debug].aw_prot),
+    .s_axi_awregion(master[ariane_soc::Debug].aw_region),
+    .s_axi_awqos(master[ariane_soc::Debug].aw_qos),
+    .s_axi_awvalid(master[ariane_soc::Debug].aw_valid),
+    .s_axi_awready(master[ariane_soc::Debug].aw_ready),
+    .s_axi_wdata(master[ariane_soc::Debug].w_data),
+    .s_axi_wstrb(master[ariane_soc::Debug].w_strb),
+    .s_axi_wlast(master[ariane_soc::Debug].w_last),
+    .s_axi_wvalid(master[ariane_soc::Debug].w_valid),
+    .s_axi_wready(master[ariane_soc::Debug].w_ready),
+    .s_axi_bid(master[ariane_soc::Debug].b_id),
+    .s_axi_bresp(master[ariane_soc::Debug].b_resp),
+    .s_axi_bvalid(master[ariane_soc::Debug].b_valid),
+    .s_axi_bready(master[ariane_soc::Debug].b_ready),
+    .s_axi_arid(master[ariane_soc::Debug].ar_id),
+    .s_axi_araddr(master[ariane_soc::Debug].ar_addr[31:0]),
+    .s_axi_arlen(master[ariane_soc::Debug].ar_len),
+    .s_axi_arsize(master[ariane_soc::Debug].ar_size),
+    .s_axi_arburst(master[ariane_soc::Debug].ar_burst),
+    .s_axi_arlock(master[ariane_soc::Debug].ar_lock),
+    .s_axi_arcache(master[ariane_soc::Debug].ar_cache),
+    .s_axi_arprot(master[ariane_soc::Debug].ar_prot),
+    .s_axi_arregion(master[ariane_soc::Debug].ar_region),
+    .s_axi_arqos(master[ariane_soc::Debug].ar_qos),
+    .s_axi_arvalid(master[ariane_soc::Debug].ar_valid),
+    .s_axi_arready(master[ariane_soc::Debug].ar_ready),
+    .s_axi_rid(master[ariane_soc::Debug].r_id),
+    .s_axi_rdata(master[ariane_soc::Debug].r_data),
+    .s_axi_rresp(master[ariane_soc::Debug].r_resp),
+    .s_axi_rlast(master[ariane_soc::Debug].r_last),
+    .s_axi_rvalid(master[ariane_soc::Debug].r_valid),
+    .s_axi_rready(master[ariane_soc::Debug].r_ready),
+    .m_axi_awaddr(master_to_dm[0].aw_addr),
+    .m_axi_awlen(master_to_dm[0].aw_len),
+    .m_axi_awsize(master_to_dm[0].aw_size),
+    .m_axi_awburst(master_to_dm[0].aw_burst),
+    .m_axi_awlock(master_to_dm[0].aw_lock),
+    .m_axi_awcache(master_to_dm[0].aw_cache),
+    .m_axi_awprot(master_to_dm[0].aw_prot),
+    .m_axi_awregion(master_to_dm[0].aw_region),
+    .m_axi_awqos(master_to_dm[0].aw_qos),
+    .m_axi_awvalid(master_to_dm[0].aw_valid),
+    .m_axi_awready(master_to_dm[0].aw_ready),
+    .m_axi_wdata(master_to_dm[0].w_data ),
+    .m_axi_wstrb(master_to_dm[0].w_strb),
+    .m_axi_wlast(master_to_dm[0].w_last),
+    .m_axi_wvalid(master_to_dm[0].w_valid),
+    .m_axi_wready(master_to_dm[0].w_ready),
+    .m_axi_bresp(master_to_dm[0].b_resp),
+    .m_axi_bvalid(master_to_dm[0].b_valid),
+    .m_axi_bready(master_to_dm[0].b_ready),
+    .m_axi_araddr(master_to_dm[0].ar_addr),
+    .m_axi_arlen(master_to_dm[0].ar_len),
+    .m_axi_arsize(master_to_dm[0].ar_size),
+    .m_axi_arburst(master_to_dm[0].ar_burst),
+    .m_axi_arlock(master_to_dm[0].ar_lock),
+    .m_axi_arcache(master_to_dm[0].ar_cache),
+    .m_axi_arprot(master_to_dm[0].ar_prot),
+    .m_axi_arregion(master_to_dm[0].ar_region),
+    .m_axi_arqos(master_to_dm[0].ar_qos),
+    .m_axi_arvalid(master_to_dm[0].ar_valid),
+    .m_axi_arready(master_to_dm[0].ar_ready),
+    .m_axi_rdata(master_to_dm[0].r_data),
+    .m_axi_rresp(master_to_dm[0].r_resp),
+    .m_axi_rlast(master_to_dm[0].r_last),
+    .m_axi_rvalid(master_to_dm[0].r_valid),
+    .m_axi_rready(master_to_dm[0].r_ready)
   );
 
 
-
-/*axi_master_connect i_dm_axi_master_connect (
-  .axi_req_i(dm_axi_m_req),
-  .axi_resp_o(dm_axi_m_resp),
-  .master(slave[1])
-);*/
 /*****************************************************************/
 logic [31 : 0] dm_master_m_awaddr;
 logic [31 : 0] dm_master_m_araddr;
@@ -392,121 +385,92 @@ assign dm_axi_m_resp.r.data = {32'h0000_0000, dm_master_s_rdata};
 assign slave[1].aw_user = '0;
 assign slave[1].w_user = '0;
 assign slave[1].ar_user = '0;
-//assign slave[1].b_user = '0;
 
 assign slave[1].aw_id = dm_axi_m_req.aw.id;
-//assign slave[1].b_id = dm_axi_m_resp.b.id;
-///assign dm_axi_m_resp.b.id = slave[1].b_id;
 assign slave[1].ar_id = dm_axi_m_req.ar.id;
-//assign slave[1].r_id = dm_axi_m_resp.r.id;
-//assign dm_axi_m_resp.r.id = slave[1].r_id;
 assign slave[1].aw_atop = dm_axi_m_req.aw.atop;
 
 
 
 xlnx_axi_dwidth_converter_dm_master  i_axi_dwidth_converter_dm_master( 
-    .s_axi_aclk(clk),// : in STD_LOGIC;
-    .s_axi_aresetn(ndmreset_n),// : in STD_LOGIC;
-    .s_axi_awid(dm_axi_m_req.aw.id),// : in STD_LOGIC_VECTOR ( 4 downto 0 );
-    .s_axi_awaddr(dm_axi_m_req.aw.addr[31:0]),// : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    .s_axi_awlen(dm_axi_m_req.aw.len),// : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    .s_axi_awsize(dm_axi_m_req.aw.size),// : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    .s_axi_awburst(dm_axi_m_req.aw.burst),// : in STD_LOGIC_VECTOR ( 1 downto 0 );
-    .s_axi_awlock(dm_axi_m_req.aw.lock),// : in STD_LOGIC_VECTOR ( 0 to 0 );
-    .s_axi_awcache(dm_axi_m_req.aw.cache),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_awprot(dm_axi_m_req.aw.prot),// : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    .s_axi_awregion(dm_axi_m_req.aw.region),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_awqos(dm_axi_m_req.aw.qos),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_awvalid(dm_axi_m_req.aw_valid),// : in STD_LOGIC;
-    .s_axi_awready(dm_axi_m_resp.aw_ready),// : out STD_LOGIC;
-    .s_axi_wdata(dm_axi_m_req.w.data[31:0]),// : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    .s_axi_wstrb(dm_axi_m_req.w.strb[3:0]),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_wlast(dm_axi_m_req.w.last),// : in STD_LOGIC;
-    .s_axi_wvalid(dm_axi_m_req.w_valid),// : in STD_LOGIC;
-    .s_axi_wready(dm_axi_m_resp.w_ready),// : out STD_LOGIC;
-    .s_axi_bid(dm_axi_m_resp.b.id),// : out STD_LOGIC_VECTOR ( 4 downto 0 );
-    .s_axi_bresp(dm_axi_m_resp.b.resp),// : out STD_LOGIC_VECTOR ( 1 downto 0 );
-    .s_axi_bvalid(dm_axi_m_resp.b_valid),// : out STD_LOGIC;
-    .s_axi_bready(dm_axi_m_req.b_ready),// : in STD_LOGIC;
-    .s_axi_arid(dm_axi_m_req.ar.id),// : in STD_LOGIC_VECTOR ( 4 downto 0 );
-    .s_axi_araddr(dm_axi_m_req.ar.addr[31:0]),// : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    .s_axi_arlen(dm_axi_m_req.ar.len),// : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    .s_axi_arsize(dm_axi_m_req.ar.size),// : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    .s_axi_arburst(dm_axi_m_req.ar.burst),// : in STD_LOGIC_VECTOR ( 1 downto 0 );
-    .s_axi_arlock(dm_axi_m_req.ar.lock),// : in STD_LOGIC_VECTOR ( 0 to 0 );
-    .s_axi_arcache(dm_axi_m_req.ar.cache),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_arprot(dm_axi_m_req.ar.prot),// : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    .s_axi_arregion(dm_axi_m_req.ar.region),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_arqos(dm_axi_m_req.ar.qos),// : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    .s_axi_arvalid(dm_axi_m_req.ar_valid),// : in STD_LOGIC;
-    .s_axi_arready(dm_axi_m_resp.ar_ready),// : out STD_LOGIC;
-    .s_axi_rid(dm_axi_m_resp.r.id),// : out STD_LOGIC_VECTOR ( 4 downto 0 );
-    .s_axi_rdata(dm_master_s_rdata),// : out STD_LOGIC_VECTOR ( 31 downto 0 );
-    .s_axi_rresp(dm_axi_m_resp.r.resp),// : out STD_LOGIC_VECTOR ( 1 downto 0 );
-    .s_axi_rlast(dm_axi_m_resp.r.last),// : out STD_LOGIC;
-    .s_axi_rvalid(dm_axi_m_resp.r_valid),// : out STD_LOGIC;
-    .s_axi_rready(dm_axi_m_req.r_ready),// : in STD_LOGIC;
-    .m_axi_awaddr(dm_master_m_awaddr),// : out STD_LOGIC_VECTOR ( 31 downto 0 );
-    .m_axi_awlen(slave[1].aw_len),// : out STD_LOGIC_VECTOR ( 7 downto 0 );
-    .m_axi_awsize(slave[1].aw_size),// : out STD_LOGIC_VECTOR ( 2 downto 0 );
-    .m_axi_awburst(slave[1].aw_burst),// : out STD_LOGIC_VECTOR ( 1 downto 0 );
-    .m_axi_awlock(slave[1].aw_lock),// : out STD_LOGIC_VECTOR ( 0 to 0 );
-    .m_axi_awcache(slave[1].aw_cache),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_awprot(slave[1].aw_prot),// : out STD_LOGIC_VECTOR ( 2 downto 0 );
-    .m_axi_awregion(slave[1].aw_region),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_awqos(slave[1].aw_qos),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_awvalid(slave[1].aw_valid),// : out STD_LOGIC;
-    .m_axi_awready(slave[1].aw_ready),// : in STD_LOGIC;
-    .m_axi_wdata(slave[1].w_data ),// : out STD_LOGIC_VECTOR ( 63 downto 0 );
-    .m_axi_wstrb(slave[1].w_strb),// : out STD_LOGIC_VECTOR ( 7 downto 0 );
-    .m_axi_wlast(slave[1].w_last),// : out STD_LOGIC;
-    .m_axi_wvalid(slave[1].w_valid),// : out STD_LOGIC;
-    .m_axi_wready(slave[1].w_ready),// : in STD_LOGIC;
-    .m_axi_bresp(slave[1].b_resp),// : in STD_LOGIC_VECTOR ( 1 downto 0 );
-    .m_axi_bvalid(slave[1].b_valid),// : in STD_LOGIC;
-    .m_axi_bready(slave[1].b_ready),// : out STD_LOGIC;
-    .m_axi_araddr(dm_master_m_araddr),// : out STD_LOGIC_VECTOR ( 31 downto 0 );
-    .m_axi_arlen(slave[1].ar_len),// : out STD_LOGIC_VECTOR ( 7 downto 0 );
-    .m_axi_arsize(slave[1].ar_size),// : out STD_LOGIC_VECTOR ( 2 downto 0 );
-    .m_axi_arburst(slave[1].ar_burst),// : out STD_LOGIC_VECTOR ( 1 downto 0 );
-    .m_axi_arlock(slave[1].ar_lock),// : out STD_LOGIC_VECTOR ( 0 to 0 );
-    .m_axi_arcache(slave[1].ar_cache),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_arprot(slave[1].ar_prot),// : out STD_LOGIC_VECTOR ( 2 downto 0 );
-    .m_axi_arregion(slave[1].ar_region),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_arqos(slave[1].ar_qos),// : out STD_LOGIC_VECTOR ( 3 downto 0 );
-    .m_axi_arvalid(slave[1].ar_valid),// : out STD_LOGIC;
-    .m_axi_arready(slave[1].ar_ready),// : in STD_LOGIC;
-    .m_axi_rdata(slave[1].r_data),// : in STD_LOGIC_VECTOR ( 63 downto 0 );
-    .m_axi_rresp(slave[1].r_resp),// : in STD_LOGIC_VECTOR ( 1 downto 0 );
-    .m_axi_rlast(slave[1].r_last),// : in STD_LOGIC;
-    .m_axi_rvalid(slave[1].r_valid),// : in STD_LOGIC;
-    .m_axi_rready(slave[1].r_ready)// : out STD_LOGIC
+    .s_axi_aclk(clk),
+    .s_axi_aresetn(ndmreset_n),
+    .s_axi_awid(dm_axi_m_req.aw.id),
+    .s_axi_awaddr(dm_axi_m_req.aw.addr[31:0]),
+    .s_axi_awlen(dm_axi_m_req.aw.len),
+    .s_axi_awsize(dm_axi_m_req.aw.size),
+    .s_axi_awburst(dm_axi_m_req.aw.burst),
+    .s_axi_awlock(dm_axi_m_req.aw.lock),
+    .s_axi_awcache(dm_axi_m_req.aw.cache),
+    .s_axi_awprot(dm_axi_m_req.aw.prot),
+    .s_axi_awregion(dm_axi_m_req.aw.region),
+    .s_axi_awqos(dm_axi_m_req.aw.qos),
+    .s_axi_awvalid(dm_axi_m_req.aw_valid),
+    .s_axi_awready(dm_axi_m_resp.aw_ready),
+    .s_axi_wdata(dm_axi_m_req.w.data[31:0]),
+    .s_axi_wstrb(dm_axi_m_req.w.strb[3:0]),
+    .s_axi_wlast(dm_axi_m_req.w.last),
+    .s_axi_wvalid(dm_axi_m_req.w_valid),
+    .s_axi_wready(dm_axi_m_resp.w_ready),
+    .s_axi_bid(dm_axi_m_resp.b.id),
+    .s_axi_bresp(dm_axi_m_resp.b.resp),
+    .s_axi_bvalid(dm_axi_m_resp.b_valid),
+    .s_axi_bready(dm_axi_m_req.b_ready),
+    .s_axi_arid(dm_axi_m_req.ar.id),
+    .s_axi_araddr(dm_axi_m_req.ar.addr[31:0]),
+    .s_axi_arlen(dm_axi_m_req.ar.len),
+    .s_axi_arsize(dm_axi_m_req.ar.size),
+    .s_axi_arburst(dm_axi_m_req.ar.burst),
+    .s_axi_arlock(dm_axi_m_req.ar.lock),
+    .s_axi_arcache(dm_axi_m_req.ar.cache),
+    .s_axi_arprot(dm_axi_m_req.ar.prot),
+    .s_axi_arregion(dm_axi_m_req.ar.region),
+    .s_axi_arqos(dm_axi_m_req.ar.qos),
+    .s_axi_arvalid(dm_axi_m_req.ar_valid),
+    .s_axi_arready(dm_axi_m_resp.ar_ready),
+    .s_axi_rid(dm_axi_m_resp.r.id),
+    .s_axi_rdata(dm_master_s_rdata),
+    .s_axi_rresp(dm_axi_m_resp.r.resp),
+    .s_axi_rlast(dm_axi_m_resp.r.last),
+    .s_axi_rvalid(dm_axi_m_resp.r_valid),
+    .s_axi_rready(dm_axi_m_req.r_ready),
+    .m_axi_awaddr(dm_master_m_awaddr),
+    .m_axi_awlen(slave[1].aw_len),
+    .m_axi_awsize(slave[1].aw_size),
+    .m_axi_awburst(slave[1].aw_burst),
+    .m_axi_awlock(slave[1].aw_lock),
+    .m_axi_awcache(slave[1].aw_cache),
+    .m_axi_awprot(slave[1].aw_prot),
+    .m_axi_awregion(slave[1].aw_region),
+    .m_axi_awqos(slave[1].aw_qos),
+    .m_axi_awvalid(slave[1].aw_valid),
+    .m_axi_awready(slave[1].aw_ready),
+    .m_axi_wdata(slave[1].w_data ),
+    .m_axi_wstrb(slave[1].w_strb),
+    .m_axi_wlast(slave[1].w_last),
+    .m_axi_wvalid(slave[1].w_valid),
+    .m_axi_wready(slave[1].w_ready),
+    .m_axi_bresp(slave[1].b_resp),
+    .m_axi_bvalid(slave[1].b_valid),
+    .m_axi_bready(slave[1].b_ready),
+    .m_axi_araddr(dm_master_m_araddr),
+    .m_axi_arlen(slave[1].ar_len),
+    .m_axi_arsize(slave[1].ar_size),
+    .m_axi_arburst(slave[1].ar_burst),
+    .m_axi_arlock(slave[1].ar_lock),
+    .m_axi_arcache(slave[1].ar_cache),
+    .m_axi_arprot(slave[1].ar_prot),
+    .m_axi_arregion(slave[1].ar_region),
+    .m_axi_arqos(slave[1].ar_qos),
+    .m_axi_arvalid(slave[1].ar_valid),
+    .m_axi_arready(slave[1].ar_ready),
+    .m_axi_rdata(slave[1].r_data),
+    .m_axi_rresp(slave[1].r_resp),
+    .m_axi_rlast(slave[1].r_last),
+    .m_axi_rvalid(slave[1].r_valid),
+    .m_axi_rready(slave[1].r_ready)
   );
 
-
-/*axi_adapter #(
-    .DATA_WIDTH            ( 32              )
-) i_dm_axi_master (
-    .clk_i                 ( clk                       ),
-    .rst_ni                ( rst_n                     ),
-    .req_i                 ( dm_master_req             ),
-    .type_i                ( ariane_axi::SINGLE_REQ    ),
-    .gnt_o                 ( dm_master_gnt             ),
-    .gnt_id_o              (                           ),
-    .addr_i                ( {32'h00000000, dm_master_add}             ),
-    .we_i                  ( dm_master_we              ),
-    .wdata_i               ( dm_master_wdata           ),
-    .be_i                  ( dm_master_be              ),
-    .size_i                ( 2'b11                     ), // always do 64bit here and use byte enables to gate
-    .id_i                  ( '0                        ),
-    .valid_o               ( dm_master_r_valid         ),
-    .rdata_o               ( dm_master_r_rdata         ),
-    .id_o                  (                           ),
-    .critical_word_o       (                           ),
-    .critical_word_valid_o (                           ),
-    .axi_req_o             ( dm_axi_m_req              ),
-    .axi_resp_i            ( dm_axi_m_resp             )
-);*/
 
 axi_adapter_32 #(
     .DATA_WIDTH            ( 32              )
@@ -734,92 +698,6 @@ axi_riscv_atomics_wrap #(
 assign dram.r_user = '0;
 assign dram.b_user = '0;
 
-//xlnx_axi_clock_converter i_xlnx_axi_clock_converter_ddr (
-//  .s_axi_aclk     ( clk              ),
-//  .s_axi_aresetn  ( ndmreset_n       ),
-//  .s_axi_awid     ( dram.aw_id       ),
-//  .s_axi_awaddr   ( dram.aw_addr     ),
-//  .s_axi_awlen    ( dram.aw_len      ),
-//  .s_axi_awsize   ( dram.aw_size     ),
-//  .s_axi_awburst  ( dram.aw_burst    ),
-//  .s_axi_awlock   ( dram.aw_lock     ),
-//  .s_axi_awcache  ( dram.aw_cache    ),
-//  .s_axi_awprot   ( dram.aw_prot     ),
-//  .s_axi_awregion ( dram.aw_region   ),
-//  .s_axi_awqos    ( dram.aw_qos      ),
-//  .s_axi_awvalid  ( dram.aw_valid    ),
-//  .s_axi_awready  ( dram.aw_ready    ),
-//  .s_axi_wdata    ( dram.w_data      ),
-//  .s_axi_wstrb    ( dram.w_strb      ),
-//  .s_axi_wlast    ( dram.w_last      ),
-//  .s_axi_wvalid   ( dram.w_valid     ),
-//  .s_axi_wready   ( dram.w_ready     ),
-//  .s_axi_bid      ( dram.b_id        ),
-//  .s_axi_bresp    ( dram.b_resp      ),
-//  .s_axi_bvalid   ( dram.b_valid     ),
-//  .s_axi_bready   ( dram.b_ready     ),
-//  .s_axi_arid     ( dram.ar_id       ),
-//  .s_axi_araddr   ( dram.ar_addr     ),
-//  .s_axi_arlen    ( dram.ar_len      ),
-//  .s_axi_arsize   ( dram.ar_size     ),
-//  .s_axi_arburst  ( dram.ar_burst    ),
-//  .s_axi_arlock   ( dram.ar_lock     ),
-//  .s_axi_arcache  ( dram.ar_cache    ),
-//  .s_axi_arprot   ( dram.ar_prot     ),
-//  .s_axi_arregion ( dram.ar_region   ),
-//  .s_axi_arqos    ( dram.ar_qos      ),
-//  .s_axi_arvalid  ( dram.ar_valid    ),
-//  .s_axi_arready  ( dram.ar_ready    ),
-//  .s_axi_rid      ( dram.r_id        ),
-//  .s_axi_rdata    ( dram.r_data      ),
-//  .s_axi_rresp    ( dram.r_resp      ),
-//  .s_axi_rlast    ( dram.r_last      ),
-//  .s_axi_rvalid   ( dram.r_valid     ),
-//  .s_axi_rready   ( dram.r_ready     ),
-//  // to size converter
-//  .m_axi_aclk     ( ps_clock_out    ),
-//  .m_axi_aresetn  ( ndmreset_n       ),
-//  .m_axi_awid     ( s_axi_awid       ),
-//  .m_axi_awaddr   ( s_axi_awaddr     ),
-//  .m_axi_awlen    ( s_axi_awlen      ),
-//  .m_axi_awsize   ( s_axi_awsize     ),
-//  .m_axi_awburst  ( s_axi_awburst    ),
-//  .m_axi_awlock   ( s_axi_awlock     ),
-//  .m_axi_awcache  ( s_axi_awcache    ),
-//  .m_axi_awprot   ( s_axi_awprot     ),
-//  .m_axi_awregion ( s_axi_awregion   ),
-//  .m_axi_awqos    ( s_axi_awqos      ),
-//  .m_axi_awvalid  ( s_axi_awvalid    ),
-//  .m_axi_awready  ( s_axi_awready    ),
-//  .m_axi_wdata    ( s_axi_wdata      ),
-//  .m_axi_wstrb    ( s_axi_wstrb      ),
-//  .m_axi_wlast    ( s_axi_wlast      ),
-//  .m_axi_wvalid   ( s_axi_wvalid     ),
-//  .m_axi_wready   ( s_axi_wready     ),
-//  .m_axi_bid      ( s_axi_bid        ),
-//  .m_axi_bresp    ( s_axi_bresp      ),
-//  .m_axi_bvalid   ( s_axi_bvalid     ),
-//  .m_axi_bready   ( s_axi_bready     ),
-//  .m_axi_arid     ( s_axi_arid       ),
-//  .m_axi_araddr   ( s_axi_araddr     ),
-//  .m_axi_arlen    ( s_axi_arlen      ),
-//  .m_axi_arsize   ( s_axi_arsize     ),
-//  .m_axi_arburst  ( s_axi_arburst    ),
-//  .m_axi_arlock   ( s_axi_arlock     ),
-//  .m_axi_arcache  ( s_axi_arcache    ),
-//  .m_axi_arprot   ( s_axi_arprot     ),
-//  .m_axi_arregion ( s_axi_arregion   ),
-//  .m_axi_arqos    ( s_axi_arqos      ),
-//  .m_axi_arvalid  ( s_axi_arvalid    ),
-//  .m_axi_arready  ( s_axi_arready    ),
-//  .m_axi_rid      ( s_axi_rid        ),
-//  .m_axi_rdata    ( s_axi_rdata      ),
-//  .m_axi_rresp    ( s_axi_rresp      ),
-//  .m_axi_rlast    ( s_axi_rlast      ),
-//  .m_axi_rvalid   ( s_axi_rvalid     ),
-//  .m_axi_rready   ( s_axi_rready     )
-//);
-
 xlnx_clk_gen i_xlnx_clk_gen (
   .clk_out1 ( clk           ), // 25 MHz
   .clk_out2 ( phy_tx_clk    ), // 125 MHz (for RGMII PHY)
@@ -828,77 +706,8 @@ xlnx_clk_gen i_xlnx_clk_gen (
   .reset    ( cpu_reset     ),
   .locked   ( pll_locked    ),
   .clk_in1  ( clk_sys )  //125 MHz
-  //.clk_in1_p( USER_SI570_P    ),
-  //.clk_in1_n( USER_SI570_N    )
 );
 
-
-
-//logic          eth_rst_n ;
-//logic          eth_rxck  ;
-//logic          eth_rxctl ;
-//logic [3:0]    eth_rxd   ;
-//logic          eth_txck  ;
-//logic          eth_txctl ;
-//logic [3:0]    eth_txd   ;
-//logic          eth_mdio  ;
-//logic          eth_mdc   ;
-
-
-
-//logic [48 : 0] saxigp0_awaddr;
-//logic [48 : 0] saxigp0_araddr;
-
-
-//assign saxigp0_awaddr = s_axi_awaddr[48:0] & 48'h7fff_ffff;
-//assign saxigp0_araddr = s_axi_araddr[48:0] & 48'h7fff_ffff;
-
-//xlnx_zynq_ultra_ps i_xlnx_zynq_ultra_ps (
-//  .saxihpc0_fpd_aclk ( ps_clock_out     ),//: in STD_LOGIC;
-//  .saxigp0_aruser    (s_axi_aruser       ),//: in STD_LOGIC;
-//  .saxigp0_awuser    (s_axi_awuser       ),//: in STD_LOGIC;
-//  .saxigp0_awid      ('0                 ),//: in STD_LOGIC_VECTOR ( 5 downto 0 );
-//  //.saxigp0_awaddr    (s_axi_awaddr[47:0] ),//: in STD_LOGIC_VECTOR ( 48 downto 0 );
-//  .saxigp0_awaddr    (saxigp0_awaddr     ),//: in STD_LOGIC_VECTOR ( 48 downto 0 );
-//  .saxigp0_awlen     (s_axi_awlen        ),//: in STD_LOGIC_VECTOR ( 7 downto 0 );
-//  .saxigp0_awsize    (s_axi_awsize       ),//: in STD_LOGIC_VECTOR ( 2 downto 0 );
-//  .saxigp0_awburst   (s_axi_awburst      ),//: in STD_LOGIC_VECTOR ( 1 downto 0 );
-//  .saxigp0_awlock    (s_axi_awlock       ),//: in STD_LOGIC;
-//  .saxigp0_awcache   (s_axi_awcache      ),//: in STD_LOGIC_VECTOR ( 3 downto 0 );
-//  .saxigp0_awprot    (s_axi_awprot       ),//: in STD_LOGIC_VECTOR ( 2 downto 0 );
-//  .saxigp0_awvalid   (s_axi_awvalid      ),//: in STD_LOGIC;
-//  .saxigp0_awready   (s_axi_awready      ),//: out STD_LOGIC;
-//  .saxigp0_wdata     (s_axi_wdata        ),//: in STD_LOGIC_VECTOR ( 63 downto 0 );
-//  .saxigp0_wstrb     (s_axi_wstrb        ),//: in STD_LOGIC_VECTOR ( 7 downto 0 );
-//  .saxigp0_wlast     (s_axi_wlast        ),//: in STD_LOGIC;
-//  .saxigp0_wvalid    (s_axi_wvalid       ),//: in STD_LOGIC;
-//  .saxigp0_wready    (s_axi_wready       ),//: out STD_LOGIC;
-//  .saxigp0_bid       (                   ),//: out STD_LOGIC_VECTOR ( 5 downto 0 );
-//  .saxigp0_bresp     (s_axi_bresp        ),//: out STD_LOGIC_VECTOR ( 1 downto 0 );
-//  .saxigp0_bvalid    (s_axi_bvalid       ),//: out STD_LOGIC;
-//  .saxigp0_bready    (s_axi_bready       ),//: in STD_LOGIC;
-//  .saxigp0_arid      ('0                 ),//: in STD_LOGIC_VECTOR ( 5 downto 0 );
-//  //.saxigp0_araddr    (s_axi_araddr[47:0] ),//: in STD_LOGIC_VECTOR ( 48 downto 0 );
-//  .saxigp0_araddr    (saxigp0_araddr ),//: in STD_LOGIC_VECTOR ( 48 downto 0 );
-//  .saxigp0_arlen     (s_axi_arlen        ),//: in STD_LOGIC_VECTOR ( 7 downto 0 );
-//  .saxigp0_arsize    (s_axi_arsize       ),//: in STD_LOGIC_VECTOR ( 2 downto 0 );
-//  .saxigp0_arburst   (s_axi_arburst      ),//: in STD_LOGIC_VECTOR ( 1 downto 0 );
-//  .saxigp0_arlock    (s_axi_arlock       ),//: in STD_LOGIC;
-//  .saxigp0_arcache   (s_axi_arcache      ),//: in STD_LOGIC_VECTOR ( 3 downto 0 );
-//  .saxigp0_arprot    (s_axi_arprot       ),//: in STD_LOGIC_VECTOR ( 2 downto 0 );
-//  .saxigp0_arvalid   (s_axi_arvalid      ),//: in STD_LOGIC;
-//  .saxigp0_arready   (s_axi_arready      ),//: out STD_LOGIC;
-//  .saxigp0_rid       (                   ),//: out STD_LOGIC_VECTOR ( 5 downto 0 );
-//  .saxigp0_rdata     (s_axi_rdata        ),//: out STD_LOGIC_VECTOR ( 63 downto 0 );
-//  .saxigp0_rresp     (s_axi_rresp        ),//: out STD_LOGIC_VECTOR ( 1 downto 0 );
-//  .saxigp0_rlast     (s_axi_rlast        ),//: out STD_LOGIC;
-//  .saxigp0_rvalid    (s_axi_rvalid       ),//: out STD_LOGIC;
-//  .saxigp0_rready    (s_axi_rready       ),//: in STD_LOGIC;
-//  .saxigp0_awqos     (s_axi_awqos        ),//: in STD_LOGIC_VECTOR ( 3 downto 0 );
-//  .saxigp0_arqos     (s_axi_arqos        ),//: in STD_LOGIC_VECTOR ( 3 downto 0 );
-//  //.pl_clk0           ( ps_clock_out     )//: out STD_LOGIC
-//  .pl_clk0           (      )//: out STD_LOGIC
-//  );
 
 logic [31 : 0] saxibram_awaddr;
 logic [31 : 0] saxibram_araddr;
@@ -909,41 +718,39 @@ assign saxibram_araddr = dram.ar_addr & 32'h7fff_ffff;
 
 xlnx_blk_mem_gen i_xlnx_blk_mem_gen (
 
-    .rsta_busy (      ),//: OUT STD_LOGIC;
-    .rstb_busy (      ),//: OUT STD_LOGIC;
-    .s_aclk ( clk     ),//: IN STD_LOGIC;
-    .s_aresetn (    ndmreset_n  ),//: IN STD_LOGIC;
-    .s_axi_awid ( dram.aw_id       ),//: IN STD_LOGIC_VECTOR(5 DOWNTO 0);
-//    .s_axi_awaddr ( dram.aw_addr     ),//: IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-    .s_axi_awaddr ( saxibram_awaddr     ),//: IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-    .s_axi_awlen ( dram.aw_len      ),//: IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-    .s_axi_awsize ( dram.aw_size     ),//: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
-    .s_axi_awburst ( dram.aw_burst    ),//: IN STD_LOGIC_VECTOR(1 DOWNTO 0);
-    .s_axi_awvalid ( dram.aw_valid    ),//: IN STD_LOGIC;
-    .s_axi_awready ( dram.aw_ready    ),//: OUT STD_LOGIC;
-    .s_axi_wdata ( dram.w_data      ),//: IN STD_LOGIC_VECTOR(63 DOWNTO 0);
-    .s_axi_wstrb ( dram.w_strb      ),//: IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-    .s_axi_wlast ( dram.w_last      ),//: IN STD_LOGIC;
-    .s_axi_wvalid ( dram.w_valid     ),//: IN STD_LOGIC;
-    .s_axi_wready ( dram.w_ready     ),//: OUT STD_LOGIC;
-    .s_axi_bid ( dram.b_id        ),//: OUT STD_LOGIC_VECTOR(5 DOWNTO 0);
-    .s_axi_bresp ( dram.b_resp      ),//: OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
-    .s_axi_bvalid ( dram.b_valid     ),//: OUT STD_LOGIC;
-    .s_axi_bready ( dram.b_ready     ),//: IN STD_LOGIC;
-    .s_axi_arid ( dram.ar_id       ),//: IN STD_LOGIC_VECTOR(5 DOWNTO 0);
-//    .s_axi_araddr ( dram.ar_addr     ),//: IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-    .s_axi_araddr ( saxibram_araddr     ),//: IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-    .s_axi_arlen ( dram.ar_len      ),//: IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-    .s_axi_arsize ( dram.ar_size     ),//: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
-    .s_axi_arburst( dram.ar_burst    ),//: IN STD_LOGIC_VECTOR(1 DOWNTO 0);
-    .s_axi_arvalid ( dram.ar_valid    ),//: IN STD_LOGIC;
-    .s_axi_arready ( dram.ar_ready    ),//: OUT STD_LOGIC;
-    .s_axi_rid ( dram.r_id        ),//: OUT STD_LOGIC_VECTOR(5 DOWNTO 0);
-    .s_axi_rdata ( dram.r_data      ),//: OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
-    .s_axi_rresp ( dram.r_resp      ),//: OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
-    .s_axi_rlast ( dram.r_last      ),//: OUT STD_LOGIC;
-    .s_axi_rvalid ( dram.r_valid     ),//: OUT STD_LOGIC;
-    .s_axi_rready ( dram.r_ready     )//: IN STD_LOGIC
+    .rsta_busy (      ),
+    .rstb_busy (      ),
+    .s_aclk ( clk ),
+    .s_aresetn ( ndmreset_n  ),
+    .s_axi_awid ( dram.aw_id ),
+    .s_axi_awaddr ( saxibram_awaddr ),
+    .s_axi_awlen ( dram.aw_len ),
+    .s_axi_awsize ( dram.aw_size ),
+    .s_axi_awburst ( dram.aw_burst ),
+    .s_axi_awvalid ( dram.aw_valid ),
+    .s_axi_awready ( dram.aw_ready ),
+    .s_axi_wdata ( dram.w_data ),
+    .s_axi_wstrb ( dram.w_strb ),
+    .s_axi_wlast ( dram.w_last ),
+    .s_axi_wvalid ( dram.w_valid ),
+    .s_axi_wready ( dram.w_ready ),
+    .s_axi_bid ( dram.b_id ),
+    .s_axi_bresp ( dram.b_resp ),
+    .s_axi_bvalid ( dram.b_valid ),
+    .s_axi_bready ( dram.b_ready ),
+    .s_axi_arid ( dram.ar_id ),
+    .s_axi_araddr ( saxibram_araddr ),
+    .s_axi_arlen ( dram.ar_len ),
+    .s_axi_arsize ( dram.ar_size ),
+    .s_axi_arburst( dram.ar_burst ),
+    .s_axi_arvalid ( dram.ar_valid ),
+    .s_axi_arready ( dram.ar_ready ),
+    .s_axi_rid ( dram.r_id ),
+    .s_axi_rdata ( dram.r_data ),
+    .s_axi_rresp ( dram.r_resp ),
+    .s_axi_rlast ( dram.r_last ),
+    .s_axi_rvalid ( dram.r_valid ),
+    .s_axi_rready ( dram.r_ready )
   );
 
 endmodule
