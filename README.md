@@ -248,7 +248,7 @@ you should see:
 ###############################
 ......................
 ```
-Replace the **HS2's serial number** in `fpga/openocd_digilent_hs2.cfg` file by the serial number of your HS2 cable.
+Replace the **HS2's serial number** in `fpga/scripts/program_cva-fpga.tcl` file by the serial number of your HS2 cable.
 
 ## Get started with Coremark application
 
