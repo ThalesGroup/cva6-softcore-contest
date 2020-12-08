@@ -231,8 +231,11 @@ This platform integrates a CV32A6 processor, a JTAG interface to run and debug s
 Below are described steps to run Coremark application on CV32A6 FPGA platform, steps are the same for Dhrystone application and other software applications.
 
 The JTAG-HS2 programming cable is initially a cable that allows programming of Xilinx FPGAs (bitstream loading) from a host PC.
+
 In our case, we use this cable to program software applications on the CV32A6 instantiated in the FPGA through a PMOD connector.
+
 We do not use the HS2 Cable in its original function therfore there is a preliminary step which consists in retrieving the serial number of the HS2 cable.
+
 To do this, connect the HS2 cable to the host PC (Zybo Z7-20 board must be disconnected from the host PC) and run the following command:
 ```
 make get_hs2_sn
@@ -241,7 +244,7 @@ you should see:
 ```
 ...............
 ###############################
-# TARGEt: localhost:3121/xilinx_tcf/Digilent/<**HS2's serial number**>
+# TARGEt: localhost:3121/xilinx_tcf/Digilent/<HS2's serial number>
 ###############################
 ......................
 ```
