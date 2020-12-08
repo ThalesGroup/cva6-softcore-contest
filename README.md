@@ -242,6 +242,7 @@ make get_hs2_sn
 ```
 you should see:
 ```
+[FPGA] Get HS2 serial number
 ...............
 ###############################
 # TARGEt: localhost:3121/xilinx_tcf/Digilent/<HS2's serial number>
