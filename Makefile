@@ -288,7 +288,27 @@ cva6_ooc: $(ariane_pkg) $(util) $(src) $(fpga_src)
 	@echo read_verilog -sv {$(fpga_src)}   >> fpga/scripts/add_sources.tcl
 	cd fpga && make cva6_ooc BOARD=$(BOARD) XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) BATCH_MODE=$(BATCH_MODE)
 
-.PHONY:  cva6_ooc
+.PHONY:  cva6_ooc cva6_fpga program_cva6_fpga get_hs2_id
+
+cva6_fpga: $(ariane_pkg) $(util) $(src) $(fpga_src) $(uart_src)
+	@echo "[FPGA] Generate sources"
+	@echo read_vhdl        {$(uart_src)}    > fpga/scripts/add_sources.tcl
+	@echo read_verilog -sv {$(ariane_pkg)} >> fpga/scripts/add_sources.tcl
+	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(util))}     >> fpga/scripts/add_sources.tcl
+	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(src))} 	   >> fpga/scripts/add_sources.tcl
+	@echo read_verilog -sv {$(fpga_src)}   >> fpga/scripts/add_sources.tcl
+	@echo "[FPGA] Generate Bitstream"
+	cd fpga && make cva6_fpga BOARD=$(BOARD) XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) BATCH_MODE=$(BATCH_MODE)
+
+
+program_cva6_fpga: 
+	@echo "[FPGA] Program FPGA"
+	cd fpga && make program_cva6_fpga BOARD=$(BOARD) XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) BATCH_MODE=$(BATCH_MODE)
+
+
+get_hs2_sn:
+	@echo "[FPGA] Get HS2 serial number"
+	cd fpga && make get_hs2_sn 
 
 clean:
 	rm -rf $(riscv-torture-dir)/output/test*

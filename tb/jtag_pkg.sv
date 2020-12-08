@@ -53,7 +53,7 @@ package jtag_pkg;
 
    task automatic jtag_wait_halfperiod(input int cycles);
       //#(50000*cycles);
-      #(100*cycles);
+      #(5*cycles);
    endtask
 
    task automatic jtag_clock(
@@ -461,7 +461,7 @@ package jtag_pkg;
          ref logic s_trstn,
          ref logic s_tdi
       );
-         JTAG_reg #(.size(32+1), .instr({JTAG_SOC_DMIACCESS, JTAG_SOC_BYPASS})) jtag_soc_dbg = new;
+         JTAG_reg #(.size(32), .instr({JTAG_SOC_DMIACCESS, JTAG_SOC_BYPASS})) jtag_soc_dbg = new;
          jtag_soc_dbg.setIR(s_tck, s_tms, s_trstn, s_tdi);
 
       endtask
@@ -473,7 +473,7 @@ package jtag_pkg;
          ref logic s_tdi
       );
 
-         JTAG_reg #(.size(32+1), .instr({JTAG_SOC_DTMCSR, JTAG_SOC_BYPASS})) jtag_soc_dbg = new;
+         JTAG_reg #(.size(32), .instr({JTAG_SOC_DTMCSR, JTAG_SOC_BYPASS})) jtag_soc_dbg = new;
          jtag_soc_dbg.setIR(s_tck, s_tms, s_trstn, s_tdi);
 
       endtask
@@ -841,12 +841,12 @@ package jtag_pkg;
          ref logic s_tdi,
          ref logic s_tdo
       );
-         logic [31+1:0] dataout;
-         JTAG_reg #(.size(32+1), .instr({JTAG_SOC_DTMCSR, JTAG_SOC_BYPASS})) jtag_soc_dbg = new;
+         logic [31:0] dataout;
+         JTAG_reg #(.size(32), .instr({JTAG_SOC_DTMCSR, JTAG_SOC_BYPASS})) jtag_soc_dbg = new;
          jtag_soc_dbg.start_shift(s_tck, s_tms, s_trstn, s_tdi);
-         jtag_soc_dbg.shift_nbits(32+1, '0, dataout, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
+         jtag_soc_dbg.shift_nbits(32, '0, dataout, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
          jtag_soc_dbg.idle(s_tck, s_tms, s_trstn, s_tdi);
-         dtmcs = dataout[32:1];
+         dtmcs = dataout[31:0];
       endtask
 
       task write_dtmcs(
@@ -857,10 +857,10 @@ package jtag_pkg;
          ref logic s_tdi,
          ref logic s_tdo
       );
-         logic [31+1:0] dataout;
-         JTAG_reg #(.size(32+1), .instr({JTAG_SOC_DTMCSR, JTAG_SOC_BYPASS})) jtag_soc_dbg = new;
+         logic [31:0] dataout;
+         JTAG_reg #(.size(32), .instr({JTAG_SOC_DTMCSR, JTAG_SOC_BYPASS})) jtag_soc_dbg = new;
          jtag_soc_dbg.start_shift(s_tck, s_tms, s_trstn, s_tdi);
-         jtag_soc_dbg.shift_nbits(32+1, {dtmcs, 1'b0}, dataout, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
+         jtag_soc_dbg.shift_nbits(32, {dtmcs, 1'b0}, dataout, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
          jtag_soc_dbg.idle(s_tck, s_tms, s_trstn, s_tdi);
 
       endtask
@@ -1153,12 +1153,12 @@ package jtag_pkg;
                    s_tdo
              );
              if (dmi_op == 2'h2) begin
-                 $display("[TB] %t dmi previous operation failed, not handled", $realtime);
+                 $display("[TB] %t read_debug_reg dmi previous operation failed, not handled", $realtime);
                  dmi_op = 2'h0; // TODO: for now we just force completion
              end
 
              if (dmi_op == 2'h3) begin
-                 $display("[TB] %t retrying debug reg access", $realtime);
+                 $display("[TB] %t read_debug_reg retrying debug reg access", $realtime);
                  this.dmi_reset(s_tck,s_tms,s_trstn,s_tdi,s_tdo);
                  this.init_dmi_access(s_tck,s_tms,s_trstn,s_tdi);
              end
@@ -1220,12 +1220,12 @@ package jtag_pkg;
                    s_tdo
              );
              if (dmi_op == 2'h2) begin
-                 $display("[TB] %t dmi previous operation failed, not handled", $realtime);
+                 $display("[TB] %t write_debug_reg dmi previous operation failed, not handled", $realtime);
                  dmi_op = 2'h0; // TODO: for now we just force completion
              end
 
              if (dmi_op == 2'h3) begin
-                 $display("[TB] %t retrying debug reg access", $realtime);
+                 $display("[TB] %t write_debug_reg retrying debug reg access", $realtime);
                  this.dmi_reset(s_tck,s_tms,s_trstn,s_tdi,s_tdo);
                  this.init_dmi_access(s_tck,s_tms,s_trstn,s_tdi);
              end
@@ -1684,6 +1684,102 @@ package jtag_pkg;
       
             endtask
 
+	task load_L2_ariane(
+               input int   num_stim,
+               ref   logic [95:0] stimuli [100000:0],
+               ref   logic s_tck,
+               ref   logic s_tms,
+               ref   logic s_trstn,
+               ref   logic s_tdi,
+               ref   logic s_tdo
+            );
+      
+               logic [1:0][31:0]   jtag_data;
+               logic [31:0]        jtag_addr;
+               logic [31:0]        spi_addr;
+               logic [31:0]        spi_addr_old;
+               logic               more_stim = 1;
+               logic [1:0]         dm_op;
+               logic [31:0]        dm_data;
+               logic [6:0]         dm_addr;
+      
+               spi_addr        = stimuli[num_stim][95:64]; // assign address
+               jtag_data[0]    = stimuli[num_stim][63:0];  // assign data
+      
+               this.set_sbreadonaddr(1'b0, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
+               this.set_sbautoincrement(1'b0, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
+      
+               $display("[JTAG] Loading L2 with debug module jtag interface");
+      
+               spi_addr_old = spi_addr - 32'h8;
+      
+               while (more_stim) begin // loop until we have no more stimuli
+      
+                  jtag_addr = stimuli[num_stim][95:64];
+                  for (int i=0;i<256;i=i+2) begin
+                     spi_addr       = stimuli[num_stim][95:64]; // assign address
+                     jtag_data[0]   = stimuli[num_stim][31:0];  // assign data
+                     jtag_data[1]   = stimuli[num_stim][63:32]; // assign data
+      
+                     if (spi_addr != (spi_addr_old + 32'h8))
+                        begin
+                           spi_addr_old = spi_addr - 32'h8;
+                           break;
+                        end
+                     else begin
+                        num_stim = num_stim + 1;
+                     end
+                     if (num_stim > $size(stimuli) || stimuli[num_stim]===96'bx ) begin // make sure we have more stimuli
+                        more_stim = 0;                    // if not set variable to 0, will prevent additional stimuli to be applied
+                        break;
+                     end
+                     spi_addr_old = spi_addr;
+      
+                     this.set_dmi(
+                        2'b10,           //write
+                        7'h3D,           //sbdata1,
+                        jtag_data[1],    //data
+                        {dm_addr, dm_data, dm_op},
+                        s_tck,
+                        s_tms,
+                        s_trstn,
+                        s_tdi,
+                        s_tdo
+                     );
+
+                      this.set_dmi(
+                        2'b10,           //write
+                        7'h39,           //sbaddress0,
+                        spi_addr[31:0], //bootaddress
+                        {dm_addr, dm_data, dm_op},
+                        s_tck,
+                        s_tms,
+                        s_trstn,
+                        s_tdi,
+                        s_tdo
+                     );
+      
+                     this.set_dmi(
+                        2'b10,           //write
+                        7'h3C,           //sbdata0,
+                        jtag_data[0],    //data
+                        {dm_addr, dm_data, dm_op},
+                        s_tck,
+                        s_tms,
+                        s_trstn,
+                        s_tdi,
+                        s_tdo
+                     );
+      
+                     
+                  end
+                 // $display("[JTAG] Loading L2 - Written up to %x (%t)", spi_addr[31:0]+4, $realtime);
+      
+               end
+               this.set_sbreadonaddr(1'b1, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
+               this.set_sbautoincrement(1'b0, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
+      
+            endtask
       // discover harts by writting all ones to hartsel and reading it back
       task test_discover_harts(
          output logic        error,

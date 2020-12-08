@@ -308,7 +308,7 @@ module ariane_peripherals #(
     // ---------------
     // 3. SPI
     // ---------------
-    assign spi.b_user = 1'b0;
+    //assign spi.b_user = 1'b0;
     assign spi.r_user = 1'b0;
 
     if (InclSPI) begin : gen_spi
