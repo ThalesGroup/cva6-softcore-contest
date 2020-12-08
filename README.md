@@ -226,7 +226,7 @@ This command generates synthesis and place and route reports in **fpga/reports_c
 
 A FPGA platform prototyping **CV32A6** (CVA6 in 32-bit flavor) has been implemented on **Zybo Z7-20** board.
 
-This platform integrates a CV32A6 processor, a JTAG interface to run and debug software applications and a UART interface to display strings on a hyperterminal.
+This platform integrates a CV32A6 processor (clocked to 25MHz), a JTAG interface to run and debug software applications and a UART interface to display strings on a hyperterminal.
 
 Below are described steps to run Coremark application on CV32A6 FPGA platform, steps are the same for Dhrystone application and other software applications.
 
