@@ -63,6 +63,11 @@ else
 	$(VIVADO) -source scripts/program_cva6_fpga.tcl	
 endif
 
+get_hs2_sn:
+	$(VIVADO) -mode batch -source scripts/get_hs2_sn.tcl
+
+
+
 
 $(ips): %.xci :
 	mkdir -p $(work-dir)

@@ -1,6 +1,6 @@
 open_hw_manager
 connect_hw_server
-current_hw_target [get_hw_targets -filter {NAME!~"localhost:3121/xilinx_tcf/Digilent/210249A85F9B"}]
+current_hw_target [get_hw_targets -filter {NAME!~"localhost:3121/xilinx_tcf/Digilent/<HS2's serial number>"}]
 open_hw_target
 set_property PROGRAM.FILE {cva6_fpga.runs/impl_1/cva6_zybo_z7_20.bit} [get_hw_devices xc7z020_1]
 current_hw_device [get_hw_devices xc7z020_1]
