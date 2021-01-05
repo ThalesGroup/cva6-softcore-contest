@@ -234,31 +234,22 @@ The JTAG-HS2 programming cable is initially a cable that allows programming of X
 
 In our case, we use this cable to program software applications on the CV32A6 instantiated in the FPGA through a PMOD connector.
 
-We do not use the HS2 Cable in its original function therfore there is a preliminary step which consists in retrieving the serial number of the HS2 cable.
-
-To do this, connect the HS2 cable to the host PC (Zybo Z7-20 board must be disconnected from the host PC) and run the following command:
-```
-make get_hs2_sn
-```
-you should see:
-```
-[FPGA] Get HS2 serial number
-...............
-###############################
-# TARGEt: localhost:3121/xilinx_tcf/Digilent/<HS2's serial number>
-###############################
-......................
-```
-Replace the **HS2's serial number** in `fpga/scripts/program_cva-fpga.tcl` file by the serial number of your HS2 cable.
 
 ## Get started with Coremark application
 
 1. First, make sure the Digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
 ![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/master/docs/pictures/20201204_150708.jpg)
 2. Compile Coremark application in `sw/app`. Commands to compile Coremark application are described in `sw/app` directory.
-3. Generate the bitstream of the FPGA platform:
+3. Generate the bitstream of the FPGA platform. There are **two** FPGA platform, one using BRAM as main memory and another one using DDR conected to Zynq PS as main memory. Using the DDR allows savings of logic resources in FPGA fabric. You can choose the FPGA platform you want to implement :
+
+If you want to implement the FPGA platform using BRAM, you have to run the following command: 
 ```
 $ make cva6_fpga
+```
+
+If you want to implement the FPGA platform using DDR, you have to run the following command: 
+```
+$ make cva6_fpga_ddr
 ```
 4. When the bitstream is generated, switch on Zybo board and run:
 ```
