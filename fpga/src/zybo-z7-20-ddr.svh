@@ -11,7 +11,9 @@
 `define WT_DCACHE
 
 // debug probe
-`define LAUTERBACH_DEBUG_PROBE
+//`define LAUTERBACH_DEBUG_PROBE
 
-// to use BRAM in FPGA fabric  
-`define BRAM
+// to use DDR connecting to Zynq PS  
+`define PS7_DDR
+
+
