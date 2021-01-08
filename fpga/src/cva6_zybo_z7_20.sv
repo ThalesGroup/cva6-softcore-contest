@@ -27,6 +27,32 @@ module cva6_zybo_z7_20 (
   input  logic     clk_sys   ,
   input  logic     cpu_reset ,
 
+`ifdef PS7_DDR
+  inout wire [14:0]DDR_addr,
+  inout wire [2:0]DDR_ba,
+  inout wire DDR_cas_n,
+  inout wire DDR_ck_n,
+  inout wire DDR_ck_p,
+  inout wire DDR_cke,
+  inout wire DDR_cs_n,
+  inout wire [3:0]DDR_dm,
+  inout wire [31:0]DDR_dq,
+  inout wire [3:0]DDR_dqs_n,
+  inout wire [3:0]DDR_dqs_p,
+  inout wire DDR_odt,
+  inout wire DDR_ras_n,
+  inout wire DDR_reset_n,
+  inout wire DDR_we_n,
+  inout wire ddr_vrn,
+  inout wire ddr_vrp,
+
+  inout wire [53:0]mio,
+  inout wire ps_clk,
+  inout wire ps_porb,
+  inout wire ps_srstb,
+`endif
+
+
   // common part
   input logic      trst_n    ,
   input  logic     tck       ,
@@ -34,7 +60,11 @@ module cva6_zybo_z7_20 (
   input  logic     tdi       ,
   output wire      tdo       ,
   input  logic     rx        ,
-  output logic     tx
+  output logic     tx	
+
+
+
+
 );
 // 24 MByte in 8 byte words
 localparam NumWords = (24 * 1024 * 1024) / 8;
@@ -716,6 +746,91 @@ logic [31 : 0] saxibram_araddr;
 assign saxibram_awaddr = dram.aw_addr & 32'h7fff_ffff;
 assign saxibram_araddr = dram.ar_addr & 32'h7fff_ffff;
 
+
+`ifdef PS7_DDR
+
+logic [5:0] S_AXI_HP0_BID;
+logic [5:0] S_AXI_HP0_RID;
+
+assign dram.b_id = S_AXI_HP0_BID[4:0];
+assign dram.r_id = S_AXI_HP0_RID[4:0];
+
+xlnx_processing_system7 i_xlnx_processing_system7(
+ //INTERNAL SIGNALS
+    .S_AXI_HP0_ARREADY (dram.ar_ready),//S_AXI_HP0_ARREADY : out STD_LOGIC;
+    .S_AXI_HP0_AWREADY (dram.aw_ready),//S_AXI_HP0_AWREADY : out STD_LOGIC;
+    .S_AXI_HP0_BVALID (dram.b_valid),//S_AXI_HP0_BVALID : out STD_LOGIC;
+    .S_AXI_HP0_RLAST (dram.r_last),//S_AXI_HP0_RLAST : out STD_LOGIC;
+    .S_AXI_HP0_RVALID (dram.r_valid),//S_AXI_HP0_RVALID : out STD_LOGIC;
+    .S_AXI_HP0_WREADY (dram.w_ready),//S_AXI_HP0_WREADY : out STD_LOGIC;
+    .S_AXI_HP0_BRESP (dram.b_resp),//S_AXI_HP0_BRESP : out STD_LOGIC_VECTOR ( 1 downto 0 );
+    .S_AXI_HP0_RRESP (dram.r_resp),//S_AXI_HP0_RRESP : out STD_LOGIC_VECTOR ( 1 downto 0 );
+    .S_AXI_HP0_BID (S_AXI_HP0_BID),//S_AXI_HP0_BID : out STD_LOGIC_VECTOR ( 5 downto 0 );
+    .S_AXI_HP0_RID (S_AXI_HP0_RID),//S_AXI_HP0_RID : out STD_LOGIC_VECTOR ( 5 downto 0 );
+    .S_AXI_HP0_RDATA (dram.r_data),//S_AXI_HP0_RDATA : out STD_LOGIC_VECTOR ( 63 downto 0 );
+    .S_AXI_HP0_RCOUNT (),//S_AXI_HP0_RCOUNT : out STD_LOGIC_VECTOR ( 7 downto 0 );
+    .S_AXI_HP0_WCOUNT (),//S_AXI_HP0_WCOUNT : out STD_LOGIC_VECTOR ( 7 downto 0 );
+    .S_AXI_HP0_RACOUNT (),//S_AXI_HP0_RACOUNT : out STD_LOGIC_VECTOR ( 2 downto 0 );
+    .S_AXI_HP0_WACOUNT (),//S_AXI_HP0_WACOUNT : out STD_LOGIC_VECTOR ( 5 downto 0 );
+    .S_AXI_HP0_ACLK (clk),//S_AXI_HP0_ACLK : in STD_LOGIC;
+    .S_AXI_HP0_ARVALID (dram.ar_valid),//S_AXI_HP0_ARVALID : in STD_LOGIC;
+    .S_AXI_HP0_AWVALID (dram.aw_valid),//S_AXI_HP0_AWVALID : in STD_LOGIC;
+    .S_AXI_HP0_BREADY (dram.b_ready),//S_AXI_HP0_BREADY : in STD_LOGIC;
+    .S_AXI_HP0_RDISSUECAP1_EN (1'b0),//S_AXI_HP0_RDISSUECAP1_EN : in STD_LOGIC;
+    .S_AXI_HP0_RREADY (dram.r_ready),//S_AXI_HP0_RREADY S_AXI_HP0_RREADY : in STD_LOGIC;
+    .S_AXI_HP0_WLAST (dram.w_last),//S_AXI_HP0_WLAST : in STD_LOGIC;
+    .S_AXI_HP0_WRISSUECAP1_EN (1'b0),//S_AXI_HP0_WRISSUECAP1_EN : in STD_LOGIC;
+    .S_AXI_HP0_WVALID (dram.w_valid),//S_AXI_HP0_WVALID : in STD_LOGIC;
+    .S_AXI_HP0_ARBURST (dram.ar_burst),//S_AXI_HP0_ARBURST : in STD_LOGIC_VECTOR ( 1 downto 0 );
+    .S_AXI_HP0_ARLOCK ({1'b0,dram.ar_lock}),//S_AXI_HP0_ARLOCK : in STD_LOGIC_VECTOR ( 1 downto 0 );
+    .S_AXI_HP0_ARSIZE (dram.ar_size),//S_AXI_HP0_ARSIZE : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    .S_AXI_HP0_AWBURST (dram.aw_burst),//S_AXI_HP0_AWBURST : in STD_LOGIC_VECTOR ( 1 downto 0 );
+    .S_AXI_HP0_AWLOCK ({1'b0,dram.aw_lock}),//S_AXI_HP0_AWLOCK : in STD_LOGIC_VECTOR ( 1 downto 0 );
+    .S_AXI_HP0_AWSIZE (dram.aw_size),//S_AXI_HP0_AWSIZE : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    .S_AXI_HP0_ARPROT (dram.ar_prot),//S_AXI_HP0_ARPROT : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    .S_AXI_HP0_AWPROT (dram.aw_prot),//S_AXI_HP0_AWPROT : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    .S_AXI_HP0_ARADDR (saxibram_araddr),//S_AXI_HP0_ARADDR : in STD_LOGIC_VECTOR ( 31 downto 0 );
+    .S_AXI_HP0_AWADDR (saxibram_awaddr),//S_AXI_HP0_AWADDR : in STD_LOGIC_VECTOR ( 31 downto 0 );
+    .S_AXI_HP0_ARCACHE (dram.ar_cache),//S_AXI_HP0_ARCACHE : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    .S_AXI_HP0_ARLEN (dram.ar_len),//S_AXI_HP0_ARLEN : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    .S_AXI_HP0_ARQOS (dram.ar_qos),//S_AXI_HP0_ARQOS : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    .S_AXI_HP0_AWCACHE (dram.aw_cache),//S_AXI_HP0_AWCACHE : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    .S_AXI_HP0_AWLEN (dram.aw_len),//S_AXI_HP0_AWLEN : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    .S_AXI_HP0_AWQOS (dram.aw_qos),//S_AXI_HP0_AWQOS : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    .S_AXI_HP0_ARID ({1'b0,dram.ar_id}),//S_AXI_HP0_ARID : in STD_LOGIC_VECTOR ( 5 downto 0 );
+    .S_AXI_HP0_AWID ({1'b0,dram.aw_id}),//S_AXI_HP0_AWID : in STD_LOGIC_VECTOR ( 5 downto 0 );
+    .S_AXI_HP0_WID ({1'b0,dram.aw_id}),//S_AXI_HP0_WID : in STD_LOGIC_VECTOR ( 5 downto 0 );
+    .S_AXI_HP0_WDATA (dram.w_data),//S_AXI_HP0_WDATA : in STD_LOGIC_VECTOR ( 63 downto 0 );
+    .S_AXI_HP0_WSTRB (dram.w_strb),//S_AXI_HP0_WSTRB : in STD_LOGIC_VECTOR ( 7 downto 0 );
+
+//FPGA EXTERNAL PORT
+    .MIO (mio),//MIO : inout STD_LOGIC_VECTOR ( 53 downto 0 );
+
+    .DDR_Addr(DDR_addr[14:0]),//DDR_Addr : inout STD_LOGIC_VECTOR ( 14 downto 0 );
+    .DDR_BankAddr(DDR_ba[2:0]),//DDR_BankAddr : inout STD_LOGIC_VECTOR ( 2 downto 0 );
+    .DDR_CAS_n(DDR_cas_n),//DDR_CAS_n : inout STD_LOGIC;
+    .DDR_CKE(DDR_cke),//DDR_CKE : inout STD_LOGIC;
+    .DDR_CS_n(DDR_cs_n),//DDR_CS_n : inout STD_LOGIC;
+    .DDR_Clk(DDR_ck_p),//DDR_Clk : inout STD_LOGIC;
+    .DDR_Clk_n(DDR_ck_n),//DDR_Clk_n : inout STD_LOGIC;
+    .DDR_DM(DDR_dm[3:0]),//DDR_DM : inout STD_LOGIC_VECTOR ( 3 downto 0 );
+    .DDR_DQ(DDR_dq[31:0]),//DDR_DQ : inout STD_LOGIC_VECTOR ( 31 downto 0 );
+    .DDR_DQS(DDR_dqs_p[3:0]),//DDR_DQS : inout STD_LOGIC_VECTOR ( 3 downto 0 ); 
+    .DDR_DQS_n(DDR_dqs_n[3:0]),//DDR_DQS_n : inout STD_LOGIC_VECTOR ( 3 downto 0 );
+    .DDR_DRSTB(DDR_reset_n),//DDR_DRSTB : inout STD_LOGIC;
+    .DDR_ODT(DDR_odt),//DDR_ODT : inout STD_LOGIC;
+    .DDR_RAS_n(DDR_ras_n),//DDR_RAS_n : inout STD_LOGIC;
+    .DDR_VRN(ddr_vrn),//DDR_VRN : inout STD_LOGIC;
+    .DDR_VRP(ddr_vrp),//DDR_VRP : inout STD_LOGIC;
+    .DDR_WEB(DDR_we_n),//DDR_WEB : inout STD_LOGIC;
+
+    .PS_CLK(ps_clk),
+    .PS_PORB(ps_porb),
+    .PS_SRSTB(ps_srstb)
+  );
+  
+`elsif BRAM
+
 xlnx_blk_mem_gen i_xlnx_blk_mem_gen (
 
     .rsta_busy (      ),
@@ -752,6 +867,8 @@ xlnx_blk_mem_gen i_xlnx_blk_mem_gen (
     .s_axi_rvalid ( dram.r_valid ),
     .s_axi_rready ( dram.r_ready )
   );
+
+`endif  
 
 endmodule
 

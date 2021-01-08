@@ -33,8 +33,9 @@ work-dir := work-fpga
 bit := $(work-dir)/cva6_fpga.bit
 
 ip-dir := xilinx
-ips := xlnx_blk_mem_gen.xci  \
-       xlnx_axi_clock_converter.xci  \
+ips := xlnx_blk_mem_gen.xci \
+       xlnx_processing_system7.xci \
+       xlnx_axi_clock_converter.xci \
        xlnx_axi_dwidth_converter_dm_master.xci \
        xlnx_axi_dwidth_converter_dm_slave.xci \
        xlnx_clk_gen.xci             
@@ -56,12 +57,10 @@ else
 	$(VIVADO) -source scripts/run_cva6_fpga.tcl	
 endif
 
+
+
 program_cva6_fpga:
-ifeq ($(BATCH_MODE), 1)
-	$(VIVADO) -mode batch -source scripts/program_cva6_fpga.tcl
-else
-	$(VIVADO) -source scripts/program_cva6_fpga.tcl	
-endif
+	xsct scripts/program_cva6_fpga.tcl	
 
 get_hs2_sn:
 	$(VIVADO) -mode batch -source scripts/get_hs2_sn.tcl

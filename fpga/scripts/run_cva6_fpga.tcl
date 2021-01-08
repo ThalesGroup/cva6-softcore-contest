@@ -43,6 +43,7 @@ set_msg_config -id {[Synth 8-4480]} -limit 1000
 
 add_files -fileset constrs_1 -norecurse constraints/zybo_z7_20.xdc
 
+read_ip xilinx/xlnx_processing_system7/ip/xlnx_processing_system7.xci
 read_ip xilinx/xlnx_blk_mem_gen/ip/xlnx_blk_mem_gen.xci
 read_ip xilinx/xlnx_axi_clock_converter/ip/xlnx_axi_clock_converter.xci
 read_ip xilinx/xlnx_axi_dwidth_converter_dm_slave/ip/xlnx_axi_dwidth_converter_dm_slave.xci
@@ -56,8 +57,16 @@ source scripts/add_sources.tcl
 
 set_property top cva6_zybo_z7_20 [current_fileset]
 
-read_verilog -sv {src/zybo-z7-20.svh ../src/common_cells/include/common_cells/registers.svh}
-set file "src/zybo-z7-20.svh"
+read_verilog -sv {src/zybo-z7-20.svh src/zybo-z7-20-ddr.svh ../src/common_cells/include/common_cells/registers.svh}
+#set file "src/zybo-z7-20.svh"
+if { $::env(PS7_DDR) == 1 } {
+   set file "src/zybo-z7-20-ddr.svh"
+} elseif {$::env(BRAM) == 1} {
+   set file "src/zybo-z7-20.svh"
+} else {
+   puts "None of the values is matching"
+}
+
 set registers "../src/common_cells/include/common_cells/registers.svh"
 
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file" "$registers"]]
@@ -67,8 +76,14 @@ update_compile_order -fileset sources_1
 
 add_files -fileset constrs_1 -norecurse constraints/$project.xdc
 
-synth_design -rtl -name rtl_1
-
+# synth_design -verilog_define PS7_DDR=$::env(PS7_DDR) -verilog_define BRAM=$::env(BRAM) -rtl -name rtl_1
+if { $::env(PS7_DDR) == 1 } {
+   synth_design -verilog_define PS7_DDR=PS7_DDR -rtl -name rtl_1
+} elseif {$::env(BRAM) == 1} {
+   synth_design -verilog_define BRAM=BRAM -rtl -name rtl_1
+} else {
+   puts "None of the values is matching"
+}
 
 set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING true [get_runs synth_1]
 
