@@ -829,7 +829,7 @@ xlnx_processing_system7 i_xlnx_processing_system7(
     .PS_SRSTB(ps_srstb)
   );
   
-`elsif BRAM
+`else
 
 xlnx_blk_mem_gen i_xlnx_blk_mem_gen (
 
