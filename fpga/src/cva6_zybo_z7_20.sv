@@ -204,11 +204,11 @@ axi_node_wrap_with_slices #(
     .valid_rule_i (ariane_soc::ValidRule)
 );
 
-`ifdef LAUTERBACH_DEBUG_PROBE
+//`ifdef LAUTERBACH_DEBUG_PROBE
   assign dmi_trst_n = trst_n;
-`else
-  assign dmi_trst_n = 1'b1;
-`endif
+//`else
+//  assign dmi_trst_n = 1'b1;
+//`endif
 
 // ---------------
 // Debug Module
