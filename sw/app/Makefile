@@ -53,7 +53,8 @@ bmarks = \
 	multiply \
 	dhrystone \
 	spmv \
-	pmp 
+	pmp \
+	mnist
 
 #--------------------------------------------------------------------
 # Build rules
@@ -110,6 +111,7 @@ $(1): $(1).D $(1).riscv
 $(1): $(1).hex $(1).riscv
 $(1): $(1).bin $(1).riscv
 $(1): $(1).mem $(1).bin
+$(1): $(1).coe $(1).mem
 $(1).riscv: libcva6.a $$($(1)_OBJ_FILES)
 	# LINKING
 	$$(RISCV_GCC) $$(RISCV_CFLAGS) -o $$@ $$^ $$(RISCV_LDFLAGS)
@@ -137,6 +139,9 @@ libcva6.a: $(OBJ_BSP)
 
 %.mem: %.bin
 	$(utils_dir)/bin2mem.py $(src_dir)/$<
+
+%.coe: %.mem
+	$(utils_dir)/mem2coe.py $(src_dir)/$<
 
 
 all: $(bmarks)

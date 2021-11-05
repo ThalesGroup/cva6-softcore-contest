@@ -23,7 +23,7 @@
 // =========================================================================== //
 
 
-`timescale 1ns/1ps
+`timescale 1ns/1ns
 
 
 import ariane_pkg::*;
@@ -164,7 +164,7 @@ uart_bus
         rst_i = 1'b1;
         
         #200ns
-       
+       /*
         // read in the stimuli vectors  == address_value
         if ($value$plusargs("stimuli=%s", stimuli_file)) begin
             $display("Loading custom stimuli from %s", stimuli_file);
@@ -172,23 +172,30 @@ uart_bus
         end else begin
 	    $display("Loading default stimuli");
 	    //$readmemh("/home/sjacq/Work_dir/USE_CASE/2020/ohg/test_ariane/bug_performance_cva6/sw/app/dhrystone.stim.txt", stimuli);
-	    $readmemh("/home/sjacq/Work_dir/USE_CASE/2020/contest_softcore_cva6/cva6-softcore-contest_zybo/fpga/sw_debug/app/helloworld.stim.txt", stimuli);
-        end
+	    //$readmemh("/home/sjacq/Work_dir/USE_CASE/2020/contest_softcore_cva6/cva6-softcore-contest_zybo/fpga/sw_debug/app/helloworld.stim.txt", stimuli);
+	    //$readmemh("/home/sjacq/Work_dir/USE_CASE/2021/contest_2021/cva6-softcore-contest/sw_debug/app/coremark.stim.txt", stimuli);    
+	    //$readmemh("/home/sjacq/Work_dir/USE_CASE/2021/cva6_contest_2021_2022/cva6-softcore-contest/sw_debug/app/coremark.stim.txt", stimuli); 
+	    $readmemh("/home/sjacq/Work_dir/USE_CASE/2021/cva6_contest_2021_2022/cva6-softcore-contest/sw_debug/app/mnist.stim.txt", stimuli);      
+        end*/
 
         // before starting the actual boot procedure we do some light
         // testing on the jtag link
+        s_trstn = 1'b0;
+        #5000ns;
+
         jtag_pkg::jtag_reset(s_tck, s_tms, s_trstn, s_tdi);
+        #5000ns;
         jtag_pkg::jtag_softreset(s_tck, s_tms, s_trstn, s_tdi);
-        #5us;
+        #5000ns;
     
         jtag_pkg::jtag_bypass_test(s_tck, s_tms, s_trstn, s_tdi, s_tdo);
-        #5us;
+        #5000ns;       
     
         jtag_pkg::jtag_get_idcode(s_tck, s_tms, s_trstn, s_tdi, s_tdo);
-        #5us;
+        #5000ns;
 
         rst_i = 1'b0;
-        #100us;
+        #10000ns;
         debug_mode_if.init_dmi_access(s_tck, s_tms, s_trstn, s_tdi);
 
         debug_mode_if.set_dmactive(1'b1, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
@@ -207,10 +214,10 @@ uart_bus
 
        debug_mode_if.test_read_sbcs(s_tck, s_tms, s_trstn, s_tdi, s_tdo);
     
-        $display("[TB] %t - Loading L2", $realtime);
+        //$display("[TB] %t - Loading L2", $realtime);
 
         // use debug module to load binary
-        debug_mode_if.load_L2_ini(num_stim, stimuli, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
+        //debug_mode_if.load_L2_ini(num_stim, stimuli, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
 
    
         // write dpc to addr_i so that we know where we resume
@@ -221,7 +228,7 @@ uart_bus
         $display("[TB] %t - Resuming the CORE", $realtime);
         debug_mode_if.resume_harts(s_tck, s_tms, s_trstn, s_tdi, s_tdo);
 
-        #50000us;
+      /*  #50000us;
         // enable sb access for subsequent readMem calls
         debug_mode_if.set_sbreadonaddr(1'b1, s_tck, s_tms, s_trstn, s_tdi, s_tdo);
     
@@ -241,7 +248,7 @@ uart_bus
 
         $display("[TB] %t - Received status core: 0x%h", $realtime, jtag_data[0][30:0]);
     
-        $stop;
+        $stop;*/
 
     end
 
