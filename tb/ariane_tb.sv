@@ -42,7 +42,7 @@ module ariane_tb;
 
     int exit_status = `EXIT_ERROR;
 
-    localparam int unsigned CLOCK_PERIOD = 20ns;
+    localparam int unsigned CLOCK_PERIOD = 40ns; //25MHz as for the Zybo kit
 
     localparam NUM_WORDS = 2**18;
     logic clk_i;
