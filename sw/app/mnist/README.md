@@ -9,7 +9,7 @@ In the current only env0003 picture is tested, it depicts a 4.
 
 ## topology
 
-This CNN has fours layers, two convolution layers and two fully layers as depicted below:
+This CNN has fours layers, two convolution layers and two fully connected layers as depicted below:
 
 ![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/contest_2021_2022/docs/pictures/mnist_1.png)
 ![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/contest_2021_2022/docs/pictures/mnist_2.png)
