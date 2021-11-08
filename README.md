@@ -17,7 +17,7 @@ $ cd cva6-softcore-contest
 $ git apply 0001-coremark-modification.patch
 ```
 
-And finally, do not forget to check all the details of the contest at [https://github.com/sjthales/cva6-softcore-contest/blob/master/Annonce RISC-V contest v4.pdf](<https://github.com/sjthales/cva6-softcore-contest/blob/master/Annonce RISC-V contest v4.pdf>).
+And finally, do not forget to check all the details of the contest at [https://github.com/sjthales/cva6-softcore-contest/blob/master/Annonce RISC-V contest v4.pdf](<https://github.com/sjthales/cva6-softcore-contest/blob/master/Annonce RISC-V contest 2021-2022 v1.pdf>).
 
 # Prerequisites
 
