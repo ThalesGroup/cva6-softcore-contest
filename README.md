@@ -109,6 +109,7 @@ Once all dependencies are installed, OpenOCD can be set up.
 ```
 $ git clone https://github.com/riscv/riscv-openocd
 $ cd riscv-openocd
+$ git checkout aec5cca15b41d778fb85e95b38a9a552438fec6a
 ```
 - Prepare a **build** directory:
 ```
