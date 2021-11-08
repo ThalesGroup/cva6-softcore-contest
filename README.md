@@ -160,7 +160,7 @@ Bus 005 Device 003: ID 0403:6014 Future Technology Devices International, Ltd FT
 # Contest
 
 ## Xilinx libraries compilation
-Some Xilinx are needed in order to simulate xilinx IP with QuestaSim.
+Some Xilinx libraries are needed in order to simulate xilinx IP with QuestaSim.
 Therefore, before running a simulation, Xilinx libraries have to be compiled, to do so, run the command:
 ```
 $ make compile_xilinx_lib
