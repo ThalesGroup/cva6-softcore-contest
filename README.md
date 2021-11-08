@@ -77,13 +77,13 @@ If you have not yet done so, start provisioning the following:
 
 ## OpenOCD
 
-To be able to run and debug software applications on CVA6, you need to install the OpenOCD tool.
+To be able to run and debug software applications on CVA6, you need to install OpenOCD tool.
 OpenOCD is a free and open-source software distributed under the GPL-2.0 license.
 It provides on-chip programming and debugging support with a layered architecture of JTAG interface and TAP support.
 
 Global documentation on OpenOCD is available at https://github.com/ThalesGroup/pulpino-compliant-debug/tree/pulpino-dbg/doc/riscv-debug-notes/pdfs
 
-These documents aim at providing help about OpenOCD and RISC-V debug.
+Theses documents aim at providing help about OpenOCD and RISC-V debug.
 
 Before setting up OpenOCD, other tools are needed:
 - make
@@ -114,13 +114,13 @@ $ cd riscv-openocd
 ```
 $ mkdir build
 ```
-- Launch the bootstrap script:
+- Launch the bootstrap scipt:
 ```
 $ ./bootstrap
 ```
 - Launch configure:
 ```
-$ ./configure --enable-ftdi --prefix=<absolute path>/build --exec-prefix=<absolute path>/build
+$ ./configure --enable-ftdi --prefix=build --exec-prefix=build
 ```
 - Compile and install files:
 ```
@@ -137,7 +137,7 @@ $ export PATH=$PATH:<path to riscv-openocd>/build/bin
 It is necessary to add a udev rule to use the cable.
 OpenOCD provides a file containing the rule we need. Copy it into /etc/udev/rules.d/
 ```
-$ sudo cp <path to riscv-openocd>/build/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+$ sudo cp <openocd>/contrib/60-openocd.rules /etc/udev/rules.d
 ```
 The file is also available here: https://github.com/riscv/riscv-openocd/blob/riscv/contrib/60-openocd.rules
 The particular entry about the HS2 cable is :
@@ -156,51 +156,159 @@ $ lsusb
 ```
 Bus 005 Device 003: ID 0403:6014 Future Technology Devices International, Ltd FT232HSingle HS USB-UART/FIFO IC
 ```
+# Contest
+
+## Xilinx libraries compilation
+Some Xilinx are needed in order to simulate xilinx IP with QuestaSim.
+Therefore, before running a simulation, Xilinx libraries have to be compiled, to do so, run the command:
+```
+$ make compile_xilinx_lib
+```
+That will create a **fpga/lib_xilinx_questa** subdirectory. This command is to be launched only once.
 
 
+## Behavioral simulation get started
+When the development environment is set up, it is now possible to run a behavioral simulation.
+Some software applications are available into the sw/app directory. Especially, Mnist application used for the contest is available as well as others tests applications.
+A description of the Mnist application is available in the **sw/app/mnist** subdirectory.
 
-# Simulation get started
-When the development environment is set up, it is now possible to run a simulation.
-Some software applications are available into the sw/app directory. Especially, there are benchmark applications such as Dhrystone and CoreMark and other test applications.
+To simulate Mnist software application on CV32A6 processor, run the following command: 
+```
+$ make cva6_sim
+```
 
-To simulate a software application on CVA6 processor, run the following command:
-```
-$ make sim APP=’application to run’
-```
-For instance, if you want to run the CoreMark application, you will have to run :
-```
-$ make sim APP=coremark
-```
-For instance, if you want to run Dhrystone application, you will have to run :
-```
-$ make sim APP=dhrystone
-
-```
 **This command:**
 - Compiles CVA6 architecture and testbench with Questa Sim tool.
 - Compiles the software application to be run on CVA6 with RISCV tool chain.
-- Runs the simulation.
+- Launches the simulation.
 
 Questa tool will open with waveform window. Some signals will be displayed; you are free to add as many signals as you want.
 
 Moreover, all `printf` used in software application will be displayed into the **transcript** window of Questa Sim and save into **uart** file to the root directory.
 
-> Simulation may take lot of time, so you need to be patient to have results.
+At the end of the Mnist application simulation, results ar deplayed in the transcript as following:
+```
+# [UART]: Expected  = 4                                                                                                                                                                                                                                                   
+# [UART]: Predicted = 4                                                                                                                                                                                                                                                   
+# [UART]: Result : 1/1                                                                                                                                                                                                                                                    
+# [UART]: image env0003: 1730550 instructions                                                                                                                                                                                                                             
+# [UART]: image env0003: 2129251 cycles  
+```
+> Simulation may take lot of time, so you need to be patient to have results. 
 
-Simulation is programmed to run 10000000 cycles but the result is displayed before the end of simulation.
+Results are displayed after 100msof running the Mnist application.
 
-For Dhrystone application, at the end of the simulation, Dhrystone result is diplayed as following:
-```
-Dhrystones per Second: 
-```
-and for coremark application, result at the end of simulation is displayed as following:
-```
-CoreMark 1.0 :
-```
+Another important point, in the context of the competition, only the image of a 4 is tested by the Mnist algorithm in order to reduce simulation times. 
 
 CVA6 software environment is detailed into `sw/app` directory.
 
-# Synthesis and place and route get started
+## Post-implementation simulation get started
+To efficiently estimate the energy consumed by the Mnist application, the post-implementation simulation of the application must be run.
+To do this, you have to run the following command:  
+```
+$ make cva6_sim_routed
+```
+
+**This command:**
+- Compiles the software application to be run on CVA6 with RISCV tool chain.
+- Run synthesis and implementation of CV32A6 FPGA platform, Mnist are initialized into main memory.
+- Compiles CVA6 architecture and testbench with Questa Sim tool.
+- Run the simulation 100ms.
+- Generate **fpga/work-sim/routed.saif** file to estimate power needed. 
+
+As for behavioral simulation, results ar deplayed in the transcript as following:
+```
+# [UART]: Expected  = 4                                                                                                                                                                                                                                                   
+# [UART]: Predicted = 4                                                                                                                                                                                                                                                   
+# [UART]: Result : 1/1                                                                                                                                                                                                                                                    
+# [UART]: image env0003: 1730550 instructions                                                                                                                                                                                                                             
+# [UART]: image env0003: 2129251 cycles  
+```
+> Simulation may take lot of time (many hours), so you need to be patient to have results.
+
+## Power analysis get started
+Once route.saif file is generated, Xilinx power analysis suite can be lauched to estimate the energy of the Mnist application.
+
+to do so, run the following command:
+```
+$ make sim cva6_power_analysis
+```
+**This command:**
+- Open Xilinx power analysis suite for mnist application.
+- Generates **fpga/work-sim/power_routed_mnist.txt** file.
+
+As part of the competition, we want to increase the energy efficiency of the Mnist application.
+
+Below, please find an excerpt from the power report generated by Xilinx power analysis suite.
+
+Power is made up of two components:
+- A static part which is worth **0.113 W**
+- A static part which is worth **0.152 W**
+
+The total power is the sum of these two components: **0.265 W** 
+```
++--------------------------+----------------------+
+| Total On-Chip Power (W)  | 0.265                |
+| Design Power Budget (W)  | Unspecified*         |
+| Power Budget Margin (W)  | NA                   |
+| Dynamic (W)              | 0.152                |
+| Device Static (W)        | 0.113                |
+| Effective TJA (C/W)      | 11.5                 |
+| Max Ambient (C)          | 81.9                 |
+| Junction Temperature (C) | 28.1                 |
+| Confidence Level         | Medium               |
+| Setting File             | ---                  |
+| Simulation Activity File | work-sim/routed.saif |
+| Design Nets Matched      | 89%   (59430/66741)  |
++--------------------------+----------------------+
+```
+From the estimated power, the energy consumption can be calculated in Joule.
+to do so:
+
+**Energy (J) = Power (W) \* Execution time of one frame (s)**
+
+**Energy (J) = Power (W) \* Number of cycles executed for one frame \* Period (s)**
+
+Reference energy for one frame:
+
+**Energy (J) = 0.265 W \* 2129251 \* 40 \* 10power(-9)= 0.02257 J = 22.57 mJ**
+
+The reference architecture consumes **22.57 mJ**.
+
+The dynamic component can be distributed hierarchically in the architecture. Below is another excerpt from the power report:
+```
++-----------------------------+-----------+
+| Name                        | Power (W) |
++-----------------------------+-----------+
+| cva6_zybo_z7_20             |     0.152 |
+|   i_ariane                  |     0.036 |
+|     ex_stage_i              |     0.002 |
+|       lsu_i                 |     0.001 |
+|     i_cache_subsystem       |     0.016 |
+|       i_wt_dcache           |     0.006 |
+|       i_wt_icache           |     0.009 |
+|     i_frontend              |     0.005 |
+|       i_btb                 |     0.001 |
+|       i_instr_queue         |     0.002 |
+|     id_stage_i              |     0.001 |
+|     issue_stage_i           |     0.011 |
+|       i_issue_read_operands |     0.005 |
+|       i_scoreboard          |     0.006 |
+|   i_ariane_peripherals      |     0.002 |
+|   i_axi_xbar                |     0.005 |
+|   i_xlnx_clk_gen            |     0.107 |
+|     inst                    |     0.107 |
++-----------------------------+-----------+
+```
+> Power < 1mW i not displayed.
+
+The values extracted from the power report are to be considered as a reference, these values must be found by default.
+
+A document explaining how to interprate the power analysis report will be delivered later.
+
+
+
+## Synthesis and place and route get started
 You can perform synthesis and place and route of the CVA6 architecture.
 
 In the first time, synthesis and place and route are carried in "out of context" mode, that means that the CVA6 architecture is synthetized in the FPGA fabric without consideration of the external IOs constraints.
@@ -222,47 +330,32 @@ $ make cva6_ooc CLK_PERIOD_NS=20 BATCH_MODE=0
 This command generates synthesis and place and route reports in **fpga/reports_cva6_ooc_synth** and **fpga/reports_cva6_ooc_impl**.
 
 
-# FPGA platform
+## FPGA emulation
 
-A FPGA platform prototyping **CV32A6** (CVA6 in 32-bit flavor) has been implemented on **Zybo Z7-20** board.
+A FPGA platform emulating **CV32A6** (CVA6 in 32b flavor) has been implemented on **Zybo Z7-20** board.
 
-This platform integrates a CV32A6 processor (clocked to 25MHz), a JTAG interface to run and debug software applications and a UART interface to display strings on a hyperterminal.
+This platform consists of a CV32A6 processor, a JTAG interface to run and debug software applications and a UART interface to display strings on hyperterminal.
 
-Below are described steps to run Coremark application on CV32A6 FPGA platform, steps are the same for Dhrystone application and other software applications.
+Below is described steps to run Coremark application on CV32A6 FPGA platform, steps are the same for Dhrystone application and others software applications.
 
-The JTAG-HS2 programming cable is initially a cable that allows programming of Xilinx FPGAs (bitstream loading) from a host PC.
+## Get started with Mnist application on Zybo
 
-In our case, we use this cable to program software applications on the CV32A6 instantiated in the FPGA through a PMOD connector.
+1. First, make sure the digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBAUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
 
-
-## Get started with Coremark application
-
-1. First, make sure the Digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
-![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/master/docs/pictures/20201204_150708.jpg)
-2. Compile Coremark application in `sw/app`. Commands to compile Coremark application are described in `sw/app` directory.
-3. Generate the bitstream of the FPGA platform. There are **two** FPGA platform, one using BRAM as main memory and another one using DDR conected to Zynq PS as main memory. Using the DDR allows savings of logic resources in FPGA fabric. You can choose the FPGA platform you want to implement :
-
-If you want to implement the FPGA platform using BRAM, you have to run the following command: 
+2. compile coremark application in `sw/app`
+3. Generate the bitstream of the FPGA platform:
 ```
 $ make cva6_fpga
 ```
-
-If you want to implement the FPGA platform using DDR, you have to run the following command: 
-```
-$ make cva6_fpga_ddr
-```
-4. When the bitstream is generated, switch on Zybo board and run:
+4. When bistream is generated, switch on Zybo board and run:
 ```
 $ make program_cva6_fpga
 ```
-When the bitstream is loaded, the green LED `done` lights up.
-![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/master/docs/pictures/20201204_160542.jpg)
-
-5. Then, in a terminal, launch **OpenOCD**:
+5. then, in a terminal, launch **OpenOCD**:
 ```
 $ openocd -f fpga/openocd_digilent_hs2.cfg
 ```
-If it is successful, you should see:
+If it is succesful, you should see something like that:
 ```
 Open On-Chip Debugger 0.10.0+dev-00832-gaec5cca (2019-12-10-14:21)
 Licensed under GNU GPL v2
@@ -282,9 +375,9 @@ Info : Listening on port 4444 for telnet connections
 ```
 6. In separate terminal, launch **gdb**:
 ```
-$ riscv32-unknown-elf-gdb sw/app/coremark.riscv
+$ riscv32-unknown-elf-gdb sw/app/mnist.riscv
 ```
-you must use the gdb from the RISC-V toolchain. If it is successful, you should see:
+you must use gdb of the RISC-V toolchain. If it is succesful, you should see:
 ```
 GNU gdb (GDB) 9.1
 Copyright (C) 2020 Free Software Foundation, Inc.
@@ -304,41 +397,42 @@ Type "apropos word" to search for commands related to "word"...
 Reading symbols from sw/app/coremark.riscv...
 (gdb) 
 ```
-7. In **gdb**, you need to connect gdb to openocd:
+7. In gdb, you need to connect gdb to openocd:
 ```
 (gdb) target remote :3333
 ```
-if it is successful, you should see the gdb connection in **openocd**:
+if it is successful, you should see the gdb connection in openocd:
 ```
 Info : accepting 'gdb' connection on tcp/3333
 ```
-8. In **gdb**, load **coremark.riscv** to CV32A6 FPGA platform by the **load** command:
+8. In gdb, load **mnist.riscv** to CV32A6 FPGA platform:
 ```
 (gdb) load
 Loading section .vectors, size 0x80 lma 0x80000000
 Loading section .init, size 0x60 lma 0x80000080
-Loading section .text, size 0x19010 lma 0x800000e0
-Loading section .rodata, size 0x1520 lma 0x800190f0
-Loading section .eh_frame, size 0x50 lma 0x8001a610
-Loading section .init_array, size 0x4 lma 0x8001a660
-Loading section .data, size 0x9d4 lma 0x8001a668
-Loading section .sdata, size 0x40 lma 0x8001b040
-Start address 0x80000080, load size 110712
-Transfer rate: 63 KB/sec, 7908 bytes/write.
+Loading section .text, size 0x16044 lma 0x800000e0
+Loading section .rodata, size 0x122a4 lma 0x80016130
+Loading section .eh_frame, size 0x50 lma 0x800283d4
+Loading section .init_array, size 0x4 lma 0x80028424
+Loading section .data, size 0xc1c lma 0x80028428
+Loading section .sdata, size 0x2c lma 0x80029048
+Start address 0x80000080, load size 168036
+Transfer rate: 61 KB/sec, 9884 bytes/write.
 ```
 
-9. At last, in **gdb**, you can run the coremark application by command `c`:
+9. At last, in gdb, you can run the coremark application by command `c`:
 ```
 (gdb) c
 Continuing.
 (gdb) 
 ```
 
-10. On the hyperterminal configured on /dev/ttyUSB0 11520-8-N-1, you should see:
+10. On hyperterminal configured on /dev/ttyUSB0 11520-8-N-1, you should see:
 ```
-2K performance run parameters for coremark.
-
-....
-
-CoreMark 1.0 : [the CoreMark score
+Expected  = 4                                                                                                                                                                                                                                                   
+Predicted = 4                                                                                                                                                                                                                                                   
+Result : 1/1                                                                                                                                                                                                                                                    
+image env0003: 1730550 instructions                                                                                                                                                                                                                             
+image env0003: 2129251 cycles  
 ```
+
