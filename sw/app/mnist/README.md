@@ -1,11 +1,11 @@
-# Mnist application
+# MNIST application
 
-Mnist is a simple CNN (Convolutionnal Neural Network) which aims at reconize number written by hand.
+MNIST is a simple CNN (Convolutionnal Neural Network) which aims at reconizing handwritten numbers.
 
 This CNN has been implemented using the database to this link: 
 http://yann.lecun.com/exdb/mnist/
 
-In the current only env0003 picture is tested, it depicts a 4.
+In the current implementation only env0003 picture is tested, it depicts a 4.
 
 ## topology
 
