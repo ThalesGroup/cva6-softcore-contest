@@ -9,7 +9,9 @@ Checkout the repository and initialize all submodules:
 $ git clone --recursive https://github.com/ThalesGroup/cva6-softcore-contest.git
 ```
 
-Do not forget to check all the details of the contest in [Annonce RISC-V contest 2021-2022 v1.pdf](https://github.com/ThalesGroup/cva6-softcore-contest/blob/master/Annonce%20RISC-V%20contest%202021-2022%20v1.pdf).
+Do not forget to check all the details of the contest in [Annonce RISC-V contest 2021-2022 v1.pdf](./Annonce%20RISC-V%20contest%202021-2022%20v1.pdf).
+
+This repository contains the files needed for the 2021-2022 contest focusing on energy efficiency. The 2020-2021 contest focusing on the performance can be retrieved in this repository under the cv32a6_contest_2020 GitHub tag.
 
 # Prerequisites
 
@@ -329,7 +331,7 @@ The steps to run the MNIST application on CV32A6 FPGA platform are described bel
 ## Get started with MNIST application on Zybo
 
 1. First, make sure the Digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBAUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
-![alt text](https://github.com/ThalesGroup/cva6-softcore-contest/blob/master/docs/pictures/20201204_150708.jpg)
+![alt text](./docs/pictures/20201204_150708.jpg)
 2. Compile the MNIST application in `sw/app`
 3. Generate the bitstream of the FPGA platform:
 ```
@@ -340,7 +342,7 @@ $ make cva6_fpga
 $ make program_cva6_fpga
 ```
 When the bitstream is loaded, the green LED `done` lights up.
-![alt text](https://github.com/ThalesGroup/cva6-softcore-contest/blob/master/docs/pictures/20201204_160542.jpg)
+![alt text](./docs/pictures/20201204_160542.jpg)
 5. Then, in a terminal, launch **OpenOCD**:
 ```
 $ openocd -f fpga/openocd_digilent_hs2.cfg
