@@ -9,21 +9,13 @@ Checkout the repository and initialize all submodules:
 $ git clone --recursive https://github.com/ThalesGroup/cva6-softcore-contest.git
 ```
 
-CoreMark application has been customized for the contest, for using CoreMark application, run:
-
- 
-```
-$ cd cva6-softcore-contest
-$ git apply 0001-coremark-modification.patch
-```
-
-And finally, do not forget to check all the details of the contest at [https://github.com/sjthales/cva6-softcore-contest/blob/master/Annonce RISC-V contest v4.pdf](<https://github.com/sjthales/cva6-softcore-contest/blob/master/Annonce RISC-V contest 2021-2022 v1.pdf>).
+Do not forget to check all the details of the contest in [Annonce RISC-V contest 2021-2022 v1.pdf](https://github.com/ThalesGroup/cva6-softcore-contest/blob/master/Annonce%20RISC-V%20contest%202021-2022%20v1.pdf).
 
 # Prerequisites
 
 
 ## RISC-V tool chain setting up
-The tool chain is available to this link: https://github.com/riscv/riscv-gnu-toolchain
+The tool chain is available at: https://github.com/riscv/riscv-gnu-toolchain.
 At first, you have to get the sources of the RISCV GNU toolchain:
 ```
 $ git clone --recursive https://github.com/riscv/riscv-gnu-toolchain 
@@ -44,24 +36,21 @@ $ export PATH=$PATH:$RISCV/bin
 ```
 
 ## Questa tool
-Questa Prime **version 10.7** has been used for simulations.
-Other simulation tools and versions can be used but will receive no support from the organization team.
-
-Performances **must** be measured using the Questa simulator.
+Questa Prime **version 10.7** must be used to measure power during the simulations.
+Other simulation tools and versions will receive no support from the organization team.
 
 ## Vitis/Vivado setting up
-This section will be completed in a next release (planned early December 2020).
 For the contest, the CVA6 processor will be implemented on Zybo Z7-20 board from Digilent. This board integrates a Zynq 7000 FPGA from Xilinx. 
-To do so, **Vitis 2020.1** environment from Xilinx need to be installed.
+To do so, **Vitis 2020.1** environment from Xilinx needs to be installed.
 
 Furthermore, Digilent provides board files for each development board.
 
-This files ease the creation of new projects with automated configuration of several complicated components such as Zynq Processing System and memory interfaces.
+These files ease the creation of new projects with automated configuration of several complicated components such as Zynq Processing System and memory interfaces.
 
-All guidelines to install **vitis 2020.1** and **Zybo Z7-20** board files are explained to the following link:
-https://reference.digilentinc.com/reference/programmable-logic/guides/installation
+All guidelines to install **vitis 2020.1** and **Zybo Z7-20** board files are explained in
+https://reference.digilentinc.com/reference/programmable-logic/guides/installation.
 
-**be careful about your linux distribution and the supported version of Vitis 2020.1 environment**
+**Be careful about your linux distribution and the supported version of Vitis 2020.1 environment.**
 
 
 ## Hardware 
@@ -83,7 +72,7 @@ It provides on-chip programming and debugging support with a layered architectur
 
 Global documentation on OpenOCD is available at https://github.com/ThalesGroup/pulpino-compliant-debug/tree/pulpino-dbg/doc/riscv-debug-notes/pdfs
 
-Theses documents aim at providing help about OpenOCD and RISC-V debug.
+These documents aim at providing help about OpenOCD and RISC-V debug.
 
 Before setting up OpenOCD, other tools are needed:
 - make
@@ -115,7 +104,7 @@ $ git checkout aec5cca15b41d778fb85e95b38a9a552438fec6a
 ```
 $ mkdir build
 ```
-- Launch the bootstrap scipt:
+- Launch the bootstrap script:
 ```
 $ ./bootstrap
 ```
@@ -140,12 +129,12 @@ OpenOCD provides a file containing the rule we need. Copy it into /etc/udev/rule
 ```
 $ sudo cp <openocd>/contrib/60-openocd.rules /etc/udev/rules.d
 ```
-The file is also available here: https://github.com/riscv/riscv-openocd/blob/riscv/contrib/60-openocd.rules
-The particular entry about the HS2 cable is :
+The file is also available here: https://github.com/riscv/riscv-openocd/blob/riscv/contrib/60-openocd.rules.
+The particular entry about the HS2 cable is:
 ```
 ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE="660", GROUP="plugdev", TAG+="uaccess"
 ```
-Then either reboot your system or reload the udev configuration with :
+Then either reboot your system or reload the udev configuration with:
 ```
 $ sudo udevadm control --reload
 ```
@@ -170,24 +159,24 @@ That will create a **fpga/lib_xilinx_questa** subdirectory. This command is to b
 
 ## Behavioral simulation get started
 When the development environment is set up, it is now possible to run a behavioral simulation.
-Some software applications are available into the sw/app directory. Especially, Mnist application used for the contest is available as well as others tests applications.
-A description of the Mnist application is available in the **sw/app/mnist** subdirectory.
+Some software applications are available into the sw/app directory. Especially, the MNIST application used in this year's contest is available as well as others test applications.
+A description of the MNIST application is available in the **sw/app/mnist** subdirectory.
 
-To simulate Mnist software application on CV32A6 processor, run the following command: 
+To simulate MNIST application on CV32A6 processor, run the following command: 
 ```
 $ make cva6_sim
 ```
 
 **This command:**
-- Compiles CVA6 architecture and testbench with Questa Sim tool.
+- Compiles CVA6 architecture and testbench with QuestaSim tool.
 - Compiles the software application to be run on CVA6 with RISCV tool chain.
 - Launches the simulation.
 
-Questa tool will open with waveform window. Some signals will be displayed; you are free to add as many signals as you want.
+Questa will open with waveform window. Some signals will be displayed; you are free to add as many signals as you want (but this can slow down the simulation).
 
 Moreover, all `printf` used in software application will be displayed into the **transcript** window of Questa Sim and save into **uart** file to the root directory.
 
-At the end of the Mnist application simulation, results ar deplayed in the transcript as following:
+At the end of the Mnist application simulation, results are deplayed in the transcript as:
 ```
 # [UART]: Expected  = 4                                                                                                                                                                                                                                                   
 # [UART]: Predicted = 4                                                                                                                                                                                                                                                   
@@ -197,14 +186,14 @@ At the end of the Mnist application simulation, results ar deplayed in the trans
 ```
 > Simulation may take lot of time, so you need to be patient to have results. 
 
-Results are displayed after 100msof running the Mnist application.
+Results are displayed after 100 ms of running the MNIST application.
 
-Another important point, in the context of the competition, only the image of a 4 is tested by the Mnist algorithm in order to reduce simulation times. 
+Note that for the contest, only the image of a 4 is tested by the MNIST algorithm in order to optimize simulation times. 
 
 CVA6 software environment is detailed into `sw/app` directory.
 
 ## Post-implementation simulation get started
-To efficiently estimate the energy consumed by the Mnist application, the post-implementation simulation of the application must be run.
+To efficiently estimate the energy consumed by the MNIST application, the post-implementation simulation of the application must be run.
 To do this, you have to run the following command:  
 ```
 $ make cva6_sim_routed
@@ -212,12 +201,12 @@ $ make cva6_sim_routed
 
 **This command:**
 - Compiles the software application to be run on CVA6 with RISCV tool chain.
-- Run synthesis and implementation of CV32A6 FPGA platform, Mnist are initialized into main memory.
-- Compiles CVA6 architecture and testbench with Questa Sim tool.
-- Run the simulation 100ms.
-- Generate **fpga/work-sim/routed.saif** file to estimate power needed. 
+- Run synthesis and implementation of CV32A6 FPGA platform, MNIST is initialized into main memory.
+- Compiles CVA6 architecture and testbench with QuestaSim tool.
+- Run the simulation for 100 ms.
+- Generate the **fpga/work-sim/routed.saif** file to estimate the power. 
 
-As for behavioral simulation, results ar deplayed in the transcript as following:
+As for the behavioral simulation, results are deplayed in the transcript as following:
 ```
 # [UART]: Expected  = 4                                                                                                                                                                                                                                                   
 # [UART]: Predicted = 4                                                                                                                                                                                                                                                   
@@ -228,17 +217,17 @@ As for behavioral simulation, results ar deplayed in the transcript as following
 > Simulation may take lot of time (many hours), so you need to be patient to have results.
 
 ## Power analysis get started
-Once route.saif file is generated, Xilinx power analysis suite can be lauched to estimate the energy of the Mnist application.
+Once routed.saif file is generated, the Xilinx power analysis suite can be lauched to estimate the energy of the MNIST application.
 
-to do so, run the following command:
+To do so, run the following command:
 ```
 $ make sim cva6_power_analysis
 ```
 **This command:**
-- Open Xilinx power analysis suite for mnist application.
+- Opens Xilinx power analysis suite for MNIST application.
 - Generates **fpga/work-sim/power_routed_mnist.txt** file.
 
-As part of the competition, we want to increase the energy efficiency of the Mnist application.
+As part of the competition, we want to increase the energy efficiency of the MNIST application.
 
 Below, please find an excerpt from the power report generated by Xilinx power analysis suite.
 
@@ -263,8 +252,7 @@ The total power is the sum of these two components: **0.265 W**
 | Design Nets Matched      | 89%   (59430/66741)  |
 +--------------------------+----------------------+
 ```
-From the estimated power, the energy consumption can be calculated in Joule.
-to do so:
+From the estimated power, the energy consumption can be calculated in Joule:
 
 **Energy (J) = Power (W) \* Execution time of one frame (s)**
 
@@ -301,20 +289,19 @@ The dynamic component can be distributed hierarchically in the architecture. Bel
 |     inst                    |     0.107 |
 +-----------------------------+-----------+
 ```
-> Power < 1mW i not displayed.
+> Power < 1 mW is not displayed.
 
 The values extracted from the power report are to be considered as a reference, these values must be found by default.
 
 A document explaining how to interprate the power analysis report will be delivered later.
 
 
-
 ## Synthesis and place and route get started
-You can perform synthesis and place and route of the CVA6 architecture.
+You can perform the synthesis and place and route of the CV32A6 architecture.
 
-In the first time, synthesis and place and route are carried in "out of context" mode, that means that the CVA6 architecture is synthetized in the FPGA fabric without consideration of the external IOs constraints.
+In the first time, can you run the synthesis and place and route "out of context" mode, that means that the CV32A6 architecture is synthetized in the FPGA fabric without consideration of the external IOs constraints.
 
-That allows to have an estimation of the logical resources used by the CVA6 in the FPGA fabric as well as the maximal frequency of CVA6 architecture. They are both major metrics for a computation architecture.
+That allows to have an estimation of the logical resources used by the CVA6 in the FPGA fabric as well as the maximal frequency of CVA6 architecture. Note that these are not the "official" figures to be reported as results, just a quicker way to estimate them.
 
 Command to run synthesis and place & route in "out of context" mode:
 ```
@@ -335,30 +322,30 @@ This command generates synthesis and place and route reports in **fpga/reports_c
 
 A FPGA platform emulating **CV32A6** (CVA6 in 32b flavor) has been implemented on **Zybo Z7-20** board.
 
-This platform consists of a CV32A6 processor, a JTAG interface to run and debug software applications and a UART interface to display strings on hyperterminal.
+This platform includes a CV32A6 processor, a JTAG interface to run and debug software applications and a UART interface to display strings on hyperterminal.
 
-Below is described steps to run Coremark application on CV32A6 FPGA platform, steps are the same for Dhrystone application and others software applications.
+The steps to run the MNIST application on CV32A6 FPGA platform are described below.
 
-## Get started with Mnist application on Zybo
+## Get started with MNIST application on Zybo
 
-1. First, make sure the digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBAUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
-![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/master/docs/pictures/20201204_150708.jpg)
-2. compile coremark application in `sw/app`
+1. First, make sure the Digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBAUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
+![alt text](https://github.com/ThalesGroup/cva6-softcore-contest/blob/master/docs/pictures/20201204_150708.jpg)
+2. Compile the MNIST application in `sw/app`
 3. Generate the bitstream of the FPGA platform:
 ```
 $ make cva6_fpga
 ```
-4. When bistream is generated, switch on Zybo board and run:
+4. When the bistream is generated, switch on Zybo board and run:
 ```
 $ make program_cva6_fpga
 ```
 When the bitstream is loaded, the green LED `done` lights up.
-![alt text](https://github.com/sjthales/cva6-softcore-contest/blob/master/docs/pictures/20201204_160542.jpg)
-5. then, in a terminal, launch **OpenOCD**:
+![alt text](https://github.com/ThalesGroup/cva6-softcore-contest/blob/master/docs/pictures/20201204_160542.jpg)
+5. Then, in a terminal, launch **OpenOCD**:
 ```
 $ openocd -f fpga/openocd_digilent_hs2.cfg
 ```
-If it is succesful, you should see something like that:
+If it is succesful, you should see something like:
 ```
 Open On-Chip Debugger 0.10.0+dev-00832-gaec5cca (2019-12-10-14:21)
 Licensed under GNU GPL v2
@@ -376,11 +363,11 @@ Info : Listening on port 6666 for tcl connections
 Info : Listening on port 4444 for telnet connections
 
 ```
-6. In separate terminal, launch **gdb**:
+6. In a separate terminal, launch **gdb**:
 ```
 $ riscv32-unknown-elf-gdb sw/app/mnist.riscv
 ```
-you must use gdb of the RISC-V toolchain. If it is succesful, you should see:
+You must use gdb from the RISC-V toolchain. If it is successful, you should see:
 ```
 GNU gdb (GDB) 9.1
 Copyright (C) 2020 Free Software Foundation, Inc.
@@ -423,7 +410,7 @@ Start address 0x80000080, load size 168036
 Transfer rate: 61 KB/sec, 9884 bytes/write.
 ```
 
-9. At last, in gdb, you can run the coremark application by command `c`:
+9. At last, in gdb, you can run the MNIST application by command `c`:
 ```
 (gdb) c
 Continuing.
