@@ -688,7 +688,7 @@ module ariane import ariane_pkg::*; #(
   );
   assign dcache_commit_wbuffer_not_ni = 1'b1;
 `endif
-
+/*
   // -------------------
   // Parameter Check
   // -------------------
@@ -895,5 +895,5 @@ module ariane import ariane_pkg::*; #(
   end
 `endif // VERILATOR
 //pragma translate_on
-
+*/
 endmodule // ariane

@@ -204,11 +204,11 @@ axi_node_wrap_with_slices #(
     .valid_rule_i (ariane_soc::ValidRule)
 );
 
-`ifdef LAUTERBACH_DEBUG_PROBE
+//`ifdef LAUTERBACH_DEBUG_PROBE
   assign dmi_trst_n = trst_n;
-`else
-  assign dmi_trst_n = 1'b1;
-`endif
+//`else
+//  assign dmi_trst_n = 1'b1;
+//`endif
 
 // ---------------
 // Debug Module
@@ -829,7 +829,7 @@ xlnx_processing_system7 i_xlnx_processing_system7(
     .PS_SRSTB(ps_srstb)
   );
   
-`elsif BRAM
+`else
 
 xlnx_blk_mem_gen i_xlnx_blk_mem_gen (
 
