@@ -124,6 +124,7 @@ clean:
 		reports_cva6_ooc_impl \
 		reports_cva6_fpga_synth \
 		reports_cva6_fpga_impl \
+	        reports_cva6_sim_impl \
 		$(work-dir) \
 		$(work-sim-dir)
 
