@@ -211,11 +211,11 @@ $ make cva6_sim_routed
 
 As for the behavioral simulation, results are deplayed in the transcript as following:
 ```
-# [UART]: Expected  = 4                                                                                                                                                                                                                                                   
-# [UART]: Predicted = 4                                                                                                                                                                                                                                                   
-# [UART]: Result : 1/1                                                                                                                                                                                                                                                    
-# [UART]: image env0003: 1730550 instructions                                                                                                                                                                                                                             
-# [UART]: image env0003: 2129251 cycles  
+# [UART]: Expected  = 4
+# [UART]: Predicted = 4
+# [UART]: Result : 1/1
+# [UART]: image env0003: 1732800 instructions
+# [UART]: image env0003: 2149795 cycles 
 ```
 > Simulation may take lot of time (many hours), so you need to be patient to have results.
 
