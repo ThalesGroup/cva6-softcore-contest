@@ -206,7 +206,7 @@ $ make cva6_sim_routed
 - Compiles the software application to be run on CVA6 with RISCV tool chain.
 - Run synthesis and implementation of CV32A6 FPGA platform, MNIST is initialized into main memory.
 - Compiles CVA6 architecture and testbench with QuestaSim tool.
-- Run the simulation for 100 ms.
+- Run the simulation for 60 ms (CV32A6 processor is clocked at 45MHz). 
 - Generate the **fpga/work-sim/routed.saif** file to estimate the power. 
 
 As for the behavioral simulation, results are deplayed in the transcript as following:
