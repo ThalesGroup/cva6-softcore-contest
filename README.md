@@ -20,9 +20,10 @@ This repository contains the files needed for the 2021-2022 contest focusing on 
 The tool chain is available at: https://github.com/riscv/riscv-gnu-toolchain.
 At first, you have to get the sources of the RISCV GNU toolchain:
 ```
-$ git clone --recursive https://github.com/riscv/riscv-gnu-toolchain 
+$ git clone https://github.com/riscv/riscv-gnu-toolchain 
 $ cd riscv-gnu-toolchain 
 $ git checkout ed53ae7a71dfc6df1940c2255aea5bf542a9c422
+$ git submodule update --init --recursive
 ```
 Next, you have to install all standard packages needed to build the toolchain depending on your Linux distribution.
 Before installing the tool chain, it is important to define the environment variable RISCV=”path where the tool chain will be installed”.
