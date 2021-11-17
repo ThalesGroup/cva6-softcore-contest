@@ -13,6 +13,8 @@
 // Description: This module takes data over UART and prints them to the console
 //              A string is printed to the console as soon as a '\n' character is found
 
+`timescale 1ns/1ns
+
 interface uart_bus #(
     parameter int unsigned BAUD_RATE = 115200,
     parameter int unsigned PARITY_EN = 0

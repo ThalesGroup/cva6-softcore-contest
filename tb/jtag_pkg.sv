@@ -15,6 +15,7 @@
  * Antonio Pullini <pullinia@iis.ee.ethz.ch>
  * Sebastien Jacq - sjthales on github.com
  */
+`timescale 1ns/1ps
  
 import ariane_pkg::*;
 
@@ -53,7 +54,7 @@ package jtag_pkg;
 
    task automatic jtag_wait_halfperiod(input int cycles);
       //#(50000*cycles);
-      #(5*cycles);
+      #(3*cycles);
    endtask
 
    task automatic jtag_clock(
@@ -79,7 +80,7 @@ package jtag_pkg;
       s_tck   = 1'b0;
       s_trstn = 1'b0;
       s_tdi   = 1'b0;
-      jtag_wait_halfperiod(2);
+      jtag_wait_halfperiod(20);
       s_trstn = 1'b1;
    endtask
 

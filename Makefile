@@ -51,14 +51,14 @@ torture-logs   :=
 elf-bin        ?= sw/app/benchmarks/coremark.riscv
 
 # Application to simulate
-APP            ?= coremark
+APP            ?= mnist
 
 # root path
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 root-dir := $(dir $(mkfile_path))
 
 # software application path
-app_path := $(root-dir)/sw/app
+APP_PATH := $(root-dir)/sw/app
 
 
 # board name for bitstream generation.
@@ -67,6 +67,12 @@ XILINX_PART    := xc7z020clg400-1
 XILINX_BOARD   := digilentinc.com:zybo-z7-20:part0:1.0
 CLK_PERIOD_NS  := 25
 BATCH_MODE ?= 1
+
+#Path to questasim binaries
+QUESTA_BIN := $(realpath $(dir $(shell which vsim)))
+
+#Path of xilinx library for Questasim
+LIB_XILINX_QUESTA_PATH := $(root-dir)fpga/lib_xilinx_questa
 
 # Sources
 # Package files -> compile first
@@ -196,7 +202,8 @@ fpga_src :=  $(wildcard fpga/src/*.sv) $(wildcard fpga/src/bootrom/*.sv) $(wildc
 fpga_src := $(addprefix $(root-dir), $(fpga_src))
 
 # look for testbenches
-tbs := tb/jtag_pkg.sv tb/ariane_tb.sv tb/ariane_testharness.sv
+tbs := tb/jtag_pkg.sv tb/ariane_tb.sv tb/ariane_testharness.sv tb/tb_cva6_zybo_z7_20.sv
+
 # RISCV asm tests and benchmark setup (used for CI)
 # there is a definesd test-list with selected CI tests
 riscv-test-dir            := tmp/riscv-tests/build/isa/
@@ -259,7 +266,7 @@ sim: build benchmark
 	echo $(riscv-benchmarks)
 	vsim${questa_version} +permissive $(questa-flags) $(questa-cmd) -lib $(library) +MAX_CYCLES=$(max_cycles) +UVM_TESTNAME=$(test_case) \
 	 $(uvm-flags) $(QUESTASIM_FLAGS)  \
-	${top_level}_optimized +permissive-off +binary_mem=$(app_path)/$(APP).mem | tee sim.log
+	${top_level}_optimized +permissive-off +binary_mem=$(APP_PATH)/$(APP).mem | tee sim.log
 
 
 run-benchmarks: $(riscv-benchmarks)
@@ -269,7 +276,9 @@ check-benchmarks:
 	ci/check-tests.sh tmp/riscv-benchmarks- $(shell wc -l $(riscv-benchmarks-list) | awk -F " " '{ print $1 }')
 
 benchmark:
-	cd sw/app && make $(APP).mem
+	cd sw/app && make $(APP).mem && make $(APP).coe
+	
+	
 
 fpga_filter := $(addprefix $(root-dir), bootrom/bootrom.sv)
 fpga_filter += $(addprefix $(root-dir), include/instr_tracer_pkg.sv)
@@ -277,49 +286,76 @@ fpga_filter += $(addprefix $(root-dir), src/util/ex_trace_item.sv)
 fpga_filter += $(addprefix $(root-dir), src/util/instr_trace_item.sv)
 fpga_filter += $(addprefix $(root-dir), src/util/instr_tracer_if.sv)
 fpga_filter += $(addprefix $(root-dir), src/util/instr_tracer.sv)
+tbs_fpga := $(addprefix $(root-dir), $(tbs))
 
-# target rused to run synthesis and place and route in out of context mode
-# make cva6_ooc CLK_PERIOD_NS=<period of the CVA6 architecture>
-cva6_ooc: $(ariane_pkg) $(util) $(src) $(fpga_src)
-	@echo "Generate sources for synthesis"
+fpga/scripts/add_sources.tcl:
+	@echo read_vhdl        {$(uart_src)}    > fpga/scripts/add_sources.tcl
 	@echo read_verilog -sv {$(ariane_pkg)} >> fpga/scripts/add_sources.tcl
 	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(util))}     >> fpga/scripts/add_sources.tcl
 	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(src))} 	   >> fpga/scripts/add_sources.tcl
 	@echo read_verilog -sv {$(fpga_src)}   >> fpga/scripts/add_sources.tcl
+
+# target rused to run synthesis and place and route in out of context mode
+# make cva6_ooc CLK_PERIOD_NS=<period of the CVA6 architecture>
+cva6_ooc: $(ariane_pkg) $(util) $(src) $(fpga_src) fpga/scripts/add_sources.tcl
+#	@echo "Generate sources for synthesis"
+#	@echo read_verilog -sv {$(ariane_pkg)} >> fpga/scripts/add_sources.tcl
+#	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(util))}     >> fpga/scripts/add_sources.tcl
+#	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(src))} 	   >> fpga/scripts/add_sources.tcl
+#	@echo read_verilog -sv {$(fpga_src)}   >> fpga/scripts/add_sources.tcl
 	cd fpga && make cva6_ooc BOARD=$(BOARD) XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) BATCH_MODE=$(BATCH_MODE)
 
 .PHONY:  cva6_ooc cva6_fpga program_cva6_fpga
 
-cva6_fpga: $(ariane_pkg) $(util) $(src) $(fpga_src) $(uart_src)
-	@echo "[FPGA] Generate sources"
-	@echo read_vhdl        {$(uart_src)}    > fpga/scripts/add_sources.tcl
-	@echo read_verilog -sv {$(ariane_pkg)} >> fpga/scripts/add_sources.tcl
-	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(util))}     >> fpga/scripts/add_sources.tcl
-	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(src))} 	   >> fpga/scripts/add_sources.tcl
-	@echo read_verilog -sv {$(fpga_src)}   >> fpga/scripts/add_sources.tcl
-	@echo "[FPGA] Generate Bitstream"
-	cd fpga && make cva6_fpga BRAM=1 PS7_DDR=0 BOARD=$(BOARD) XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) BATCH_MODE=$(BATCH_MODE)
 
-cva6_fpga_ddr: $(ariane_pkg) $(util) $(src) $(fpga_src) $(uart_src)
-	@echo "[FPGA] Generate sources"
-	@echo read_vhdl        {$(uart_src)}    > fpga/scripts/add_sources.tcl
-	@echo read_verilog -sv {$(ariane_pkg)} >> fpga/scripts/add_sources.tcl
-	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(util))}     >> fpga/scripts/add_sources.tcl
-	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(src))} 	   >> fpga/scripts/add_sources.tcl
-	@echo read_verilog -sv {$(fpga_src)}   >> fpga/scripts/add_sources.tcl
-	@echo "[FPGA] Generate Bitstream"
-	cd fpga && make cva6_fpga PS7_DDR=1 BRAM=0 XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) BATCH_MODE=$(BATCH_MODE)
+cva6_fpga: $(ariane_pkg) $(util) $(src) $(fpga_src) $(uart_src) fpga/scripts/add_sources.tcl
+#	@echo "[FPGA] Generate sources"
+#	@echo read_vhdl        {$(uart_src)}    > fpga/scripts/add_sources.tcl
+#	@echo read_verilog -sv {$(ariane_pkg)} >> fpga/scripts/add_sources.tcl
+#	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(util))}     >> fpga/scripts/add_sources.tcl
+#	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(src))} 	   >> fpga/scripts/add_sources.tcl
+#	@echo read_verilog -sv {$(fpga_src)}   >> fpga/scripts/add_sources.tcl
+#	@echo "[FPGA] Generate Bitstream"
+	cd fpga && make cva6_fpga BRAM=1 PS7_DDR=0 BOARD=$(BOARD) XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) BATCH_MODE=$(BATCH_MODE) FPGA=1
+
+cva6_fpga_ddr: $(ariane_pkg) $(util) $(src) $(fpga_src) $(uart_src) fpga/scripts/add_sources.tcl
+#	@echo "[FPGA] Generate sources"
+#	@echo read_vhdl        {$(uart_src)}    > fpga/scripts/add_sources.tcl
+#	@echo read_verilog -sv {$(ariane_pkg)} >> fpga/scripts/add_sources.tcl
+#	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(util))}     >> fpga/scripts/add_sources.tcl
+#	@echo read_verilog -sv {$(filter-out $(fpga_filter), $(src))} 	   >> fpga/scripts/add_sources.tcl
+#	@echo read_verilog -sv {$(fpga_src)}   >> fpga/scripts/add_sources.tcl
+#	@echo "[FPGA] Generate Bitstream"
+	cd fpga && make cva6_fpga PS7_DDR=1 BRAM=0 XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) BATCH_MODE=$(BATCH_MODE) FPGA=1
 
 
 program_cva6_fpga: 
 	@echo "[FPGA] Program FPGA"
 	cd fpga && make program_cva6_fpga BOARD=$(BOARD) XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) BATCH_MODE=$(BATCH_MODE)
+	
+cva6_sim: $(ariane_pkg) $(util) $(src) $(fpga_src) $(uart_src) benchmark fpga/scripts/add_sources.tcl
+	@echo read_verilog -sv {$(tbs_fpga)}   >> fpga/scripts/add_sources.tcl
+	cp sw/app/$(APP).coe $(APP).coe
+	cp sw/app/$(APP).coe fpga/xilinx/xlnx_blk_mem_gen/$(APP).coe
+	cd fpga && make cva6_sim BRAM=1 PS7_DDR=0 BOARD=$(BOARD) XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) LIB_XILINX_QUESTA_PATH=$(LIB_XILINX_QUESTA_PATH) BATCH_MODE=$(BATCH_MODE) APP=$(APP) SIM=1  FPGA=0
 
+cva6_sim_routed: $(ariane_pkg) $(util) $(src) $(fpga_src) $(uart_src) benchmark fpga/scripts/add_sources.tcl
+	@echo read_verilog -sv {$(tbs_fpga)}   >> fpga/scripts/add_sources.tcl
+	cp sw/app/$(APP).coe $(APP).coe
+	cp sw/app/$(APP).coe fpga/xilinx/xlnx_blk_mem_gen/$(APP).coe
+	cd fpga && make cva6_sim BRAM=1 PS7_DDR=0 BOARD=$(BOARD) XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) LIB_XILINX_QUESTA_PATH=$(LIB_XILINX_QUESTA_PATH) BATCH_MODE=$(BATCH_MODE) APP=$(APP) SIM=0  FPGA=0
+
+cva6_power_analysis: 
+	cd fpga && make cva6_power_analysis APP=$(APP) BATCH_MODE=$(BATCH_MODE)
+
+compile_xilinx_lib:
+	cd fpga && make xilinx_lib QUESTA_BIN=$(QUESTA_BIN) LIB_XILINX_QUESTA_PATH=$(LIB_XILINX_QUESTA_PATH)
 
 clean:
 	rm -rf $(riscv-torture-dir)/output/test*
 	rm -rf $(library)/ $(dpi-library)/ $(ver-library)/
 	rm -f tmp/*.ucdb tmp/*.log *.wlf *vstf wlft* *.ucdb
+	rm -f $(APP).coe fpga/xilinx/xlnx_blk_mem_gen/$(APP).coe
 	cd sw/app && make clean
 	cd fpga && make clean
 

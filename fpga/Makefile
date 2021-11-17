@@ -29,6 +29,8 @@
 
 VIVADO ?= vivado
 
+work-sim-dir := work-sim
+
 work-dir := work-fpga
 bit := $(work-dir)/cva6_fpga.bit
 
@@ -57,6 +59,24 @@ else
 	$(VIVADO) -source scripts/run_cva6_fpga.tcl	
 endif
 
+cva6_sim: $(ips)
+ifeq ($(BATCH_MODE), 1)
+	mkdir -p $(work-sim-dir)
+	$(VIVADO) -mode batch -source scripts/run_cva6_sim.tcl
+else
+	$(VIVADO) -source scripts/run_cva6_sim.tcl	
+endif
+
+cva6_power_analysis: 
+ifeq ($(BATCH_MODE), 1)
+	$(VIVADO) -mode batch -source scripts/run_cva6_power_analysis.tcl
+else
+	$(VIVADO) -source scripts/run_cva6_power_analysis.tcl	
+endif
+
+
+xilinx_lib:
+	$(VIVADO) -mode batch -source scripts/compile_lib.tcl
 
 
 program_cva6_fpga:
@@ -75,7 +95,7 @@ $(ips): %.xci :
 	@cp $(ip-dir)/$(basename $(@F))/ip/$(@F) $@
 
 clean:
-	rm -rf 	*.log \
+	rm -rf  *.log \
 		*.jou \
 		*.str \
 		*.mif \
@@ -93,12 +113,19 @@ clean:
 		cva6_fpga.sim \
 		cva6_fpga.runs \
 		cva6_fpga.hbs \
+		cva6_sim.cache \
+		cva6_sim.hw \
+		cva6_sim.ip_user_files \
+		cva6_sim.sim \
+		cva6_sim.runs \
+		cva6_sim.hbs \
 		.Xil \
 		reports_cva6_ooc_synth \
 		reports_cva6_ooc_impl \
 		reports_cva6_fpga_synth \
 		reports_cva6_fpga_impl \
-		$(work-dir)
+		$(work-dir) \
+		$(work-sim-dir)
 
 
 .PHONY:
