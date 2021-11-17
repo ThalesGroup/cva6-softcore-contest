@@ -265,7 +265,7 @@ Reference energy for one frame:
 
 **Energy (J) = 0.306 W \* 2149795 \* 22.2 \* 10power(-9)= 0.01460J = 14.60 mJ**
 
-The reference architecture consumes **22.57 mJ**.
+The reference architecture consumes **14.60 mJ**.
 
 The dynamic component can be distributed hierarchically in the architecture. Below is another excerpt from the power report:
 ```
