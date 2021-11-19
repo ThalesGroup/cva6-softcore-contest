@@ -94,10 +94,22 @@ if {$::env(SIM)} {
     launch_runs synth_1
     wait_on_run synth_1
     open_run synth_1
+    
+    # set for RuntimeOptimized implementation
+    set_property "steps.place_design.args.directive" "RuntimeOptimized" [get_runs impl_1]
+    set_property "steps.route_design.args.directive" "RuntimeOptimized" [get_runs impl_1]
 
     launch_runs impl_1
     wait_on_run impl_1
     open_run impl_1
+    
+    # reports
+    exec mkdir -p reports_cva6_sim_impl/
+    exec rm -rf reports_cva6_sim_impl/*
+    check_timing                                                              -file reports_cva6_sim_impl/${project}.check_timing.rpt
+    report_timing -max_paths 100 -nworst 100 -delay_type max -sort_by slack   -file reports_cva6_sim_impl/${project}.timing_WORST_100.rpt
+    report_timing -nworst 1 -delay_type max -sort_by group                    -file reports_cva6_sim_impl/${project}.timing.rpt
+    report_utilization -hierarchical                                          -file reports_cva6_sim_impl/${project}.utilization.rpt
     
     set_property -name {questa.simulate.custom_udo} -value {../../../../../scripts/sim_routed.udo} -objects [get_filesets sim_1]
 
