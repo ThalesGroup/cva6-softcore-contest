@@ -224,7 +224,7 @@ Once routed.saif file is generated, the Xilinx power analysis suite can be lauch
 
 To do so, run the following command:
 ```
-$ make sim cva6_power_analysis
+$ make cva6_power_analysis
 ```
 **This command:**
 - Opens Xilinx power analysis suite for MNIST application.
