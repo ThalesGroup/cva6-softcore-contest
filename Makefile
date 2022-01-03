@@ -340,7 +340,7 @@ clean:
 	rm -rf $(library)/ $(dpi-library)/ $(ver-library)/
 	rm -f tmp/*.ucdb tmp/*.log *.wlf *vstf wlft* *.ucdb
 	rm -f $(APP).coe fpga/xilinx/xlnx_blk_mem_gen/$(APP).coe
-	cd sw/app && make clean
+#	cd sw/app && make clean
 	cd fpga && make clean
 
 .PHONY:
