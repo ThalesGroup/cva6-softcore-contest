@@ -378,6 +378,7 @@ static void fccellPropagateDATA_T(
 static void maxPropagate1(
     const DATA_T* __restrict inputs,
     int32_t* __restrict outputs,
+    DATA_T* output_value,
     int NB_CHANNELS,
     int INPUTS_HEIGHT, int INPUTS_WIDTH,
     // Memory mapping: outputs
@@ -409,15 +410,17 @@ static void maxPropagate1(
                 }
 
                 outputs[oPos] = (int32_t)(iMaxInput);
+		*output_value = maxInput;
             }
             else {
                 outputs[oPos] = (inputs[iOffset] > 0);
+		output_value = inputs[iOffset];
             }
         }
     }
 }
 
-void propagate(const UDATA_T* inputs, Target_T* outputs)
+void propagate(const UDATA_T* inputs, Target_T* outputs, UDATA_T* maxPropagate_val)
 {
 #ifdef SAVE_OUTPUTS
     FILE* env_stream = fopen("env_output.txt", "w");
@@ -547,7 +550,7 @@ void propagate(const UDATA_T* inputs, Target_T* outputs)
     fclose(fc2_stream);
 #endif
 
-    maxPropagate1(fc2_output, outputs,FC2_NB_OUTPUTS, FC2_OUTPUTS_HEIGHT, FC2_OUTPUTS_WIDTH, FC2_MEM_CONT_OFFSET, FC2_MEM_CONT_SIZE, FC2_MEM_WRAP_OFFSET, FC2_MEM_WRAP_SIZE, FC2_MEM_STRIDE);
+    maxPropagate1(fc2_output, outputs, maxPropagate_val, FC2_NB_OUTPUTS, FC2_OUTPUTS_HEIGHT, FC2_OUTPUTS_WIDTH, FC2_MEM_CONT_OFFSET, FC2_MEM_CONT_SIZE, FC2_MEM_WRAP_OFFSET, FC2_MEM_WRAP_SIZE, FC2_MEM_STRIDE);
 
 #ifdef SAVE_OUTPUTS
     FILE* max_stream = fopen("max_output.txt", "w");

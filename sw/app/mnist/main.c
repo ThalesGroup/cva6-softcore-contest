@@ -19,15 +19,14 @@ void readStimulus(
 
 int processInput(        UDATA_T* inputBuffer,
                             Target_T* expectedOutputBuffer,
-                            Target_T* predictedOutputBuffer)
+                            Target_T* predictedOutputBuffer,
+			    UDATA_T* output_value)
 {
     size_t nbPredictions = 0;
     size_t nbValidPredictions = 0;
 
-    propagate(inputBuffer, predictedOutputBuffer);
+    propagate(inputBuffer, predictedOutputBuffer, output_value);
 
-    printf("Expected  = %d\n", expectedOutputBuffer[0]);
-    printf("Predicted = %d\n", predictedOutputBuffer[0]);
     // assert(expectedOutputBuffer.size() == predictedOutputBuffer.size());
     for(size_t i = 0; i < OUTPUTS_SIZE[0]; i++) {
         if (expectedOutputBuffer[i] >= 0) {
@@ -57,17 +56,22 @@ int main(int argc, char* argv[]) {
 
     Target_T expectedOutputBuffer[OUTPUTS_SIZE[0]];
     Target_T predictedOutputBuffer[OUTPUTS_SIZE[0]];
+    UDATA_T output_value;
 
     readStimulus(inputBuffer, expectedOutputBuffer);
     instret = -read_csr(minstret);
     cycles = -read_csr(mcycle);
     const int success = processInput(inputBuffer, 
                                                         expectedOutputBuffer, 
-                                                        predictedOutputBuffer);
+                                                        predictedOutputBuffer,
+							&output_value);
     instret += read_csr(minstret);
     cycles += read_csr(mcycle);
     
+    printf("Expected  = %d\n", expectedOutputBuffer[0]);
+    printf("Predicted = %d\n", predictedOutputBuffer[0]);
     printf("Result : %d/1\n", success);
+    printf("credence: %d\n", output_value);
     printf("image %s: %d instructions\n", stringify(MNIST_INPUT_IMAGE), (int)(instret));
     printf("image %s: %d cycles\n", stringify(MNIST_INPUT_IMAGE), (int)(cycles));
 

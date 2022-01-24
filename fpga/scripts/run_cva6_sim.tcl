@@ -79,6 +79,8 @@ add_files -fileset constrs_1 -norecurse constraints/cva6_fpga.xdc
 
 synth_design -verilog_define BRAM=BRAM -rtl -name rtl_1
 
+set_property verilog_define WT_DCACHE=1 [get_filesets sim_1]
+
 set_property top tb_cva6_zybo_z7_20 [get_filesets sim_1]
 update_compile_order -fileset sim_1
 
