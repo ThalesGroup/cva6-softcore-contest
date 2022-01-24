@@ -240,7 +240,7 @@ Power is made up of two components:
 - A static part at **0.114 W**
 - A dynamic part at **0.193 W**
 
-The total power is the sum of these two components: **0.306 W** 
+The total power is the sum of these two components: **0.307 W** 
 ```
 +--------------------------+----------------------+
 | Total On-Chip Power (W)  | 0.307                |
