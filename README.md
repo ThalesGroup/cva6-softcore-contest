@@ -437,4 +437,6 @@ credence: 82
 image env0003: 1725056 instructions
 image env0003: 2098749 cycles
 ```
+This result is obtained just after the FPGA bitstream loading.
+When MNIST is rerun system is not at initial state. For instance, cache is preloaded. 
 
