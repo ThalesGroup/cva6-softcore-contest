@@ -52,11 +52,16 @@ You should now have a running hello world project on qemu_riscv32.
 
 #### Building RIPE for the CV32A6 on ZYBO
 
+The test is selected in the /workdir/ripe/src/ripe_attack_generator.c file with the following macro :
+```
+#define ATTACK_NR
+```
+
 Now that we have a working environment, we can build the RIPE attack.
 
 ```
 west build -p -b cv32a6_zybo /workdir/ripe
 ```
 
-Now you can launch the elf file located in build/zephyr/zephyr.elf
+You can launch the elf file located in build/zephyr/zephyr.elf.
 
