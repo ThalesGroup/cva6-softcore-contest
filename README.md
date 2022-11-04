@@ -9,7 +9,7 @@ Checkout the repository and initialize all submodules:
 $ git clone --recursive https://github.com/ThalesGroup/cva6-softcore-contest.git
 ```
 
-Do not forget to check all the details of the contest in [Annonce RISC-V contest 2021-2022 v1.pdf](./Annonce%20RISC-V%20contest%202021-2022%20v1.pdf).
+Do not forget to check all the details of the contest in [Annonce RISC-V contest 2022-2023 v1.pdf](./Annonce%20RISC-V%20contest%202022-2023%20v1.pdf).
 
 This repository contains the files needed for the 2022-2023 contest focusing on security. The 2020-2021 contest focusing on the performance can be retrieved in this repository under the cv32a6_contest_2020 GitHub tag. The 2021-2022 contest focusing on energy efficiency can be retrieved in this repository under the cv32a6_contest_2021 GitHub tag.
 
@@ -130,7 +130,7 @@ A FPGA platform running **CV32A6** (CVA6 in 32b flavor) has been implemented on 
 
 This platform includes a CV32A6 processor, a JTAG interface to run and debug software applications and a UART interface to display strings on hyperterminal.
 
-The steps to run the MNIST application on CV32A6 FPGA platform are described below.
+The steps to run the RIPE application on CV32A6 FPGA platform are described below.
 
 The JTAG-HS2 programming cable is initially a cable that allows programming of Xilinx FPGAs (bitstream loading) from a host PC.
 
@@ -184,7 +184,7 @@ Now, the hardware is ready, the debugger is halting the processor and waiting fo
 
 #### Building Developer Docker Image
 
-The developer docker image can be built using the following command:
+The developer docker image can be built using the following command from the zephyr-docker folder:
 
 ```
 docker build -f Dockerfile --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t zephyr-build:v1 .
@@ -264,14 +264,14 @@ Reading symbols from build/zephyr/zephyr.elf...
 
 The host is connecting to the hardware through OpenOCD and launching the gdbserver. You will need the name of the host in order to connect to it from inside the docker. Similar to this:
 ```
-target remote 172.18.0.1:3333
+(gdb) target remote 172.18.0.1:3333
 ```
 if it is successful, you should see the gdb connection in the host openocd:
 ```
 Info : accepting 'gdb' connection on tcp/3333
 ```
 
-In gdb, load the elf file to CV32A6 FPGA platform:
+load the elf file to CV32A6 FPGA platform:
 ```
 (gdb) load
 Loading section rom_start, size 0x18 lma 0x80000000
@@ -290,7 +290,7 @@ Start address 0x80000000, load size 36622
 Transfer rate: 65 KB/sec, 2817 bytes/write.
 ```
 
-At last, in gdb, you can run the RIPE application with command `c`:
+At last you can run the RIPE application with command `c`:
 ```
 (gdb) c
 Continuing.
