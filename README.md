@@ -196,6 +196,8 @@ It can be used for building Zephyr samples and tests by mounting the Zephyr work
 docker run -ti -v `realpath workspace`:/workdir zephyr-build:v1
 ```
 
+All the following commands should be run from the docker.
+
 ### Usage
 
 #### Initialization of Zephyr
@@ -297,7 +299,7 @@ Continuing.
 (gdb) 
 ```
 
-On the host hyperterminal configured on /dev/ttyUSB0 11520-8-N-1, you should see:
+On the host hyperterminal you should see:
 ```
 *** Booting Zephyr OS build zephyr-v3.2.0-324-gf5d5bc39c3af  ***
 RIPE is alive! cv32a6_zybo
