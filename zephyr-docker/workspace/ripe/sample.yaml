@@ -1,0 +1,8 @@
+sample:
+  description: Running the RIPE test
+  name: ripe
+common:
+    tags: introduction
+    harness: console
+    harness_config:
+      type: one_line
