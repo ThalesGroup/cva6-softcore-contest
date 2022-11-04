@@ -11,31 +11,11 @@ $ git clone --recursive https://github.com/ThalesGroup/cva6-softcore-contest.git
 
 Do not forget to check all the details of the contest in [Annonce RISC-V contest 2021-2022 v1.pdf](./Annonce%20RISC-V%20contest%202021-2022%20v1.pdf).
 
-This repository contains the files needed for the 2021-2022 contest focusing on energy efficiency. The 2020-2021 contest focusing on the performance can be retrieved in this repository under the cv32a6_contest_2020 GitHub tag.
+This repository contains the files needed for the 2022-2023 contest focusing on security. The 2020-2021 contest focusing on the performance can be retrieved in this repository under the cv32a6_contest_2020 GitHub tag. The 2021-2022 contest focusing on energy efficiency can be retrieved in this repository under the cv32a6_contest_2021 GitHub tag.
+
+Thank you to Wilander and Nikiforakis for providing an open source intrusion prevention evaluator [RIPE](https://github.com/johnwilander/RIPE).
 
 # Prerequisites
-
-## RISC-V tool chain setting up
-The tool chain is available at: https://github.com/riscv/riscv-gnu-toolchain.
-At first, you have to get the sources of the RISCV GNU toolchain:
-```
-$ git clone https://github.com/riscv/riscv-gnu-toolchain 
-$ cd riscv-gnu-toolchain 
-$ git checkout ed53ae7a71dfc6df1940c2255aea5bf542a9c422
-$ git submodule update --init --recursive
-```
-Next, you have to install all standard packages needed to build the toolchain depending on your Linux distribution.
-Before installing the tool chain, it is important to define the environment variable RISCV=”path where the tool chain will be installed”.
-Then, you have to set up the compiler by running the following command:
-```
-$ export RISCV=/path/to/install/riscv/compilators
-$ ./configure --prefix=$RISCV --disable-linux --with-cmodel=medany --with-arch=rv32ima
-$ make newlib 
-```
-When the installation is achieved, do not forget to add $RISCV/bin to your PATH.
-```
-$ export PATH=$PATH:$RISCV/bin
-```
 
 ## Vitis/Vivado setting up
 
@@ -156,23 +136,24 @@ The JTAG-HS2 programming cable is initially a cable that allows programming of X
 
 In our case, we use this cable to program software applications on the CV32A6 instantiated in the FPGA through a PMOD connector.
 
-
-## Get started with RIPE application on Zybo
+## Get the Zybo ready
 
 1. First, make sure the Digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBAUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
 ![alt text](./docs/pictures/20201204_150708.jpg)
-2. Follow the instructions in `zephyr-docker` to compile the RIPE application 
-3. Generate the bitstream of the FPGA platform:
+
+2. Generate the bitstream of the FPGA platform:
 ```
 $ make cva6_fpga
 ```
-4. When the bitstream is generated, switch on Zybo board and run:
+
+3. When the bitstream is generated, switch on Zybo board and run:
 ```
 $ make program_cva6_fpga
 ```
 When the bitstream is loaded, the green LED `done` lights up.
 ![alt text](./docs/pictures/20201204_160542.jpg)
-5. Then, in a terminal, launch **OpenOCD**:
+
+4. Then, in a terminal, launch **OpenOCD**:
 ```
 $ openocd -f fpga/openocd_digilent_hs2.cfg
 ```
@@ -192,41 +173,105 @@ Info : Listening on port 3333 for gdb connections
 Ready for Remote Connections
 Info : Listening on port 6666 for tcl connections
 Info : Listening on port 4444 for telnet connections
+```
+5. Get a hyperterminal configured on /dev/ttyUSB0 11520-8-N-1
+
+Now, the hardware is ready, the debugger is halting the processor and waiting for a gdb connection and the hyperterminal is connected to the UART output of the FPGA. We can now start the software.
+
+## Get started with Zephyr in the docker image
+
+### Installation
+
+#### Building Developer Docker Image
+
+The developer docker image can be built using the following command:
 
 ```
-6. In a separate terminal, launch **gdb**:
+docker build -f Dockerfile --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t zephyr-build:v1 .
 ```
-$ riscv32-unknown-elf-gdb zephyr-docker/build/zephyr/zephyr.elf
+
+It can be used for building Zephyr samples and tests by mounting the Zephyr workspace into it:
+
 ```
-You must use gdb from the RISC-V toolchain compiled previously. If it is successful, you should see:
+docker run -ti -v `realpath workspace`:/workdir zephyr-build:v1
 ```
-GNU gdb (GDB) 9.1
-Copyright (C) 2020 Free Software Foundation, Inc.
+
+### Usage
+
+#### Initialization of Zephyr
+
+To initialize Zephyr environment with the Thales modified Zephyr:
+
+```
+cd /workdir
+west init -m https://github.com/ThalesGroup/riscv-zephyr --mr main
+west update
+```
+
+Thales modifications add CV32A6 support on Zybo board.
+
+#### Building a sample application
+
+Follow the steps below to build and run a sample application:
+
+```
+west build -p -b qemu_riscv32 /workdir/zephyr/samples/hello_world
+west build -t run
+```
+
+You should now have a running hello world project on qemu_riscv32.
+
+#### Building RIPE for the CV32A6 on ZYBO
+
+The test is selected in the /workdir/ripe/src/ripe_attack_generator.c file with the following macro :
+```
+#define ATTACK_NR 1
+```
+By default its value is 1 but you should try to protect against as many scenario as possible.
+
+Now that we have a working environment, we can build the RIPE attack.
+
+```
+west build -p -b cv32a6_zybo /workdir/ripe
+```
+
+#### Running the RIPE application on the CV32A6
+
+You can launch the elf file located in build/zephyr/zephyr.elf with the gdb provided by zephyr-sdk.
+```
+/opt/toolchains/zephyr-sdk-0.15.1/riscv64-zephyr-elf/bin/riscv64-zephyr-elf-gdb /workdir/build/zephyr/zephyr.elf
+```
+
+You should see
+```
+GNU gdb (Zephyr SDK 0.15.1) 12.1
+Copyright (C) 2022 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 Type "show copying" and "show warranty" for details.
-This GDB was configured as "--host=x86_64-pc-linux-gnu --target=riscv32-unknown-elf".
+This GDB was configured as "--host=x86_64-build_pc-linux-gnu --target=riscv64-zephyr-elf".
 Type "show configuration" for configuration details.
 For bug reporting instructions, please see:
-<http://www.gnu.org/software/gdb/bugs/>.
+<https://github.com/zephyrproject-rtos/sdk-ng/issues>.
 Find the GDB manual and other documentation resources online at:
     <http://www.gnu.org/software/gdb/documentation/>.
 
 For help, type "help".
 Type "apropos word" to search for commands related to "word"...
-Reading symbols from zephyr.elf...
-(gdb) 
+Reading symbols from build/zephyr/zephyr.elf...
 ```
-7. In gdb, you need to connect gdb to openocd:
+
+The host is connecting to the hardware through OpenOCD and launching the gdbserver. You will need the name of the host in order to connect to it from inside the docker. Similar to this:
 ```
-(gdb) target remote :3333
+target remote 172.18.0.1:3333
 ```
-if it is successful, you should see the gdb connection in openocd:
+if it is successful, you should see the gdb connection in the host openocd:
 ```
 Info : accepting 'gdb' connection on tcp/3333
 ```
-8. In gdb, load the elf file to CV32A6 FPGA platform:
+
+In gdb, load the elf file to CV32A6 FPGA platform:
 ```
 (gdb) load
 Loading section rom_start, size 0x18 lma 0x80000000
@@ -245,17 +290,17 @@ Start address 0x80000000, load size 36622
 Transfer rate: 65 KB/sec, 2817 bytes/write.
 ```
 
-9. At last, in gdb, you can run the RIPE application by command `c`:
+At last, in gdb, you can run the RIPE application with command `c`:
 ```
 (gdb) c
 Continuing.
 (gdb) 
 ```
 
-10. On hyperterminal configured on /dev/ttyUSB0 11520-8-N-1, you should see:
+On the host hyperterminal configured on /dev/ttyUSB0 11520-8-N-1, you should see:
 ```
 *** Booting Zephyr OS build zephyr-v3.2.0-324-gf5d5bc39c3af  ***
-RIPE is alive! cv32a6_zebu
+RIPE is alive! cv32a6_zybo
 RIPE parameters:
 technique       direct
 inject param    shellcode
