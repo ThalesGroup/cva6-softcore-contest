@@ -35,12 +35,12 @@ https://reference.digilentinc.com/reference/programmable-logic/guides/installati
 
 If you have not yet done so, start provisioning the following:
 
-| Reference	                 | URL                                                                             |	List price |	Remark                            |
-| :------------------------- | :------------------------------------------------------------------------------ | ---------: | :-------------------------------- |
-| Zybo Z7-20	                | https://store.digilentinc.com/zybo-z7-zynq-7000-arm-fpga-soc-development-board/ |    $299.00	| Zybo Z7-10 is too small for CVA6. |
-| Pmod USBUART               |	https://store.digilentinc.com/pmod-usbuart-usb-to-uart-interface/               |      $9.99 |	Used for the console output       |
-| JTAG-HS2 Programming Cable |	https://store.digilentinc.com/jtag-hs2-programming-cable/                       |     $59.00	|                                   |
-| Connectors                 |	https://store.digilentinc.com/pmod-cable-kit-2x6-pin-and-2x6-pin-to-dual-6-pin-pmod-splitter-cable/ | $5.99 |	At least a 6-pin connector Pmod is necessary; other references may offer it. |
+| Reference	                 | URL                                                                             |	Remark                            |
+| :------------------------- | :------------------------------------------------------------------------------ | :-------------------------------- |
+| Zybo Z7-20	                | https://store.digilentinc.com/zybo-z7-zynq-7000-arm-fpga-soc-development-board/ | Zybo Z7-10 is too small for CVA6. |
+| Pmod USBUART               |	https://store.digilentinc.com/pmod-usbuart-usb-to-uart-interface/               |	Used for the console output       |
+| JTAG-HS2 Programming Cable |	https://store.digilentinc.com/jtag-hs2-programming-cable/                       |                                   |
+| Connectors                 |	https://store.digilentinc.com/pmod-cable-kit-2x6-pin-and-2x6-pin-to-dual-6-pin-pmod-splitter-cable/ |	At least a 6-pin connector Pmod is necessary; other references may offer it. |
 
 ## OpenOCD
 
