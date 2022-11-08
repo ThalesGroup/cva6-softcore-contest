@@ -42,88 +42,6 @@ If you have not yet done so, start provisioning the following:
 | JTAG-HS2 Programming Cable |	https://store.digilentinc.com/jtag-hs2-programming-cable/                       |                                   |
 | Connectors                 |	https://store.digilentinc.com/pmod-cable-kit-2x6-pin-and-2x6-pin-to-dual-6-pin-pmod-splitter-cable/ |	At least a 6-pin connector Pmod is necessary; other references may offer it. |
 
-## OpenOCD
-
-To be able to run and debug software applications on CVA6, you need to install OpenOCD tool.
-OpenOCD is a free and open-source software distributed under the GPL-2.0 license.
-It provides on-chip programming and debugging support with a layered architecture of JTAG interface and TAP support.
-
-Global documentation on OpenOCD is available at https://github.com/ThalesGroup/pulpino-compliant-debug/tree/pulpino-dbg/doc/riscv-debug-notes/pdfs
-
-These documents aim at providing help about OpenOCD and RISC-V debug.
-
-Before setting up OpenOCD, other tools are needed:
-- make
-- libtool
-- pkg-congfig > 0.23
-- autoconf > 2.64
-- automake > 1.14
-- texinfo
-
-On Ubuntu, ensure that everything is installed with:
-```
-$ sudo apt install make libtool pkg-config autoconf automake texinfo
-```
-
-Furthermore, you need to set up libusb and libftdi libraries.
-On Ubuntu:
-```
-$ sudo apt install libusb-1.0-0-dev libftdi1-dev
-```
-
-Once all dependencies are installed, OpenOCD can be set up.
-- Download sources:
-```
-$ git clone https://github.com/riscv/riscv-openocd
-$ cd riscv-openocd
-$ git checkout aec5cca15b41d778fb85e95b38a9a552438fec6a
-```
-- Prepare a **build** directory:
-```
-$ mkdir build
-```
-- Launch the bootstrap script:
-```
-$ ./bootstrap
-```
-- Launch configure:
-```
-$ ./configure --enable-ftdi --prefix=build --exec-prefix=build
-```
-- Compile and install files:
-```
-$ make
-$ make install
-```
-When the installation is achieved, do not forget to add riscv-openocd/build/bin to your PATH.
-```
-$ export PATH=$PATH:<path to riscv-openocd>/build/bin
-```
-
-## HS2 cable
-
-It is necessary to add a udev rule to use the cable.
-OpenOCD provides a file containing the rule we need. Copy it into /etc/udev/rules.d/
-```
-$ sudo cp <openocd>/contrib/60-openocd.rules /etc/udev/rules.d
-```
-The file is also available here: https://github.com/riscv/riscv-openocd/blob/riscv/contrib/60-openocd.rules.
-The particular entry about the HS2 cable is:
-```
-ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE="660", GROUP="plugdev", TAG+="uaccess"
-```
-Then either reboot your system or reload the udev configuration with:
-```
-$ sudo udevadm control --reload
-```
-
-To check if the cable is recognized, run lsusb. There should be a line like this:
-```
-$ lsusb
-```
-```
-Bus 005 Device 003: ID 0403:6014 Future Technology Devices International, Ltd FT232HSingle HS USB-UART/FIFO IC
-```
 # FPGA platform
 
 A FPGA platform running **CV32A6** (CVA6 in 32b flavor) has been implemented on **Zybo Z7-20**
@@ -153,30 +71,9 @@ $ make program_cva6_fpga
 When the bitstream is loaded, the green LED `done` lights up.
 ![alt text](./docs/pictures/20201204_160542.jpg)
 
-4. Then, in a terminal, launch **OpenOCD**:
-```
-$ openocd -f fpga/openocd_digilent_hs2.cfg
-```
-If it is succesful, you should see something like:
-```
-Open On-Chip Debugger 0.10.0+dev-00832-gaec5cca (2019-12-10-14:21)
-Licensed under GNU GPL v2
-For bug reports, read
-    http://openocd.org/doc/doxygen/bugs.html
-Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
-Info : clock speed 1000 kHz
-Info : JTAG tap: riscv.cpu tap/device found: 0x249511c3 (mfg: 0x0e1 (Wintec Industries), part: 0x4951, ver: 0x2)
-Info : datacount=2 progbufsize=8
-Info : Examined RISC-V core; found 1 harts
-Info :  hart 0: XLEN=32, misa=0x40141105
-Info : Listening on port 3333 for gdb connections
-Ready for Remote Connections
-Info : Listening on port 6666 for tcl connections
-Info : Listening on port 4444 for telnet connections
-```
-5. Get a hyperterminal configured on /dev/ttyUSB0 11520-8-N-1
+4. Get a hyperterminal configured on /dev/ttyUSB0 11520-8-N-1
 
-Now, the hardware is ready, the debugger is halting the processor and waiting for a gdb connection and the hyperterminal is connected to the UART output of the FPGA. We can now start the software.
+Now, the hardware is ready and the hyperterminal is connected to the UART output of the FPGA. We can now start the software.
 
 ## Get started with Zephyr in the docker image
 
@@ -193,7 +90,7 @@ docker build -f Dockerfile --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t 
 It can be used for building Zephyr samples and tests by mounting the Zephyr workspace into it:
 
 ```
-docker run -ti -v `realpath workspace`:/workdir zephyr-build:v1
+docker run -ti --privileged -v `realpath workspace`:/workdir zephyr-build:v1
 ```
 
 All the following commands should be run from the docker.
@@ -239,13 +136,38 @@ west build -p -b cv32a6_zybo /workdir/ripe
 
 #### Running the RIPE application on the CV32A6
 
-You can launch the elf file located in build/zephyr/zephyr.elf with the gdb provided by zephyr-sdk.
+You can launch the elf file located in build/zephyr/zephyr.elf with the tools provided by zephyr-sdk.
 ```
-/opt/toolchains/zephyr-sdk-0.15.1/riscv64-zephyr-elf/bin/riscv64-zephyr-elf-gdb /workdir/build/zephyr/zephyr.elf
+west debug
 ```
 
 You should see
 ```
+user@62813f8ca741:/workdir$ west debug
+-- west debug: rebuilding
+ninja: no work to do.
+-- west debug: using runner openocd
+-- runners.openocd: OpenOCD GDB server running on port 3333; no thread info available
+Open On-Chip Debugger 0.11.0+dev-00725-gc5c47943d-dirty (2022-10-03-06:14)
+Licensed under GNU GPL v2
+For bug reports, read
+        http://openocd.org/doc/doxygen/bugs.html
+Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
+Warn : `riscv set_prefer_sba` is deprecated. Please use `riscv set_mem_access` instead.
+Ready for Remote Connections
+Info : clock speed 1000 kHz
+Info : JTAG tap: riscv.cpu tap/device found: 0x249511c3 (mfg: 0x0e1 (Wintec Industries), part: 0x4951, ver: 0x2)
+Info : datacount=2 progbufsize=8
+Info : Examined RISC-V core; found 1 harts
+Info :  hart 0: XLEN=32, misa=0x40141105
+Info : starting gdb server for riscv.cpu on 3333
+Info : Listening on port 3333 for gdb connections
+    TargetName         Type       Endian TapName            State
+--  ------------------ ---------- ------ ------------------ ------------
+ 0* riscv.cpu          riscv      little riscv.cpu          halted
+
+Info : Listening on port 6333 for tcl connections
+Info : Listening on port 4444 for telnet connections
 GNU gdb (Zephyr SDK 0.15.1) 12.1
 Copyright (C) 2022 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -261,21 +183,11 @@ Find the GDB manual and other documentation resources online at:
 
 For help, type "help".
 Type "apropos word" to search for commands related to "word"...
-Reading symbols from build/zephyr/zephyr.elf...
-```
-
-The host is connecting to the hardware through OpenOCD and launching the gdbserver. You will need the name of the host in order to connect to it from inside the docker. Similar to this:
-```
-(gdb) target remote 172.18.0.1:3333
-```
-if it is successful, you should see the gdb connection in the host openocd:
-```
+Reading symbols from /workdir/build/zephyr/zephyr.elf...
+Remote debugging using :3333
 Info : accepting 'gdb' connection on tcp/3333
-```
-
-load the elf file to CV32A6 FPGA platform:
-```
-(gdb) load
+_exit (status=<optimized out>) at /workdir/zephyr/lib/libc/newlib/libc-hooks.c:281
+281             while (1) {
 Loading section rom_start, size 0x18 lma 0x80000000
 Loading section reset, size 0x4 lma 0x80000018
 Loading section exceptions, size 0x1c8 lma 0x8000001c
@@ -289,14 +201,13 @@ Loading section datas, size 0x6c0 lma 0x8000b160
 Loading section device_states, size 0x4 lma 0x8000b820
 Loading section k_mutex_area, size 0x14 lma 0x8000b824
 Start address 0x80000000, load size 36622
-Transfer rate: 65 KB/sec, 2817 bytes/write.
+Transfer rate: 63 KB/sec, 2817 bytes/write.
 ```
 
-At last you can run the RIPE application with command `c`:
+You can then run the RIPE application with command `c`:
 ```
 (gdb) c
 Continuing.
-(gdb) 
 ```
 
 On the host hyperterminal you should see:

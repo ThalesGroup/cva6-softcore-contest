@@ -48,6 +48,7 @@ RUN apt-get -y update && \
 		iproute2 \
 		lcov \
 		libglib2.0-dev \
+		libftdi1-dev \
 		libgtk2.0-0 \
 		liblocale-gettext-perl \
 		libncurses5-dev \
@@ -58,6 +59,7 @@ RUN apt-get -y update && \
 		libssl-dev \
 		libtool \
 		libtool-bin \
+		libusb-1.0-0-dev \
 		locales \
 		make \
 		net-tools \
@@ -75,12 +77,17 @@ RUN apt-get -y update && \
 		srecord \
 		sudo \
 		texinfo \
+		udev \
 		unzip \
+		usbutils \
 		valgrind \
+		vim \
 		wget \
 		ovmf \
-		xz-utils \
-		vim
+		xz-utils
+
+# Install rule for udev to access HS2 cable
+RUN echo "ATTRS{idVendor}==\"0403\", ATTRS{idProduct}==\"6014\", MODE=\"660\", GROUP=\"plugdev\", TAG+=\"uaccess\"" > /etc/udev/rules.d/60-openocd.rules
 
 # Install multi-lib gcc (x86 only)
 RUN if [ "${HOSTTYPE}" = "x86_64" ]; then \
