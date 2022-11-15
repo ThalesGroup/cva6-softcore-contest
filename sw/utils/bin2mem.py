@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 # Copyright (c) 2020 Thales.
 # 
@@ -37,7 +37,7 @@ import binascii
 # Start of file
 ###############################################################################
 if(len(sys.argv) < 2):
-    print "Usage bin2mem.py FILENAME"
+    print("Usage bin2mem.py FILENAME")
     quit()
 
 filename = sys.argv[1].strip('.bin') + ".mem"
@@ -47,14 +47,12 @@ mem_file  = open(filename,    'wb')
 with open(sys.argv[1], "rb") as f:
     bytes_read = f.read(8)
     while bytes_read:
-    	bytes_read_inv = bytes_read[::-1]
-    	mem_file.write("%s\n" %binascii.hexlify(bytes_read_inv) )
-	bytes_read = f.read(8)
+        bytes_read_inv = bytes_read[::-1]
+        mem_file.write(b"%s\n" %binascii.hexlify(bytes_read_inv) )
+        bytes_read = f.read(8)
     
 ###############################################################################
 # close all files
 ###############################################################################
 
 mem_file.close()
-
-
