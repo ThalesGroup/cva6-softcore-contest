@@ -84,6 +84,7 @@ Now, the hardware is ready and the hyperterminal is connected to the UART output
 The developer docker image can be built using the following command from the zephyr-docker folder:
 
 ```
+cd zephyr-docker
 docker build -f Dockerfile --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t zephyr-build:v1 .
 ```
 
