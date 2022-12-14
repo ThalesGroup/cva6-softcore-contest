@@ -71,7 +71,7 @@ $ make program_cva6_fpga
 When the bitstream is loaded, the green LED `done` lights up.
 ![alt text](./docs/pictures/20201204_160542.jpg)
 
-4. Get a hyperterminal configured on /dev/ttyUSB0 11520-8-N-1
+4. Get a hyperterminal configured on /dev/ttyUSB0 115200-8-N-1
 
 Now, the hardware is ready and the hyperterminal is connected to the UART output of the FPGA. We can now start the software.
 
