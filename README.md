@@ -241,3 +241,30 @@ exit
 ```
 This result shows that the penetration test has succeeded.
 
+#### Building and executing the perf_baseline test application
+
+The perf_baseline test application is measuring performance of the HW and SW on the FPGA by performing multiple compute, stack access and heap manipulations. This application is generated similarly than RIPE:
+
+```
+west build -p -b cv32a6_zybo /workdir/perf_baseline/
+```
+This step should give you the memory size of the application as follow :
+```
+Memory region         Used Size  Region Size  %age Used
+             RAM:       61936 B         1 GB      0.01%
+        IDT_LIST:          0 GB         2 KB      0.00%
+```
+
+The execution is also similar:
+```
+west debug
+```
+
+On the hyperterminal, you should have the output :
+```
+*** Booting Zephyr OS build zephyr-v3.2.0-327-g869365ab012b  ***
+Begining of execution with depth 12, call number 50, seed value 63728127.000000
+SUCCESS: computed value 868200.000000 - duration: 25.300611 sec 632515274 cycles
+```
+
+Your execution duration can be a little different than our, but the computed value should be the same.
