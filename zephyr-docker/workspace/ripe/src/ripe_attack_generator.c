@@ -891,6 +891,13 @@ build_payload(CHARPAYLOAD * payload)
     size_t size_shellcode, bytes_to_pad;
     char * shellcode, * temp_char_buffer, * temp_char_ptr;
     
+    /* Allocate payload buffer */
+    payload->buffer = (char *) malloc(payload->size);
+    if (payload->buffer == NULL) {
+        if (output_debug_info)
+            printk("Unable to allocate payload buffer.");
+        return FALSE;
+    }
 	switch (attack.inject_param) {
         case INJECTED_CODE_NO_NOP:
             if (payload->size < (size_shellcode_nonop + sizeof(long))) {
@@ -922,13 +929,6 @@ build_payload(CHARPAYLOAD * payload)
             size_shellcode = 0;
             shellcode      = "dummy";
             break;
-    }
-    /* Allocate payload buffer */
-    payload->buffer = (char *) malloc(payload->size);
-    if (payload->buffer == NULL) {
-        if (output_debug_info)
-            printk("Unable to allocate payload buffer.");
-        return FALSE;
     }
 
     /* Copy shellcode into payload buffer */
