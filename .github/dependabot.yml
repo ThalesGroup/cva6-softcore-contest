@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      time: "19:30"
+      timezone: "Europe/Paris"
+    allow:
+      - dependency-name: "verif/core-v-verif"
+    labels:
+      - "Component:Verif"
