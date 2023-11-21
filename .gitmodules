@@ -1,3 +1,42 @@
 [submodule "corev_apu/axi_mem_if"]
 	path = corev_apu/axi_mem_if
 	url = https://github.com/pulp-platform/axi_mem_if.git
+[submodule "corev_apu/register_interface"]
+	path = corev_apu/register_interface
+	url = https://github.com/pulp-platform/register_interface.git
+[submodule "corev_apu/fpga/src/apb_uart"]
+	path = corev_apu/fpga/src/apb_uart
+	url = https://github.com/pulp-platform/apb_uart.git
+[submodule "corev_apu/fpga/src/apb_node"]
+	path = corev_apu/fpga/src/apb_node
+	url = https://github.com/pulp-platform/apb_node.git
+[submodule "corev_apu/fpga/src/axi2apb"]
+	path = corev_apu/fpga/src/axi2apb
+	url = https://github.com/pulp-platform/axi2apb.git
+[submodule "corev_apu/fpga/src/axi_slice"]
+	path = corev_apu/fpga/src/axi_slice
+	url = https://github.com/pulp-platform/axi_slice.git
+[submodule "corev_apu/fpga/src/ariane-ethernet"]
+	path = corev_apu/fpga/src/ariane-ethernet
+	url = https://github.com/lowRISC/ariane-ethernet.git
+[submodule "corev_apu/src/axi_riscv_atomics"]
+	path = corev_apu/src/axi_riscv_atomics
+	url = https://github.com/pulp-platform/axi_riscv_atomics.git
+[submodule "corev_apu/riscv-dbg"]
+	path = corev_apu/riscv-dbg
+	url = https://github.com/pulp-platform/riscv-dbg.git
+[submodule "corev_apu/rv_plic"]
+	path = corev_apu/rv_plic
+	url = https://github.com/pulp-platform/rv_plic.git
+[submodule "corev_apu/fpga/src/apb_timer"]
+	path = corev_apu/fpga/src/apb_timer
+	url = https://github.com/pulp-platform/apb_timer.git
+[submodule "corev_apu/tb/common_verification"]
+	path = corev_apu/tb/common_verification
+	url = https://github.com/pulp-platform/common_verification.git
+[submodule "verif/core-v-verif"]
+	path = verif/core-v-verif
+	url = https://github.com/openhwgroup/core-v-verif
+[submodule "core/cache_subsystem/hpdcache"]
+	path = core/cache_subsystem/hpdcache
+	url = https://github.com/openhwgroup/cv-hpdcache.git
