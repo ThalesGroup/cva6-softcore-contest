@@ -40,6 +40,8 @@
 
 #define UART_DATA_READY             ((uint8_t) 0x01)
 
+#define DELAY_COUNT 50
+
 
 /*******************************************************************************
  * Possible values for Interrupt Identification Register Field.
@@ -151,6 +153,8 @@ UART_polled_tx
    // uint32_t size_sent;
     uint8_t status;
     //uint32_t temp_tx_size = tx_size;
+    
+    volatile uint32_t delay_counter = 0u;
 
     //ASSERT(pbuff != ( (uint8_t*)0));
     //ASSERT(tx_size > 0u);
@@ -165,9 +169,13 @@ UART_polled_tx
             /* Wait until TX FIFO is empty. */
             do
             {
+                
                 status = this_uart->hw_reg->LSR;
+                for (delay_counter = 0; delay_counter < DELAY_COUNT; delay_counter++){}
                // this_uart->status |= status;
             }while (0u == (status & UART_THRE));
+            
+            for (delay_counter = 0; delay_counter < DELAY_COUNT; delay_counter++){}
 
 
             /* Check if TX FIFO is empty. */
@@ -192,6 +200,8 @@ UART_polled_tx
                 /* Calculate the number of bytes remaining(not transmitted yet)*/
                 //temp_tx_size -= size_sent;
             //}
+            
+            for (delay_counter = 0; delay_counter < DELAY_COUNT; delay_counter++){}
         }while (char_idx < tx_size);
     }
 }
