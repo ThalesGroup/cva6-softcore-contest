@@ -80,7 +80,7 @@ When the bitstream is loaded, the green LED `done` lights up.
 
 Now, the hardware is ready and the hyperterminal is connected to the UART output of the FPGA. We can now start the software.
 
-## Get started with the RISC-V software environment using a docker image
+## Get started with software environment
 
 ### Building the docker image
 
