@@ -96,16 +96,16 @@ docker build -f Dockerfile --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t 
 
 the **sw-docker** Docker container consists of the entire RISC-V compilation chain as well as the openocd tool.
 
-2. To compile software applications in ***sw/app**, you need to use Docker container with the following command:
+2. To compile software applications in **sw/app**, you need to use Docker container with the following command:
 
 ```
 docker run -ti --privileged -v `realpath sw`:/workdir sw-docker:v1
 ```
 
-The ***sw*** directory is mounted in the docker container.
+The **sw** directory is mounted in the docker container.
 ![alt text](./docs/pictures/docker_image.png)
 
-Once in the ***sw-docker*** Docker container, you are in the default directory ***/workdir*** which corresponds to the sw directory in the host OS.
+Once in the **sw-docker** Docker container, you are in the default directory **/workdir** which corresponds to the sw directory in the host OS.
 
 ```
 user@[CONTAINER ID]:/workdir$ ll
@@ -126,7 +126,7 @@ user@[CONTAINER ID]:/workdir/app$ make mnist
 ```
 At the end of the compilation the mnist.riscv executable file must be created.
 
-4. Then, in the Docker container, launch ***OpenOCD*** in background:
+4. Then, in the Docker container, launch **OpenOCD** in background:
 ```
 user@[CONTAINER ID]:/workdir/app$ openocd -f openocd_digilent_hs2.cfg &
 [1] 90
@@ -149,7 +149,7 @@ Info : Listening on port 6666 for tcl connections
 Info : Listening on port 4444 for telnet connections
 ```
 
-5. In the Docker container (same terminal), launch ***gdb*** as following:
+5. In the Docker container (same terminal), launch **gdb** as following:
 ```
 user@41d21c42513f:/workdir/app$ riscv-none-elf-gdb mnist.riscv
 GNU gdb (GDB) 14.0.50.20230114-git
@@ -171,7 +171,7 @@ Reading symbols from mnist.riscv...
 (gdb)
 ```
 
-6. In ***gdb***, you need to connect gdb to ***openocd*** as following:
+6. In **gdb**, you need to connect gdb to **openocd** as following:
 ```
 (gdb) target remote :3333
 Remote debugging using :3333
@@ -196,7 +196,7 @@ Transfer rate: 57 KB/sec, 9579 bytes/write.
 (gdb) 
 ```
 
-8. At last, in gdb, you can run the ***mnist*** application by command ***c***:
+8. At last, in gdb, you can run the **mnist** application by command **c**:
 ```
 (gdb) c
 Continuing.
@@ -219,13 +219,13 @@ When MNIST is rerun system is not at initial state. For instance, cache is prelo
 
 # Simulation get started
 When the development environment is set up, it is now possible to run a simulation.
-Some software applications are available into the ***sw/app*** directory. Especially, there are benchmark applications such as Dhrystone and CoreMark and other test applications.
+Some software applications are available into the **sw/app** directory. Especially, there are benchmark applications such as Dhrystone and CoreMark and other test applications.
 
 To simulate a software application on CVA6 processor, run the following command:
 ```
 $ make sim APP=’application to run’
 ```
-For instance, if you want to run the ***mnist*** application, you will have to run :
+For instance, if you want to run the **mnist** application, you will have to run :
 ```
 $ make sim APP=mnist
 ```
@@ -243,7 +243,7 @@ Moreover, all `printf` used in software application will be displayed into the *
 
 Simulation is programmed to run 10000000 cycles but the result is displayed before the end of simulation.
 
-For ***mnist*** application, at the end of the simulation, result is diplayed as following:
+For **mnist** application, at the end of the simulation, result is diplayed as following:
 ```
 Expected  = 4
 Predicted = 4
