@@ -6,37 +6,16 @@ https://cva6.readthedocs.io/en/latest/
 
 Checkout the repository and initialize all submodules:
 ```
-$ git clone --recursive https://github.com/ThalesGroup/cva6-softcore-contest.git
+$ git clone https://github.com/ThalesGroup/cva6-softcore-contest.git
+$ git submodule update --init --recursive
 ```
 
-Do not forget to check all the details of the contest in [Annonce RISC-V contest 2021-2022 v1.pdf](./Annonce%20RISC-V%20contest%202021-2022%20v1.pdf).
+Do not forget to check all the details of the contest in [Annonce RISC-V contest 2023-2024 v2.pdf](./Annonce%20RISC-V%20contest%202023-2024%20v2.pdf).
 
 This repository contains the files needed for the 2021-2022 contest focusing on energy efficiency. The 2020-2021 contest focusing on the performance can be retrieved in this repository under the cv32a6_contest_2020 GitHub tag.
 
 # Prerequisites
 
-
-## RISC-V tool chain setting up
-The tool chain is available at: https://github.com/riscv/riscv-gnu-toolchain.
-At first, you have to get the sources of the RISCV GNU toolchain:
-```
-$ git clone https://github.com/riscv/riscv-gnu-toolchain 
-$ cd riscv-gnu-toolchain 
-$ git checkout ed53ae7a71dfc6df1940c2255aea5bf542a9c422
-$ git submodule update --init --recursive
-```
-Next, you have to install all standard packages needed to build the toolchain depending on your Linux distribution.
-Before installing the tool chain, it is important to define the environment variable RISCV=”path where the tool chain will be installed”.
-Then, you have to set up the compiler by running the following command:
-```
-$ export RISCV=/path/to/install/riscv/compilators
-$ ./configure --prefix=$RISCV --disable-linux --with-cmodel=medany --with-arch=rv32ima
-$ make newlib 
-```
-When the installation is achieved, do not forget to add $RISCV/bin to your PATH.
-```
-$ export PATH=$PATH:$RISCV/bin
-```
 
 ## Questa tool
 Questa Prime **version 10.7** must be used to measure power during the simulations.
@@ -56,6 +35,7 @@ https://reference.digilentinc.com/reference/programmable-logic/guides/installati
 **Be careful about your linux distribution and the supported version of Vitis 2020.1 environment.**
 
 
+
 ## Hardware 
 If you have not yet done so, start provisioning the following:
 
@@ -67,252 +47,220 @@ If you have not yet done so, start provisioning the following:
 | Connectors                 |	https://store.digilentinc.com/pmod-cable-kit-2x6-pin-and-2x6-pin-to-dual-6-pin-pmod-splitter-cable/ | $5.99 |	At least a 6-pin connector Pmod is necessary; other references may offer it. |
 
 
-## OpenOCD
+# FPGA platform
 
-To be able to run and debug software applications on CVA6, you need to install OpenOCD tool.
-OpenOCD is a free and open-source software distributed under the GPL-2.0 license.
-It provides on-chip programming and debugging support with a layered architecture of JTAG interface and TAP support.
+A FPGA platform running **CV32A6** (CVA6 in 32b flavor) has been implemented on **Zybo Z7-20**
 
-Global documentation on OpenOCD is available at https://github.com/ThalesGroup/pulpino-compliant-debug/tree/pulpino-dbg/doc/riscv-debug-notes/pdfs
+This platform includes a CV32A6 processor, a JTAG interface to run and debug software applications and a UART interface to display strings on hyperterminal.
 
-These documents aim at providing help about OpenOCD and RISC-V debug.
+The steps to run the RIPE application on CV32A6 FPGA platform are described below.
 
-Before setting up OpenOCD, other tools are needed:
-- make
-- libtool
-- pkg-congfig > 0.23
-- autoconf > 2.64
-- automake > 1.14
-- texinfo
+The JTAG-HS2 programming cable is initially a cable that allows programming of Xilinx FPGAs (bitstream loading) from a host PC.
 
-On Ubuntu, ensure that everything is installed with:
+In our case, we use this cable to program software applications on the CV32A6 instantiated in the FPGA through a PMOD connector.
+
+## Get the Zybo ready
+
+1. First, make sure the Digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBAUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
+![alt text](./docs/pictures/20201204_150708.jpg)
+
+2. Generate the bitstream of the FPGA platform:
 ```
-$ sudo apt install make libtool pkg-config autoconf automake texinfo
-```
-
-Furthermore, you need to set up libusb and libftdi libraries.
-On Ubuntu:
-```
-$ sudo apt install libusb-1.0-0-dev libftdi1-dev
+$ make cva6_fpga
 ```
 
-Once all dependencies are installed, OpenOCD can be set up.
-- Download sources:
+3. When the bitstream is generated, switch on Zybo board and run:
 ```
-$ git clone https://github.com/riscv/riscv-openocd
-$ cd riscv-openocd
-$ git checkout aec5cca15b41d778fb85e95b38a9a552438fec6a
+$ make program_cva6_fpga
 ```
-- Prepare a **build** directory:
+When the bitstream is loaded, the green LED `done` lights up.
+![alt text](./docs/pictures/20201204_160542.jpg)
+
+4. Get a hyperterminal configured on /dev/ttyUSB0 115200-8-N-1
+
+Now, the hardware is ready and the hyperterminal is connected to the UART output of the FPGA. We can now start the software.
+
+## Get started with the RISC-V software environment using a docker image
+
+### Building the docker image
+
+A **sw-docker** docker container is used to ease the installation of RISC-V tools including the toolchain and OpenOCD.
+
+1. The **sw-docker** image can be built using the following command:
+
 ```
-$ mkdir build
-```
-- Launch the bootstrap script:
-```
-$ ./bootstrap
-```
-- Launch configure:
-```
-$ ./configure --enable-ftdi --prefix=build --exec-prefix=build
-```
-- Compile and install files:
-```
-$ make
-$ make install
-```
-When the installation is achieved, do not forget to add riscv-openocd/build/bin to your PATH.
-```
-$ export PATH=$PATH:<path to riscv-openocd>/build/bin
+docker build -f Dockerfile --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t sw-docker:v1 .
 ```
 
-## HS2 cable
+### Using the docker image
 
-It is necessary to add a udev rule to use the cable.
-OpenOCD provides a file containing the rule we need. Copy it into /etc/udev/rules.d/
+the **sw-docker** Docker container consists of the entire RISC-V compilation chain as well as the openocd tool.
+
+2. To compile software applications in ***sw/app**, you need to use Docker container with the following command:
+
 ```
-$ sudo cp <openocd>/contrib/60-openocd.rules /etc/udev/rules.d
-```
-The file is also available here: https://github.com/riscv/riscv-openocd/blob/riscv/contrib/60-openocd.rules.
-The particular entry about the HS2 cable is:
-```
-ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE="660", GROUP="plugdev", TAG+="uaccess"
-```
-Then either reboot your system or reload the udev configuration with:
-```
-$ sudo udevadm control --reload
+docker run -ti --privileged -v `realpath sw`:/workdir sw-docker:v1
 ```
 
-To check if the cable is recognized, run lsusb. There should be a line like this:
-```
-$ lsusb
-```
-```
-Bus 005 Device 003: ID 0403:6014 Future Technology Devices International, Ltd FT232HSingle HS USB-UART/FIFO IC
-```
-# Contest
+The ***sw*** directory is mounted in the docker container.
+![alt text](./docs/pictures/docker_image.png)
 
-## Xilinx libraries compilation
-Some Xilinx libraries are needed in order to simulate xilinx IP with QuestaSim.
-Therefore, before running a simulation, Xilinx libraries have to be compiled, to do so, run the command:
+Once in the ***sw-docker*** Docker container, you are in the default directory ***/workdir*** which corresponds to the sw directory in the host OS.
+
 ```
-$ make compile_xilinx_lib
+user@[CONTAINER ID]:/workdir$ ll
+total 24
+drwxrwxr-x  5 user user 4096 Nov 23 10:57 ./
+drwxr-xr-x  1 root root 4096 Nov 24 09:09 ../
+-rw-rw-r--  1 user user 2620 Nov 23 10:57 README.md
+drwxrwxr-x 18 user user 4096 Nov 23 10:59 app/
+drwxrwxr-x  5 user user 4096 Nov 23 10:57 bsp/
+drwxrwxr-x  2 user user 4096 Nov 23 10:57 utils/
 ```
-That will create a **fpga/lib_xilinx_questa** subdirectory. This command is to be launched only once.
+
+3. To compile mnist application, run the following commands.
+```
+user@[CONTAINER ID]:/workdir$ cd app
+user@[CONTAINER ID]:/workdir/app$ make mnist
+
+```
+At the end of the compilation the mnist.riscv executable file must be created.
+
+4. Then, in the Docker container, launch ***OpenOCD*** in background:
+```
+user@[CONTAINER ID]:/workdir/app$ openocd -f openocd_digilent_hs2.cfg &
+[1] 90
+user@[CONTAINER ID]:/workdir/app$ Open On-Chip Debugger 0.11.0-dirty (2023-11-23-09:23)
+Licensed under GNU GPL v2
+For bug reports, read
+    http://openocd.org/doc/doxygen/bugs.html
+DEPRECATED! use 'adapter driver' not 'interface'
+DEPRECATED! use 'adapter speed' not 'adapter_khz'
+Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
+Info : clock speed 1000 kHz
+Info : JTAG tap: riscv.cpu tap/device found: 0x249511c3 (mfg: 0x0e1 (Wintec Industries), part: 0x4951, ver: 0x2)
+Info : datacount=2 progbufsize=8
+Info : Examined RISC-V core; found 1 harts
+Info :  hart 0: XLEN=32, misa=0x40141101
+Info : starting gdb server for riscv.cpu on 3333
+Info : Listening on port 3333 for gdb connections
+Ready for Remote Connections
+Info : Listening on port 6666 for tcl connections
+Info : Listening on port 4444 for telnet connections
+```
+
+5. In the Docker container (same terminal), launch ***gdb*** as following:
+```
+user@41d21c42513f:/workdir/app$ riscv-none-elf-gdb mnist.riscv
+GNU gdb (GDB) 14.0.50.20230114-git
+Copyright (C) 2022 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "--host=x86_64-pc-linux-gnu --target=riscv-none-elf".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<https://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from mnist.riscv...
+(gdb)
+```
+
+6. In ***gdb***, you need to connect gdb to ***openocd*** as following:
+```
+(gdb) target remote :3333
+Remote debugging using :3333
+Info : accepting 'gdb' connection on tcp/3333
+Warn : Prefer GDB command "target extended-remote 3333" instead of "target remote 3333"
+0x00010ec4 in ?? ()
+(gdb)
+```
+
+7. In ***gdb***, load ***mnist.riscv*** to CV32A6 FPGA platform by the load command:
+```
+(gdb) load
+Loading section .vectors, size 0x80 lma 0x80000000
+Loading section .init, size 0x60 lma 0x80000080
+Loading section .text, size 0xe518 lma 0x800000e0
+Loading section .rodata, size 0x11c2c lma 0x8000e5f8
+Loading section .eh_frame, size 0x3c lma 0x80020224
+Loading section .data, size 0x91c lma 0x80020260
+Loading section .sdata, size 0x60 lma 0x80020b80
+Start address 0x80000080, load size 134108
+Transfer rate: 57 KB/sec, 9579 bytes/write.
+(gdb) 
+```
+
+8. At last, in gdb, you can run the ***mnist*** application by command ***c***:
+```
+(gdb) c
+Continuing.
+(gdb) 
+```
+
+9. On the hyperterminal configured on /dev/ttyUSB0 11520-8-N-1, you should see:
+```
+Expected  = 4
+Predicted = 4
+Result : 1/1
+credence: 82
+image env0003: 1731593 instructions
+image env0003: 2353693 cycles
+```
+
+This result is obtained just after the FPGA bitstream loading.
+When MNIST is rerun system is not at initial state. For instance, cache is preloaded.
 
 
-## Behavioral simulation get started
-When the development environment is set up, it is now possible to run a behavioral simulation.
-Some software applications are available into the sw/app directory. Especially, the MNIST application used in this year's contest is available as well as others test applications.
-A description of the MNIST application is available in the **sw/app/mnist** subdirectory.
+# Simulation get started
+When the development environment is set up, it is now possible to run a simulation.
+Some software applications are available into the ***sw/app*** directory. Especially, there are benchmark applications such as Dhrystone and CoreMark and other test applications.
 
-To simulate MNIST application on CV32A6 processor, run the following command: 
+To simulate a software application on CVA6 processor, run the following command:
 ```
-$ make cva6_sim
+$ make sim APP=’application to run’
+```
+For instance, if you want to run the ***mnist*** application, you will have to run :
+```
+$ make sim APP=mnist
 ```
 
 **This command:**
-- Compiles CVA6 architecture and testbench with QuestaSim tool.
+- Compiles CVA6 architecture and testbench with Questa Sim tool.
 - Compiles the software application to be run on CVA6 with RISCV tool chain.
-- Launches the simulation.
+- Runs the simulation.
 
-Questa will open with waveform window. Some signals will be displayed; you are free to add as many signals as you want (but this can slow down the simulation).
+Questa tool will open with waveform window. Some signals will be displayed; you are free to add as many signals as you want.
 
 Moreover, all `printf` used in software application will be displayed into the **transcript** window of Questa Sim and save into **uart** file to the root directory.
 
-At the end of the Mnist application simulation, results are deplayed in the transcript as:
-```
-# [UART]: Expected  = 4
-# [UART]: Predicted = 4
-# [UART]: Result : 1/1
-# [UART]: credence: 82
-# [UART]: image env0003: 1725056 instructions
-# [UART]: image env0003: 2098749 cycles
-```
-> Simulation may take lot of time, so you need to be patient to have results. 
+> Simulation may take lot of time, so you need to be patient to have results.
 
-Results are displayed after 100 ms of running the MNIST application.
+Simulation is programmed to run 10000000 cycles but the result is displayed before the end of simulation.
 
-Note that for the contest, only the image of a 4 is tested by the MNIST algorithm in order to optimize simulation times. 
+For ***mnist*** application, at the end of the simulation, result is diplayed as following:
+```
+Expected  = 4
+Predicted = 4
+Result : 1/1
+credence: 82
+image env0003: 1731593 instructions
+image env0003: 2316653 cycles
+```
 
 CVA6 software environment is detailed into `sw/app` directory.
 
-## Post-implementation simulation get started
-To efficiently estimate the energy consumed by the MNIST application, the post-implementation simulation of the application must be run.
-To do this, you have to run the following command:  
-```
-$ make cva6_sim_routed
-```
+# Synthesis and place and route get started
+You can perform synthesis and place and route of the CVA6 architecture.
 
-**This command:**
-- Compiles the software application to be run on CVA6 with RISCV tool chain.
-- Run synthesis and implementation of CV32A6 FPGA platform, MNIST is initialized into main memory.
-- Compiles CVA6 architecture and testbench with QuestaSim tool.
-- Run the simulation for 60 ms (CV32A6 processor is clocked at 45MHz). 
-- Generate the **fpga/work-sim/routed.saif** file to estimate the power. 
+In the first time, synthesis and place and route are carried in "out of context" mode, that means that the CVA6 architecture is synthetized in the FPGA fabric without consideration of the external IOs constraints.
 
-As for the behavioral simulation, results are deplayed in the transcript as following:
-```
-# [UART]: Expected  = 4
-# [UART]: Predicted = 4
-# [UART]: Result : 1/1
-# [UART]: credence: 82
-# [UART]: image env0003: 1725056 instructions
-# [UART]: image env0003: 2098749 cycles
-```
-> Simulation may take lot of time (many hours), so you need to be patient to have results.
-
-## Power analysis get started
-Once routed.saif file is generated, the Xilinx power analysis suite can be lauched to estimate the energy of the MNIST application.
-
-To do so, run the following command:
-```
-$ make cva6_power_analysis
-```
-**This command:**
-- Opens Xilinx power analysis suite for MNIST application.
-- Generates **fpga/work-sim/power_routed_mnist.txt** file.
-
-As part of the competition, we want to increase the energy efficiency of the MNIST application.
-
-Below, please find an excerpt from the power report generated by Xilinx power analysis suite.
-
-Power is made up of two components:
-- A static part at **0.114 W**
-- A dynamic part at **0.193 W**
-
-The total power is the sum of these two components: **0.307 W** 
-```
-+--------------------------+----------------------+
-| Total On-Chip Power (W)  | 0.307                |
-| Design Power Budget (W)  | Unspecified*         |
-| Power Budget Margin (W)  | NA                   |
-| Dynamic (W)              | 0.193                |
-| Device Static (W)        | 0.114                |
-| Effective TJA (C/W)      | 11.5                 |
-| Max Ambient (C)          | 81.5                 |
-| Junction Temperature (C) | 28.5                 |
-| Confidence Level         | Medium               |
-| Setting File             | ---                  |
-| Simulation Activity File | work-sim/routed.saif |
-| Design Nets Matched      | 89%   (59430/66741)  |
-+--------------------------+----------------------+
-```
-From the estimated power, the energy consumption can be calculated in Joule:
-
-**Energy (J) = Power (W) \* Execution time of one frame (s)**
-
-**Energy (J) = Power (W) \* Number of cycles executed for one frame \* Period (s)**
-
-Reference energy for one frame:
-
-**Energy (J) = 0.307 W \* 2098749 \* 22.2 \* 10power(-9)= 0.01430 J = 14.30 mJ**
-
-The reference architecture consumes **14.30 mJ**.
-
-The dynamic component can be distributed hierarchically in the architecture. Below is another excerpt from the power report:
-```
-+------------------------------------------------------+-----------+
-| Name                                                 | Power (W) |
-+------------------------------------------------------+-----------+
-| cva6_zybo_z7_20                                      |     0.193 |
-|   i_ariane                                           |     0.063 |
-|     csr_regfile_i                                    |     0.001 |
-|     ex_stage_i                                       |     0.003 |
-|       lsu_i                                          |     0.003 |
-|     i_cache_subsystem                                |     0.027 |
-|       i_wt_dcache                                    |     0.011 |
-|       i_wt_icache                                    |     0.015 |
-|     i_frontend                                       |     0.010 |
-|       i_bht                                          |     0.001 |
-|       i_btb                                          |     0.002 |
-|       i_instr_queue                                  |     0.003 |
-|       i_instr_realign                                |     0.002 |
-|     id_stage_i                                       |     0.002 |
-|     issue_stage_i                                    |     0.019 |
-|       i_issue_read_operands                          |     0.010 |
-|       i_scoreboard                                   |     0.010 |
-|   i_ariane_peripherals                               |     0.004 |
-|     gen_uart.i_apb_uart                              |     0.002 |
-|   i_axi_xbar                                         |     0.008 |
-|     axi_slice_master_port[0].i_axi_slice_wrap_master |     0.001 |
-|     axi_slice_slave_port[0].i_axi_slice_wrap_slave   |     0.001 |
-|   i_xlnx_clk_gen                                     |     0.113 |
-|     inst                                             |     0.113 |
-+------------------------------------------------------+-----------+
-```
-> Power < 1 mW is not displayed.
-
-The values extracted from the power report are to be considered as a reference, these values must be found by default.
-
-A document explaining how to interprate the power analysis report will be delivered later.
-
-
-## Synthesis and place and route get started
-You can perform the synthesis and place and route of the CV32A6 architecture.
-
-In the first time, can you run the synthesis and place and route "out of context" mode, that means that the CV32A6 architecture is synthetized in the FPGA fabric without consideration of the external IOs constraints.
-
-That allows to have an estimation of the logical resources used by the CVA6 in the FPGA fabric as well as the maximal frequency of CVA6 architecture. Note that these are not the "official" figures to be reported as results, just a quicker way to estimate them.
+That allows to have an estimation of the logical resources used by the CVA6 in the FPGA fabric as well as the maximal frequency of CVA6 architecture. They are both major metrics for a computation architecture.
 
 Command to run synthesis and place & route in "out of context" mode:
 ```
@@ -329,114 +277,11 @@ $ make cva6_ooc CLK_PERIOD_NS=20 BATCH_MODE=0
 This command generates synthesis and place and route reports in **fpga/reports_cva6_ooc_synth** and **fpga/reports_cva6_ooc_impl**.
 
 
-## FPGA emulation
 
-A FPGA platform emulating **CV32A6** (CVA6 in 32b flavor) has been implemented on **Zybo Z7-20** board.
 
-This platform includes a CV32A6 processor, a JTAG interface to run and debug software applications and a UART interface to display strings on hyperterminal.
 
-The steps to run the MNIST application on CV32A6 FPGA platform are described below.
 
-## Get started with MNIST application on Zybo
 
-1. First, make sure the Digilent **JTAG-HS2 debug adapter** is properly connected to the **PMOD JE** connector and that the USBAUART adapter is properly connected to the **PMOD JB** connector of the Zybo Z7-20 board.
-![alt text](./docs/pictures/20201204_150708.jpg)
-2. Compile the MNIST application in `sw/app`
-3. Generate the bitstream of the FPGA platform:
-```
-$ make cva6_fpga
-```
-4. When the bistream is generated, switch on Zybo board and run:
-```
-$ make program_cva6_fpga
-```
-When the bitstream is loaded, the green LED `done` lights up.
-![alt text](./docs/pictures/20201204_160542.jpg)
-5. Then, in a terminal, launch **OpenOCD**:
-```
-$ openocd -f fpga/openocd_digilent_hs2.cfg
-```
-If it is succesful, you should see something like:
-```
-Open On-Chip Debugger 0.10.0+dev-00832-gaec5cca (2019-12-10-14:21)
-Licensed under GNU GPL v2
-For bug reports, read
-    http://openocd.org/doc/doxygen/bugs.html
-Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
-Info : clock speed 1000 kHz
-Info : JTAG tap: riscv.cpu tap/device found: 0x249511c3 (mfg: 0x0e1 (Wintec Industries), part: 0x4951, ver: 0x2)
-Info : datacount=2 progbufsize=8
-Info : Examined RISC-V core; found 1 harts
-Info :  hart 0: XLEN=32, misa=0x40141105
-Info : Listening on port 3333 for gdb connections
-Ready for Remote Connections
-Info : Listening on port 6666 for tcl connections
-Info : Listening on port 4444 for telnet connections
 
-```
-6. In a separate terminal, launch **gdb**:
-```
-$ riscv32-unknown-elf-gdb sw/app/mnist.riscv
-```
-You must use gdb from the RISC-V toolchain. If it is successful, you should see:
-```
-GNU gdb (GDB) 9.1
-Copyright (C) 2020 Free Software Foundation, Inc.
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.
-Type "show copying" and "show warranty" for details.
-This GDB was configured as "--host=x86_64-pc-linux-gnu --target=riscv32-unknown-elf".
-Type "show configuration" for configuration details.
-For bug reporting instructions, please see:
-<http://www.gnu.org/software/gdb/bugs/>.
-Find the GDB manual and other documentation resources online at:
-    <http://www.gnu.org/software/gdb/documentation/>.
 
-For help, type "help".
-Type "apropos word" to search for commands related to "word"...
-Reading symbols from sw/app/coremark.riscv...
-(gdb) 
-```
-7. In gdb, you need to connect gdb to openocd:
-```
-(gdb) target remote :3333
-```
-if it is successful, you should see the gdb connection in openocd:
-```
-Info : accepting 'gdb' connection on tcp/3333
-```
-8. In gdb, load **mnist.riscv** to CV32A6 FPGA platform:
-```
-(gdb) load
-Loading section .vectors, size 0x80 lma 0x80000000
-Loading section .init, size 0x60 lma 0x80000080
-Loading section .text, size 0x16044 lma 0x800000e0
-Loading section .rodata, size 0x122a4 lma 0x80016130
-Loading section .eh_frame, size 0x50 lma 0x800283d4
-Loading section .init_array, size 0x4 lma 0x80028424
-Loading section .data, size 0xc1c lma 0x80028428
-Loading section .sdata, size 0x2c lma 0x80029048
-Start address 0x80000080, load size 168036
-Transfer rate: 61 KB/sec, 9884 bytes/write.
-```
-
-9. At last, in gdb, you can run the MNIST application by command `c`:
-```
-(gdb) c
-Continuing.
-(gdb) 
-```
-
-10. On hyperterminal configured on /dev/ttyUSB0 11520-8-N-1, you should see:
-```
-Expected  = 4
-Predicted = 4
-Result : 1/1
-credence: 82
-image env0003: 1725056 instructions
-image env0003: 2098749 cycles
-```
-This result is obtained just after the FPGA bitstream loading.
-When MNIST is rerun system is not at initial state. For instance, cache is preloaded. 
 
