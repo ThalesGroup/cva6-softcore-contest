@@ -151,7 +151,7 @@ Info : Listening on port 4444 for telnet connections
 
 5. In the Docker container (same terminal), launch **gdb** as following:
 ```
-user@41d21c42513f:/workdir/app$ riscv-none-elf-gdb mnist.riscv
+user@[CONTAINER ID]:/workdir/app$ riscv-none-elf-gdb mnist.riscv
 GNU gdb (GDB) 14.0.50.20230114-git
 Copyright (C) 2022 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
