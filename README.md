@@ -181,7 +181,7 @@ Warn : Prefer GDB command "target extended-remote 3333" instead of "target remot
 (gdb)
 ```
 
-7. In ***gdb***, load ***mnist.riscv*** to CV32A6 FPGA platform by the load command:
+7. In **gdb**, load **mnist.riscv** to CV32A6 FPGA platform by the load command:
 ```
 (gdb) load
 Loading section .vectors, size 0x80 lma 0x80000000
