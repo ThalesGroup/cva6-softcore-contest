@@ -84,6 +84,8 @@ Now, the hardware is ready and the hyperterminal is connected to the UART output
 
 ### Building the docker image
 
+Install Docker on the workstation.
+
 A **sw-docker** docker container is used to ease the installation of RISC-V tools including the toolchain and OpenOCD.
 
 1. The **sw-docker** image can be built using the following command:
