@@ -84,7 +84,7 @@ VL_INC_DIR := $(VERILATOR_INSTALL_DIR)/share/verilator/include
 # board name for bitstream generation.
 BOARD          := zybo-z7-20
 XILINX_PART    := xc7z020clg400-1
-XILINX_BOARD   := digilentinc.com:zybo-z7-20:part0:1.0
+XILINX_BOARD   := digilentinc.com:zybo-z7-20:part0:1.2
 CLK_PERIOD_NS  := 25
 BATCH_MODE ?= 1
 
