@@ -53,13 +53,14 @@ bmarks = \
 	multiply \
 	dhrystone \
 	spmv \
-	pmp 
+	pmp \
+	mnist
 
 #--------------------------------------------------------------------
 # Build rules
 #--------------------------------------------------------------------
 
-RISCV_PREFIX ?= riscv$(XLEN)-unknown-elf-
+RISCV_PREFIX ?= riscv-none-elf-
 RISCV_GCC ?= $(RISCV_PREFIX)gcc
 RISCV_OBJCOPY ?= $(RISCV_PREFIX)objcopy
 RISCV_AR ?= $(RISCV_PREFIX)ar
@@ -86,12 +87,12 @@ INCS += -I$(src_dir)/../bsp/config \
 	
 FLAGS_STR:="$(RISCV_CFLAGS)  $(RISCV_LDFLAGS) "
 
-CFLAGS ?=-DPREALLOCATE=1 -fvisibility=hidden -DSTDIO_THRU_UART -O3 -mcmodel=medany   -static  -Wall -pedantic 
+CFLAGS ?=-march=rv32im_zicsr -mabi=ilp32 -DPREALLOCATE=1 -fvisibility=hidden -DSTDIO_THRU_UART -O3 -mcmodel=medany   -static  -Wall -pedantic 
 
 RISCV_CFLAGS :=-DPERFORMANCE_RUN=1 \
 		-DITERATIONS=3 \
 		-DFLAGS_STR=\"$(FLAGS_STR)\" \
-		-DPREALLOCATE=1 -fvisibility=hidden -DSTDIO_THRU_UART -O3 -mcmodel=medany   -static  -Wall -pedantic 
+		-march=rv32im_zicsr -mabi=ilp32 -DPREALLOCATE=1 -fvisibility=hidden -DSTDIO_THRU_UART -O3 -mcmodel=medany   -static  -Wall -pedantic 
 
 RISCV_LDFLAGS=-L./ -lcva6 -static -nostartfiles -T $(src_dir)/../bsp/config/link.ld
 
@@ -110,6 +111,7 @@ $(1): $(1).D $(1).riscv
 $(1): $(1).hex $(1).riscv
 $(1): $(1).bin $(1).riscv
 $(1): $(1).mem $(1).bin
+$(1): $(1).coe $(1).mem
 $(1).riscv: libcva6.a $$($(1)_OBJ_FILES)
 	# LINKING
 	$$(RISCV_GCC) $$(RISCV_CFLAGS) -o $$@ $$^ $$(RISCV_LDFLAGS)
@@ -138,11 +140,14 @@ libcva6.a: $(OBJ_BSP)
 %.mem: %.bin
 	$(utils_dir)/bin2mem.py $(src_dir)/$<
 
+%.coe: %.mem
+	$(utils_dir)/mem2coe.py $(src_dir)/$<
+
 
 all: $(bmarks)
 
 
 clean:
-	rm -rf $(OBJ_BSP) $(ALL_OBJ) libcva6.a *.riscv *.o *.D *.mem *.bin
+	rm -rf $(OBJ_BSP) $(ALL_OBJ) libcva6.a *.riscv *.o *.D *.mem *.bin *.coe *.hex
 
 

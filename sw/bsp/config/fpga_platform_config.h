@@ -19,7 +19,7 @@
 // Language:       C header
 //
 // Description:    File which defines the FPGA platform, i.e base address for each 
-//                 peripheral and others information relating to FPAG platform.
+//                 peripheral and others information relating to FPGA platform.
 //
 // =========================================================================== #
 // Revisions  :
@@ -35,7 +35,7 @@
  * Platform frequency
  */
 
-#define FPGA_UART_0_FREQUENCY 25000000
+#define FPGA_UART_0_FREQUENCY 50000000
 
 
 /***************************************************************************//**

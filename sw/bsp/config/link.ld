@@ -32,7 +32,7 @@ MEMORY
 	   allowing initialized sections to be placed there). Infact we dump all
 	   sections to ram. */
 
-	ram (rwxai) : ORIGIN = 0x80000000, LENGTH = 0x20000
+	ram (rwxai) : ORIGIN = 0x80000000, LENGTH = 0x30000
 	dbg (rwxai) : ORIGIN = 0x1A110800, LENGTH = 0x1000
 }
 

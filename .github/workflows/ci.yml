@@ -1,0 +1,26 @@
+# Copyright 2021 OpenHW Group
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+
+# Run functional regression checks
+name: ci
+on: [push, pull_request]
+
+jobs:
+  riscv-tests:
+    name: riscv-tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        testcase: [asm-tests, mul, amo, fp, benchmarks]
+        target: [cv64a6_imafdc_sv39, cv64a6_imafdc_sv39_wb]
+    env:
+      RISCV: /riscv
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Prepare
+      run: ci/setup.sh
+    - name: run tests
+      run: make run-${{ matrix.testcase}}-verilator target=${{ matrix.target }}

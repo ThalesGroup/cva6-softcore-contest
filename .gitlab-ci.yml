@@ -1,256 +1,544 @@
-before_script:
-  # paths to local or network installations (the riscv toolchain and
-  # verilator are not built in the ci job as in travis)
-  - export QUESTASIM_HOME=/usr/pack/modelsim-10.6b-kgf/questasim/
-  - export QUESTASIM_VERSION=-10.6b
-  - export QUESTASIM_FLAGS=-noautoldlibpath
-  - export CXX=g++-7.2.0 CC=gcc-7.2.0
-  - export RISCV=/scratch2/gitlabci/riscv_install
-  - export VERILATOR_ROOT=/scratch2/gitlabci/verilator-4.014
-  # setup dependent paths
-  - export PATH=${RISCV}/bin:$VERILATOR_ROOT/bin:${PATH}
-  - export LIBRARY_PATH=$RISCV/lib
-  - export LD_LIBRARY_PATH=$RISCV/lib:/usr/pack/gcc-7.2.0-af/linux-x64/lib64/
-  - export C_INCLUDE_PATH=$RISCV/include:$VERILATOR_ROOT/include:/usr/pack/gcc-7.2.0-af/linux-x64/include
-  - export CPLUS_INCLUDE_PATH=$RISCV/include:$VERILATOR_ROOT/include:/usr/pack/gcc-7.2.0-af/linux-x64/include
-  # number of parallel jobs to use for make commands and simulation
-  - export NUM_JOBS=4
-  - which java
-  - java -version
-  - which git
-  - git --version
-  - ci/make-tmp.sh
-  - git submodule init
-  - git submodule update --recursive
+# Copyright 2022 Thales Silicon Security
+#
+# Licensed under the Solderpad Hardware Licence, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# SPDX-License-Identifier: Apache-2.0 WITH SHL-2.0
+# You may obtain a copy of the License at https://solderpad.org/licenses/
+#
+# Original Author: Yannick Casamatta (yannick.casamatta@thalesgroup.com)
+
+# Please refer to .gitlab-ci/README.md to add jobs
+
+# Project maintainers must define following variables to adapt this CI to their runtime environment (Settings > CI/CD > Variables)
+# - SETUP_CI_CVV_BRANCH: master (the main branch of CVA6 repository)
+
+# A git repository named "setup-ci" must be created in the same namespace as cva6 and must contain the following file:
+# - 'cva6/core-v-verif-cva6.yml'
+#
+# This file must at least contain the variables necessary for the execution of
+# this pipeline.
+# Other elements such as new jobs can be added to overload the associated
+# downstream pipeline included in this repository.
+# Example can be found in ".gitlab-ci/setup-ci-example/"
+
+include:
+  - project: '$CI_PROJECT_NAMESPACE/setup-ci'
+    ref: '$SETUP_CI_CVV_BRANCH'
+    file: 'cva6/core-v-verif-cva6.yml'
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      variables:
+        CI_KIND: verif
+    - if: $CI_COMMIT_BRANCH == "master"
+      variables:
+        CI_KIND: regress
+    - if: $CI_COMMIT_BRANCH =~ /.*_PR_.*/
+      variables:
+        CI_KIND: dev
+    - if: $CI_COMMIT_BRANCH =~ /^dev.*/
+      variables:
+        CI_KIND: dev
+    - variables:
+        CI_KIND: none
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  DASHBOARD: cva6
+  DV_TARGET: cv32a6_embedded
+
+default:
+  tags: [$TAGS_RUNNER]
+  artifacts:
+    when: always
+    paths:
+      - artifacts/
 
 stages:
-  - build
-  - write-back
-  - write-through
+  - setup
+  - light tests
+  - heavy tests
+  - backend tests
+  - find failures
+  - report
 
-###################################
-# prepare
-build:
-  stage: build
+.setup_job:
+  stage: setup
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  rules: &on_dev
+    - if: $CI_KIND == "regress"
+    - if: $CI_KIND == "verif"
+    - if: $CI_KIND == "dev"
+    - when: manual
+      allow_failure: true
+
+check_env:
+  extends:
+    - .setup_job
+  variables:
+    GIT_STRATEGY: none
   script:
-    - ci/build-riscv-tests.sh
-    - ci/get-torture.sh
-    - make clean
-    # this currently does not work with the current runner version...
-    #- make torture-gen
+    - env
   artifacts:
-      paths:
-        - tmp
+    paths: []
 
-###################################
-# tests with write-back cache system
-
-# rv64ui-p-* and rv64ui-v-* tests
-asm-quest:
-  stage: write-back
+build_tools:
+  extends:
+    - .setup_job
   script:
-    - make -j${NUM_JOBS} run-asm-tests batch-mode=1 defines=WB_DCACHE
-  dependencies:
-    - build
+    - git submodule update --init verif/core-v-verif
+    - source $SYN_VCS_BASHRC
+    # ROOT_PROJECT is used by Spike installer and designates the toplevel of core-v-verif tree.
+    - 'export ROOT_PROJECT=$(pwd)'
+    # If a local build of Spike is requested, clean up build and installation directories.
+    - '[ -n "$SPIKE_INSTALL_DIR" -a "$SPIKE_INSTALL_DIR" = "__local__" ] && rm -rf vendor/riscv/riscv-isa-sim/build'
+    - '[ -n "$SPIKE_INSTALL_DIR" -a "$SPIKE_INSTALL_DIR" = "__local__" ] && rm -rf tools/spike'
+    # Create default directory corresponding to the artifact path.
+    - mkdir -p tools/spike
+    # Set up Spike, whether locally built or pre-installed.
+    # If initially set to "__local__", SPIKE_INSTALL_DIR will be resolved
+    # to an absolute path by the installation script.
+    - source verif/regress/install-spike.sh
+    # Strip locally built binaries and libraries to reduce artifact size.
+    - '[ -f $(pwd)/tools/spike/bin/spike ] && strip $(pwd)/tools/spike/bin/spike* $(pwd)/tools/spike/lib/lib*.*'
+    - mkdir -p artifacts/tools/
+    - mv tools/spike artifacts/tools/
 
-amo-quest:
-  stage: write-back
+.fe_smoke_test:
+  stage: light tests
+  rules: *on_dev
+  before_script:
+    - mkdir -p tools
+    - mv artifacts/tools/spike tools
+    - rm -rf artifacts/
+    - mkdir -p artifacts/{reports,logs}
+    - python3 .gitlab-ci/scripts/report_fail.py
+    - echo $SYN_VCS_BASHRC; source $SYN_VCS_BASHRC
+
+.simu_after_script: &simu_after_script
+  - for i in verif/sim/*/v*_sim/*.log.iss ; do head -10000 $i > artifacts/logs/$(basename $i).head ; done
+  - python3 .gitlab-ci/scripts/report_simu.py verif/sim/logfile.log
+
+smoke:
+  extends:
+    - .fe_smoke_test
+  variables:
+    DASHBOARD_JOB_TITLE: "Smoke test $DV_SIMULATORS"
+    DASHBOARD_JOB_DESCRIPTION: "Short tests to challenge most architectures with most testbenchs configurations"
+    DASHBOARD_SORT_INDEX: 0
+    DASHBOARD_JOB_CATEGORY: "Basic"
+  parallel:
+    matrix:
+      - DV_SIMULATORS:
+        - "veri-testharness,spike"
+        - "vcs-testharness,spike"
+        - "vcs-uvm,spike"
   script:
-    - make -j${NUM_JOBS} run-amo-tests batch-mode=1 defines=WB_DCACHE
-  dependencies:
-    - build
+    - source verif/regress/smoke-tests.sh
+    - !reference [.simu_after_script]
 
-# floating point
-fp-quest:
-  stage: write-back
+gen_smoke:
+  extends:
+    - .fe_smoke_test
+  variables:
+    DASHBOARD_JOB_TITLE: "Smoke Generated test $DV_SIMULATORS"
+    DASHBOARD_JOB_DESCRIPTION: "Short generated tests to challenge the CVA6-DV on STEP1 configuration"
+    DASHBOARD_SORT_INDEX: 0
+    DASHBOARD_JOB_CATEGORY: "Basic"
+    DV_SIMULATORS: "vcs-uvm,spike"
   script:
-    - make -j${NUM_JOBS} run-fp-tests batch-mode=1 defines=WB_DCACHE
-  dependencies:
-    - build
+    - source verif/regress/smoke-gen_tests.sh
+    - !reference [.simu_after_script]
 
-bench-quest:
-  stage: write-back
+coremark:
+  extends:
+    - .fe_smoke_test
+  variables:
+    DASHBOARD_JOB_TITLE: "CoreMark"
+    DASHBOARD_JOB_DESCRIPTION: "Performance indicator"
+    DASHBOARD_SORT_INDEX: 5
+    DASHBOARD_JOB_CATEGORY: "Performance"
   script:
-    - make -j${NUM_JOBS} run-benchmarks batch-mode=1 defines=WB_DCACHE
-  dependencies:
-    - build
+    - bash verif/regress/coremark.sh --no-print
+    - python3 .gitlab-ci/scripts/report_benchmark.py --coremark verif/sim/out_*/veri-testharness_sim/core_main.log
 
-# rv64ui-p-* tests
-asm1-ver:
-  stage: write-back
+hwconfig:
+  extends:
+    - .fe_smoke_test
+  variables:
+    DASHBOARD_JOB_TITLE: "HW config $DV_SIMULATORS $DV_HWCONFIG_OPTS"
+    DASHBOARD_JOB_DESCRIPTION: "Short tests to challenge target configurations"
+    DASHBOARD_SORT_INDEX: 1
+    DASHBOARD_JOB_CATEGORY: "Basic"
+    DV_SIMULATORS: "veri-testharness,spike"
+    DV_HWCONFIG_OPTS: "--default_config=cv32a60x --isa=rv32imac"
   script:
-    - make -j${NUM_JOBS} run-asm-tests1-verilator defines=WB_DCACHE
-  dependencies:
-    - build
+    - source verif/regress/hwconfig_tests.sh
+    - python3 .gitlab-ci/scripts/report_pass.py
 
-# rv64ui-v-* tests
-asm2-ver:
-  stage: write-back
+.synthesis_test:
+  stage: heavy tests
+  timeout: 2 hours
+  before_script:
+    - !reference [.fe_smoke_test, before_script]
+  rules: &on_dev_rtl
+    - if: $CI_KIND == "regress"
+    - if: $CI_KIND == "verif"
+    - if: $CI_KIND == "dev"
+      changes:
+        paths:
+          - core/**/*
+          - corev_apu/**/*
+        compare_to: master
+    - when: manual
+      allow_failure: true
+
+asic-synthesis:
+  extends:
+    - .synthesis_test
+  variables:
+    DASHBOARD_JOB_TITLE: "ASIC Synthesis $DV_TARGET"
+    DASHBOARD_JOB_DESCRIPTION: "Synthesis indicator with specific Techno"
+    DASHBOARD_SORT_INDEX: 5
+    DASHBOARD_JOB_CATEGORY: "Synthesis"
+    INPUT_DELAY: "0.46"
+    OUTPUT_DELAY: "0.11"
+    PERIOD: "0.85"
   script:
-    - make -j${NUM_JOBS} run-asm-tests2-verilator defines=WB_DCACHE
-  dependencies:
-    - build
+    - echo $SYNTH_PERIOD
+    - echo $INPUT_DELAY
+    - echo $OUTPUT_DELAY
+    - echo $NAND2_AREA
+    - echo $FOUNDRY_PATH
+    - echo $PERIOD
+    - echo $TECH_NAME
+    - echo $DV_TARGET
+    - source verif/regress/install-cva6.sh
+    - echo $SYN_DCSHELL_BASHRC; source $SYN_DCSHELL_BASHRC
+    - make -C pd/synth cva6_synth TARGET="$DV_TARGET"
+    - mv pd/synth/cva6_${DV_TARGET}_synth_modified.v artifacts/cva6_${DV_TARGET}_synth_modified.v
+    - python3 .gitlab-ci/scripts/report_synth.py pd/synth/cva6_${DV_TARGET}/reports/$PERIOD/cva6_$(echo $TECH_NAME)_synth_area.rpt pd/synth/synthesis_batch.log
 
-# rv64um-*-* tests
-mul-ver:
-  stage: write-back
+fpga-build:
+  extends:
+    - .synthesis_test
+  variables:
+    DASHBOARD_JOB_TITLE: "FPGA Build $TARGET"
+    DASHBOARD_JOB_DESCRIPTION: "Test of FPGA build flow"
+    DASHBOARD_SORT_INDEX: 9
+    DASHBOARD_JOB_CATEGORY: "Synthesis"
+    TARGET: cv32a60x
   script:
-    - make -j${NUM_JOBS} run-mul-verilator defines=WB_DCACHE
-  dependencies:
-    - build
+    - source $VIVADO_SETUP
+    - source verif/regress/install-cva6.sh
+    - make fpga target=$TARGET
+    - mkdir -p artifacts/reports
+    - mv corev_apu/fpga/work-fpga/ariane_xilinx.bit artifacts/ariane_xilinx_$TARGET.bit
+    - python3 .gitlab-ci/scripts/report_fpga.py corev_apu/fpga/reports/ariane.utilization.rpt
 
-# atomics
-amo-ver:
-  stage: write-back
+.regress_test:
+  stage: heavy tests
+  before_script:
+    - !reference [.fe_smoke_test, before_script]
+  rules: &on_regress
+    - if: $CI_KIND == "regress"
+    - if: $CI_KIND == "verif"
+    - when: manual
+      allow_failure: true
+
+dhrystone:
+  extends:
+    - .regress_test
+  variables:
+    DASHBOARD_JOB_TITLE: "Dhrystone"
+    DASHBOARD_JOB_DESCRIPTION: "Performance indicator"
+    DASHBOARD_SORT_INDEX: 5
+    DASHBOARD_JOB_CATEGORY: "Performance"
   script:
-    - make -j${NUM_JOBS} run-amo-verilator defines=WB_DCACHE
-  dependencies:
-    - build
+    - bash verif/regress/dhrystone.sh
+    - python3 .gitlab-ci/scripts/report_benchmark.py --dhrystone verif/sim/out_*/veri-testharness_sim/dhrystone_main.log
 
-# floating point
-fp-ver:
-  stage: write-back
+riscv_arch_test:
+  extends:
+    - .regress_test
+  variables:
+    DASHBOARD_JOB_TITLE: "arch_test $DV_TARGET"
+    DASHBOARD_JOB_DESCRIPTION: "Compliance regression suite"
+    DASHBOARD_SORT_INDEX: 0
+    DASHBOARD_JOB_CATEGORY: "Test suites"
+    DV_SIMULATORS: "veri-testharness,spike"
+  script: source verif/regress/dv-riscv-arch-test.sh
+  after_script: *simu_after_script
+
+compliance:
+  extends:
+    - .regress_test
+  variables:
+    DASHBOARD_JOB_TITLE: "Compliance $DV_TARGET"
+    DASHBOARD_JOB_DESCRIPTION: "Compliance regression suite"
+    DASHBOARD_SORT_INDEX: 2
+    DASHBOARD_JOB_CATEGORY: "Test suites"
+    DV_SIMULATORS: "veri-testharness,spike"
+  script: source verif/regress/dv-riscv-compliance.sh
+  after_script: *simu_after_script
+
+riscv-tests-v:
+  extends:
+    - .regress_test
+  variables:
+    DASHBOARD_JOB_TITLE: "Riscv-test $DV_TARGET (virtual)"
+    DASHBOARD_JOB_DESCRIPTION: "Riscv-test regression suite (virtual)"
+    DASHBOARD_SORT_INDEX: 3
+    DASHBOARD_JOB_CATEGORY: "Test suites"
+    DV_SIMULATORS: "veri-testharness,spike"
+    DV_TARGET: cv64a6_imafdc_sv39
+    DV_TESTLISTS: "../tests/testlist_riscv-tests-$DV_TARGET-v.yaml"
+  script: source verif/regress/dv-riscv-tests.sh
+  after_script: *simu_after_script
+
+riscv-tests-p:
+  extends:
+    - .regress_test
+  variables:
+    DASHBOARD_JOB_TITLE: "Riscv-test $DV_TARGET (physical)"
+    DASHBOARD_JOB_DESCRIPTION: "Riscv-test regression suite (physical)"
+    DASHBOARD_SORT_INDEX: 4
+    DASHBOARD_JOB_CATEGORY: "Test suites"
+    DV_SIMULATORS: "veri-testharness,spike"
+    DV_TESTLISTS: "../tests/testlist_riscv-tests-$DV_TARGET-p.yaml"
+  script: source verif/regress/dv-riscv-tests.sh
+  after_script: *simu_after_script
+
+.verif_test:
+  extends:
+    - .regress_test
+  rules: &on_verif
+    - if: $CI_KIND == "verif"
+    - when: manual
+      allow_failure: true
+  timeout: 4h
+
+csr_test:
+  extends:
+    - .verif_test
+  variables:
+    DASHBOARD_JOB_TITLE: "csr_test $DV_TARGET"
+    DASHBOARD_JOB_DESCRIPTION: "CSR regression suite"
+    DASHBOARD_SORT_INDEX: 0
+    DASHBOARD_JOB_CATEGORY: "Test suites"
+    DV_SIMULATORS: "veri-testharness,spike"
+  script: source verif/regress/dv-riscv-csr-access-test.sh
+  after_script: *simu_after_script
+
+mmu_sv32_tests:
+  extends:
+    - .verif_test
+  variables:
+    DASHBOARD_JOB_TITLE: "mmu_sv32_tests $DV_TARGET"
+    DASHBOARD_JOB_DESCRIPTION: "MMU SV32 regression suite"
+    DASHBOARD_SORT_INDEX: 0
+    DASHBOARD_JOB_CATEGORY: "Test suites"
+    DV_SIMULATORS: "veri-testharness,spike"
+    DV_TARGET: cv32a60x
+  script: source verif/regress/dv-riscv-mmu-sv32-test.sh
+  after_script: *simu_after_script
+
+generated_tests:
+  extends:
+    - .verif_test
+  variables:
+    DASHBOARD_SORT_INDEX: 11
+    DASHBOARD_JOB_CATEGORY: "Code Coverage"
+  parallel:
+    matrix:
+      - list_num: 1
+        DASHBOARD_JOB_TITLE: "Generated Random Arithmetic tests"
+        DASHBOARD_JOB_DESCRIPTION: "Generate Random Arithmetic tests using CVA6-DV"
+      - list_num: 2
+        DASHBOARD_JOB_TITLE: "Generated Hazard Arithmetic tests"
+        DASHBOARD_JOB_DESCRIPTION: "Generate Hazard register (RAW) Arithmetic tests using CVA6-DV"
+      - list_num: 3
+        DASHBOARD_JOB_TITLE: "Generated CSR tests"
+        DASHBOARD_JOB_DESCRIPTION: "Generate Random CSR tests using CVA6-DV"
+      - list_num: 4
+        DASHBOARD_JOB_TITLE: "Generated MMU tests"
+        DASHBOARD_JOB_DESCRIPTION: "Generate Random MMU tests using CVA6-DV"
+      - list_num: 5
+        DASHBOARD_JOB_TITLE: "Generated Random Load_store tests"
+        DASHBOARD_JOB_DESCRIPTION: "Generate Random Load_store tests using CVA6-DV"
+      - list_num: 6
+        DASHBOARD_JOB_TITLE: "Generated Jump tests"
+        DASHBOARD_JOB_DESCRIPTION: "Generate Random Arithmetic Jump tests using CVA6-DV"
   script:
-    - make -j${NUM_JOBS} run-fp-verilator defines=WB_DCACHE
-  dependencies:
-    - build
+    - mkdir -p artifacts/coverage
+    - source verif/regress/dv-generated-tests.sh
+    - mv verif/sim/vcs_results/default/vcs.d/simv.vdb artifacts/coverage
+    - mv verif/sim/seedlist.yaml artifacts/coverage
+    - python3 .gitlab-ci/scripts/report_pass.py
 
-bench-ver:
-  stage: write-back
+generated_xif_tests:
+  extends:
+    - .verif_test
+  variables:
+    DASHBOARD_SORT_INDEX: 12
+    DASHBOARD_JOB_CATEGORY: "Code Coverage"
+  parallel:
+    matrix:
+      - list_num: 1
+        DASHBOARD_JOB_TITLE: "Generated Random xif tests"
+        DASHBOARD_JOB_DESCRIPTION: "Generate Random tests for cvxif using CVA6-DV"
   script:
-    - make -j${NUM_JOBS} run-benchmarks-verilator defines=WB_DCACHE
-  dependencies:
-    - build
+    - mkdir -p artifacts/coverage
+    - source verif/regress/dv-generated-xif-tests.sh
+    - mv verif/sim/vcs_results/default/vcs.d/simv.vdb artifacts/coverage
+    - mv verif/sim/seedlist.yaml artifacts/coverage
+    - python3 .gitlab-ci/scripts/report_pass.py
 
-bench-ver:
-  stage: write-back
+directed_isacov-tests:
+  extends:
+    - .verif_test
+  variables:
+    DASHBOARD_SORT_INDEX: 13
+    DASHBOARD_JOB_CATEGORY: "Functional Coverage"
+  parallel:
+    matrix:
+      - list_num: 0
+        DASHBOARD_JOB_TITLE: "Directed tests"
+        DASHBOARD_JOB_DESCRIPTION: "Execute directed tests to improve functional coverage of ISA"
   script:
-    - make -j${NUM_JOBS} run-benchmarks-verilator defines=WB_DCACHE
-  dependencies:
-    - build
+    - mkdir -p artifacts/coverage
+    - source verif/regress/dv-generated-tests.sh
+    - mv verif/sim/vcs_results/default/vcs.d/simv.vdb artifacts/coverage
+    - python3 .gitlab-ci/scripts/report_pass.py
 
-# torture:
-#   stage: write-back
-#   script:
-#     - make torture-rtest batch-mode=1
-#     - make torture-rtest-verilator
-#   dependencies:
-#     - build
-
-serdiv-quest:
-  stage: write-back
+directed_xif-tests:
+  extends:
+    - .verif_test
+  variables:
+    DASHBOARD_SORT_INDEX: 15
+    DASHBOARD_JOB_CATEGORY: "Functional Coverage"
+  parallel:
+    matrix:
+      - list_num: 0
+        DASHBOARD_JOB_TITLE: "Directed tests"
+        DASHBOARD_JOB_DESCRIPTION: "Execute directed tests to improve functional coverage of cvxif"
   script:
-    - cd tb/tb_serdiv/
-    - make simc
-    - "grep 'CI: PASSED' summary.rep"
-  dependencies:
-    - build
+    - mkdir -p artifacts/coverage
+    - source verif/regress/dv-generated-xif-tests.sh
+    - mv verif/sim/vcs_results/default/vcs.d/simv.vdb artifacts/coverage
+    - python3 .gitlab-ci/scripts/report_pass.py
 
-###################################
-# tests with write-through cache system
+.backend_test:
+  stage: backend tests
+  before_script:
+    - mkdir -p artifacts/{reports,logs}
+    - python3 .gitlab-ci/scripts/report_fail.py
 
-s-asm-quest:
-  stage: write-through
+smoke-gate:
+  extends:
+    - .backend_test
+  needs:
+    - build_tools
+    - asic-synthesis
+  variables:
+    DASHBOARD_JOB_TITLE: "Smoke Gate $DV_TARGET"
+    DASHBOARD_JOB_DESCRIPTION: "Simple test to check netlist from ASIC synthesis"
+    DASHBOARD_SORT_INDEX: 6
+    DASHBOARD_JOB_CATEGORY: "Post Synthesis"
   script:
-    - make -j${NUM_JOBS} run-asm-tests defines=WT_DCACHE batch-mode=1
-  dependencies:
-    - build
+    - mkdir -p tools
+    - mv artifacts/tools/spike tools
+    - echo $SYN_VCS_BASHRC; source $SYN_VCS_BASHRC
+    - echo $LIB_VERILOG
+    - echo $FOUNDRY_PATH
+    - echo $PERIOD
+    - echo $TECH_NAME
+    - source verif/regress/install-cva6.sh
+    - source verif/regress/install-riscv-dv.sh
+    - source verif/regress/install-riscv-tests.sh
+    - mv artifacts/cva6_${DV_TARGET}_synth_modified.v pd/synth/cva6_${DV_TARGET}_synth_modified.v
+    - cd verif/sim
+    - make vcs_clean_all
+    - python3 cva6.py --testlist=../tests/testlist_riscv-tests-cv32a60x-p.yaml --test rv32ui-p-lw --iss_yaml cva6.yaml --target $DV_TARGET --iss=spike,vcs-gate $DV_OPTS
+  after_script: *simu_after_script
 
-# atomics
-s-amo-quest:
-  stage: write-through
+fpga-boot:
+  extends:
+    - .backend_test
+  tags: [fpga,shell]
+  needs:
+    - build_tools
+    - fpga-build
+  variables:
+    DASHBOARD_JOB_TITLE: "FPGA Linux32 Boot "
+    DASHBOARD_JOB_DESCRIPTION: "Test of Linux 32 bits boot on FPGA Genesys2"
+    DASHBOARD_SORT_INDEX: 10
+    DASHBOARD_JOB_CATEGORY: "Synthesis"
+    VERILATOR_INSTALL_DIR: "NO" # Skip install and checks of verilator
+    SPIKE_INSTALL_DIR: "NO"  # Skip install and checks of spike
   script:
-    - make -j${NUM_JOBS} run-amo-tests defines=WT_DCACHE batch-mode=1
-  dependencies:
-    - build
+    - source verif/regress/install-cva6.sh
+    - source $VIVADO2022_SETUP
+    - mkdir -p corev_apu/fpga/work-fpga
+    - mv artifacts/ariane_xilinx_cv32a60x.bit corev_apu/fpga/work-fpga/ariane_xilinx.bit
+    - cd corev_apu/fpga/scripts
+    - source check_fpga_boot.sh
+    - cd -
+    - python3 .gitlab-ci/scripts/report_fpga_boot.py corev_apu/fpga/scripts/fpga_boot.rpt
 
-# floating point
-s-fp-quest:
-  stage: write-through
+code_coverage-report:
+  extends:
+    - .backend_test
+  needs:
+    - generated_tests
+    - directed_isacov-tests
+    - generated_xif_tests
+    - directed_xif-tests
+  variables:
+    DASHBOARD_JOB_TITLE: "Report merge coverage"
+    DASHBOARD_JOB_DESCRIPTION: "Report merge coverage of generated tests"
+    DASHBOARD_SORT_INDEX: 14
+    DASHBOARD_JOB_CATEGORY: "Code Coverage"
   script:
-    - make -j${NUM_JOBS} run-fp-tests defines=WT_DCACHE batch-mode=1
-  dependencies:
-    - build
+    - echo $SYN_VCS_BASHRC; source $SYN_VCS_BASHRC
+    - mkdir -p artifacts/cov_reports/
+    - mkdir -p verif/sim/vcs_results/default/vcs.d
+    - mv artifacts/coverage/simv.vdb verif/sim/vcs_results/default/vcs.d/
+    - mv artifacts/coverage/seedlist.yaml verif/sim/seedlist.yaml
+    - make -C verif/sim generate_cov_dash
+    - mv verif/sim/urgReport artifacts/cov_reports/
+    - python3 .gitlab-ci/scripts/report_coverage.py artifacts/cov_reports/urgReport/hierarchy.txt
 
-s-bench-quest:
-  stage: write-through
+check gitlab jobs status:
+  stage: find failures
+  rules:
+    - if: $DASHBOARD_URL && $CI_KIND != "none"
+      when: on_failure
+  variables:
+    DASHBOARD_JOB_TITLE: "Environment check"
+    DASHBOARD_JOB_DESCRIPTION: "Detect environment issues"
+    DASHBOARD_SORT_INDEX: 0
+    DASHBOARD_JOB_CATEGORY: "Environment"
+    GIT_SUBMODULE_STRATEGY: none
   script:
-    - make -j${NUM_JOBS} run-benchmarks defines=WT_DCACHE batch-mode=1
-  dependencies:
-    - build
+    - rm -rf artifacts/
+    - mkdir -p artifacts/reports
+    - python3 .gitlab-ci/scripts/report_envfail.py
 
-# rv64ui-p-* tests
-s-asm1-ver:
-  stage: write-through
+merge reports:
+  stage: report
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+  rules:
+    - if: $DASHBOARD_URL && $CI_KIND != "none"
+      when: always
   script:
-    - make -j${NUM_JOBS} run-asm-tests1-verilator defines=WT_DCACHE
-  dependencies:
-    - build
-
-# rv64ui-v-* tests
-s-asm2-ver:
-  stage: write-through
-  script:
-    - make -j${NUM_JOBS} run-asm-tests2-verilator defines=WT_DCACHE
-  dependencies:
-    - build
-
-# rv64um-*-* tests
-mul-ver:
-  stage: write-through
-  script:
-    - make -j${NUM_JOBS} run-mul-verilator defines=WT_DCACHE
-  dependencies:
-    - build
-
-# atomics
-amo-ver:
-  stage: write-through
-  script:
-    - make -j${NUM_JOBS} run-amo-verilator defines=WT_DCACHE
-  dependencies:
-    - build
-
-# floating point
-s-fp-ver:
-  stage: write-through
-  script:
-    - make -j${NUM_JOBS} run-fp-verilator defines=WT_DCACHE
-  dependencies:
-    - build
-
-s-bench-ver:
-  stage: write-through
-  script:
-    - make -j${NUM_JOBS} run-benchmarks-verilator defines=WT_DCACHE
-  dependencies:
-    - build
-
-s-icache-quest:
-  stage: write-through
-  script:
-    - cd tb/tb_wt_icache/
-    - make simc
-    - "grep 'CI: PASSED' summary.rep"
-
-s-dcache-quest:
-  stage: write-through
-  script:
-    - cd tb/tb_wt_dcache/
-    - make simc
-    - "grep 'CI: PASSED' RD0_summary.rep"
-    - "grep 'CI: PASSED' RD1_summary.rep"
-    - "grep 'CI: PASSED' TB_MEM_summary.rep"
-  dependencies:
-    - build
-
-# s-torture:
-#   stage: write-through
-#   script:
-#     - make torture-rtest           defines=WT_DCACHE batch-mode=1
-#     - make torture-rtest-verilator defines=WT_DCACHE
-#   dependencies:
-#     - build
+    - mkdir -p artifacts/reports
+    - ls -al artifacts/reports
+    - python3 .gitlab-ci/scripts/merge_job_reports.py artifacts/reports pipeline_report_$CI_PIPELINE_ID.yml
+  artifacts:
+    when: always
+    paths:
+      - "artifacts/reports/pipeline_report_$CI_PIPELINE_ID.yml"
