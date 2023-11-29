@@ -6,19 +6,22 @@ https://cva6.readthedocs.io/en/latest/
 
 Checkout the repository and initialize all submodules:
 ```
-$ git clone --recursive https://github.com/ThalesGroup/cva6-softcore-contest.git
+$ git clone https://github.com/ThalesGroup/cva6-softcore-contest.git
+$ git submodule update --init --recursive
 ```
 
-Do not forget to check all the details of the contest in [Annonce RISC-V contest 2022-2023 v1.pdf](./Annonce%20RISC-V%20contest%202022-2023%20v1.pdf).
+Do not forget to check all the details of the contest in [Annonce RISC-V contest 2023-2024 v2.pdf](./Annonce%20RISC-V%20contest%202023-2024%20v2.pdf).
 
-This repository contains the files needed for the 2022-2023 contest focusing on security. The 2020-2021 contest focusing on the performance can be retrieved in this repository under the cv32a6_contest_2020 GitHub tag. The 2021-2022 contest focusing on energy efficiency can be retrieved in this repository under the cv32a6_contest_2021 GitHub tag.
-
-Thank you to Wilander and Nikiforakis for providing an open source intrusion prevention evaluator [RIPE](https://github.com/johnwilander/RIPE).
+This repository contains the files needed for the 2021-2022 contest focusing on energy efficiency. The 2020-2021 contest focusing on the performance can be retrieved in this repository under the cv32a6_contest_2020 GitHub tag.
 
 # Prerequisites
 
-## Vitis/Vivado setting up
 
+## Questa tool
+Questa Prime **version 10.7** must be used to measure power during the simulations.
+Other simulation tools and versions will receive no support from the organization team.
+
+## Vitis/Vivado setting up
 For the contest, the CVA6 processor will be implemented on Zybo Z7-20 board from Digilent. This board integrates a Zynq 7000 FPGA from Xilinx. 
 To do so, **Vitis 2020.1** environment from Xilinx needs to be installed.
 
@@ -31,16 +34,18 @@ https://reference.digilentinc.com/reference/programmable-logic/guides/installati
 
 **Be careful about your linux distribution and the supported version of Vitis 2020.1 environment.**
 
-## Hardware 
 
+
+## Hardware 
 If you have not yet done so, start provisioning the following:
 
-| Reference	                 | URL                                                                             |	Remark                            |
-| :------------------------- | :------------------------------------------------------------------------------ | :-------------------------------- |
-| Zybo Z7-20	                | https://store.digilentinc.com/zybo-z7-zynq-7000-arm-fpga-soc-development-board/ | Zybo Z7-10 is too small for CVA6. |
-| Pmod USBUART               |	https://store.digilentinc.com/pmod-usbuart-usb-to-uart-interface/               |	Used for the console output       |
-| JTAG-HS2 Programming Cable |	https://store.digilentinc.com/jtag-hs2-programming-cable/                       |                                   |
-| Connectors                 |	https://store.digilentinc.com/pmod-cable-kit-2x6-pin-and-2x6-pin-to-dual-6-pin-pmod-splitter-cable/ |	At least a 6-pin connector Pmod is necessary; other references may offer it. |
+| Reference	                 | URL                                                                             |	List price |	Remark                            |
+| :------------------------- | :------------------------------------------------------------------------------ | ---------: | :-------------------------------- |
+| Zybo Z7-20	                | https://store.digilentinc.com/zybo-z7-zynq-7000-arm-fpga-soc-development-board/ |    $299.00	| Zybo Z7-10 is too small for CVA6. |
+| Pmod USBUART               |	https://store.digilentinc.com/pmod-usbuart-usb-to-uart-interface/               |      $9.99 |	Used for the console output       |
+| JTAG-HS2 Programming Cable |	https://store.digilentinc.com/jtag-hs2-programming-cable/                       |     $59.00	|                                   |
+| Connectors                 |	https://store.digilentinc.com/pmod-cable-kit-2x6-pin-and-2x6-pin-to-dual-6-pin-pmod-splitter-cable/ | $5.99 |	At least a 6-pin connector Pmod is necessary; other references may offer it. |
+
 
 # FPGA platform
 
@@ -75,196 +80,210 @@ When the bitstream is loaded, the green LED `done` lights up.
 
 Now, the hardware is ready and the hyperterminal is connected to the UART output of the FPGA. We can now start the software.
 
-## Get started with Zephyr in the docker image
+## Get started with software environment
 
-### Installation
+### Building the docker image
 
-#### Building Developer Docker Image
+Install Docker on the workstation.
 
-The developer docker image can be built using the following command from the zephyr-docker folder:
+A **sw-docker** docker container is used to ease the installation of RISC-V tools including the toolchain and OpenOCD.
 
-```
-cd zephyr-docker
-docker build -f Dockerfile --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t zephyr-build:v1 .
-```
-
-It can be used for building Zephyr samples and tests by mounting the Zephyr workspace into it:
+1. The **sw-docker** image can be built using the following command:
 
 ```
-docker run -ti --privileged -v `realpath workspace`:/workdir zephyr-build:v1
+docker build -f Dockerfile --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t sw-docker:v1 .
 ```
 
-All the following commands should be run from the docker.
+### Using the docker image
 
-### Usage
+the **sw-docker** Docker container consists of the entire RISC-V compilation chain as well as the openocd tool.
 
-#### Initialization of Zephyr
-
-To initialize Zephyr environment with the Thales modified Zephyr:
+2. To compile software applications in **sw/app**, you need to use Docker container with the following command:
 
 ```
-cd /workdir
-west init -m https://github.com/ThalesGroup/riscv-zephyr --mr main
-west update
+docker run -ti --privileged -v `realpath sw`:/workdir sw-docker:v1
 ```
 
-Thales modifications add CV32A6 support on Zybo board.
+The **sw** directory is mounted in the docker container.
+![alt text](./docs/pictures/docker_image.png)
 
-#### Building a sample application
-
-Follow the steps below to build and run a sample application:
-
-```
-west build -p -b qemu_riscv32 /workdir/zephyr/samples/hello_world
-west build -t run
-```
-
-You should now have a running hello world project on qemu_riscv32.
-
-#### Building RIPE for the CV32A6 on ZYBO
-
-The test is selected in the /workdir/ripe/src/ripe_attack_generator.c file with the following macro :
-```
-#define ATTACK_NR 1
-```
-By default its value is 1 but you should try to protect against as many scenario as possible.
-
-Now that we have a working environment, we can build the RIPE attack.
+Once in the **sw-docker** Docker container, you are in the default directory **/workdir** which corresponds to the sw directory in the host OS.
 
 ```
-west build -p -b cv32a6_zybo /workdir/ripe
+user@[CONTAINER ID]:/workdir$ ll
+total 24
+drwxrwxr-x  5 user user 4096 Nov 23 10:57 ./
+drwxr-xr-x  1 root root 4096 Nov 24 09:09 ../
+-rw-rw-r--  1 user user 2620 Nov 23 10:57 README.md
+drwxrwxr-x 18 user user 4096 Nov 23 10:59 app/
+drwxrwxr-x  5 user user 4096 Nov 23 10:57 bsp/
+drwxrwxr-x  2 user user 4096 Nov 23 10:57 utils/
 ```
 
-#### Running the RIPE application on the CV32A6
+3. To compile mnist application, run the following commands.
+```
+user@[CONTAINER ID]:/workdir$ cd app
+user@[CONTAINER ID]:/workdir/app$ make mnist
 
-You can launch the elf file located in build/zephyr/zephyr.elf with the tools provided by zephyr-sdk.
 ```
-west debug
-```
+At the end of the compilation the mnist.riscv executable file must be created.
 
-You should see
+4. Then, in the Docker container, launch **OpenOCD** in background:
 ```
-user@62813f8ca741:/workdir$ west debug
--- west debug: rebuilding
-ninja: no work to do.
--- west debug: using runner openocd
--- runners.openocd: OpenOCD GDB server running on port 3333; no thread info available
-Open On-Chip Debugger 0.11.0+dev-00725-gc5c47943d-dirty (2022-10-03-06:14)
+user@[CONTAINER ID]:/workdir/app$ openocd -f openocd_digilent_hs2.cfg &
+[1] 90
+user@[CONTAINER ID]:/workdir/app$ Open On-Chip Debugger 0.11.0-dirty (2023-11-23-09:23)
 Licensed under GNU GPL v2
 For bug reports, read
-        http://openocd.org/doc/doxygen/bugs.html
+    http://openocd.org/doc/doxygen/bugs.html
+DEPRECATED! use 'adapter driver' not 'interface'
+DEPRECATED! use 'adapter speed' not 'adapter_khz'
 Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
-Warn : `riscv set_prefer_sba` is deprecated. Please use `riscv set_mem_access` instead.
-Ready for Remote Connections
 Info : clock speed 1000 kHz
 Info : JTAG tap: riscv.cpu tap/device found: 0x249511c3 (mfg: 0x0e1 (Wintec Industries), part: 0x4951, ver: 0x2)
 Info : datacount=2 progbufsize=8
 Info : Examined RISC-V core; found 1 harts
-Info :  hart 0: XLEN=32, misa=0x40141105
+Info :  hart 0: XLEN=32, misa=0x40141101
 Info : starting gdb server for riscv.cpu on 3333
 Info : Listening on port 3333 for gdb connections
-    TargetName         Type       Endian TapName            State
---  ------------------ ---------- ------ ------------------ ------------
- 0* riscv.cpu          riscv      little riscv.cpu          halted
-
-Info : Listening on port 6333 for tcl connections
+Ready for Remote Connections
+Info : Listening on port 6666 for tcl connections
 Info : Listening on port 4444 for telnet connections
-GNU gdb (Zephyr SDK 0.15.1) 12.1
+```
+
+5. In the Docker container (same terminal), launch **gdb** as following:
+```
+user@[CONTAINER ID]:/workdir/app$ riscv-none-elf-gdb mnist.riscv
+GNU gdb (GDB) 14.0.50.20230114-git
 Copyright (C) 2022 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 Type "show copying" and "show warranty" for details.
-This GDB was configured as "--host=x86_64-build_pc-linux-gnu --target=riscv64-zephyr-elf".
+This GDB was configured as "--host=x86_64-pc-linux-gnu --target=riscv-none-elf".
 Type "show configuration" for configuration details.
 For bug reporting instructions, please see:
-<https://github.com/zephyrproject-rtos/sdk-ng/issues>.
+<https://www.gnu.org/software/gdb/bugs/>.
 Find the GDB manual and other documentation resources online at:
     <http://www.gnu.org/software/gdb/documentation/>.
 
 For help, type "help".
 Type "apropos word" to search for commands related to "word"...
-Reading symbols from /workdir/build/zephyr/zephyr.elf...
-Remote debugging using :3333
-Info : accepting 'gdb' connection on tcp/3333
-_exit (status=<optimized out>) at /workdir/zephyr/lib/libc/newlib/libc-hooks.c:281
-281             while (1) {
-Loading section rom_start, size 0x18 lma 0x80000000
-Loading section reset, size 0x4 lma 0x80000018
-Loading section exceptions, size 0x1c8 lma 0x8000001c
-Loading section text, size 0x72ec lma 0x800001e4
-Loading section initlevel, size 0x28 lma 0x800074d0
-Loading section devices, size 0x18 lma 0x800074f8
-Loading section sw_isr_table, size 0x200 lma 0x80007510
-Loading section device_handles, size 0x6 lma 0x80007710
-Loading section rodata, size 0x1120 lma 0x80007718
-Loading section datas, size 0x6c0 lma 0x8000b160
-Loading section device_states, size 0x4 lma 0x8000b820
-Loading section k_mutex_area, size 0x14 lma 0x8000b824
-Start address 0x80000000, load size 36622
-Transfer rate: 63 KB/sec, 2817 bytes/write.
+Reading symbols from mnist.riscv...
+(gdb)
 ```
 
-You can then run the RIPE application with command `c`:
+6. In **gdb**, you need to connect gdb to **openocd** as following:
+```
+(gdb) target remote :3333
+Remote debugging using :3333
+Info : accepting 'gdb' connection on tcp/3333
+Warn : Prefer GDB command "target extended-remote 3333" instead of "target remote 3333"
+0x00010ec4 in ?? ()
+(gdb)
+```
+
+7. In **gdb**, load **mnist.riscv** to CV32A6 FPGA platform by the load command:
+```
+(gdb) load
+Loading section .vectors, size 0x80 lma 0x80000000
+Loading section .init, size 0x60 lma 0x80000080
+Loading section .text, size 0xe518 lma 0x800000e0
+Loading section .rodata, size 0x11c2c lma 0x8000e5f8
+Loading section .eh_frame, size 0x3c lma 0x80020224
+Loading section .data, size 0x91c lma 0x80020260
+Loading section .sdata, size 0x60 lma 0x80020b80
+Start address 0x80000080, load size 134108
+Transfer rate: 57 KB/sec, 9579 bytes/write.
+(gdb) 
+```
+
+8. At last, in gdb, you can run the **mnist** application by command **c**:
 ```
 (gdb) c
 Continuing.
+(gdb) 
 ```
 
-On the host hyperterminal you should see:
+9. On the hyperterminal configured on /dev/ttyUSB0 11520-8-N-1, you should see:
 ```
-*** Booting Zephyr OS build zephyr-v3.2.0-324-gf5d5bc39c3af  ***
-RIPE is alive! cv32a6_zybo
-RIPE parameters:
-technique       direct
-inject param    shellcode
-code pointer    ret
-location        stack
-function        memcpy
-----------------
-Shellcode instructions:
-lui t1,  0x80001                     80001337
-addi t1, t1, 0xb1c                   b1c30313
-jalr t1                              000300e7
-----------------
-target_addr == 0x8000afec
-buffer == 0x8000aa70
-payload size == 1409
-bytes to pad: 1392
-
-overflow_ptr: 0x8000aa70
-payload: 7
-
-Executing attack... success.
-Code injection function reached.
-exit
-```
-This result shows that the penetration test has succeeded.
-
-#### Building and executing the perf_baseline test application
-
-The perf_baseline test application is measuring performance of the HW and SW on the FPGA by performing multiple compute, stack access and heap manipulations. This application is generated similarly than RIPE:
-
-```
-west build -p -b cv32a6_zybo /workdir/perf_baseline/
-```
-This step should give you the memory size of the application as follow :
-```
-Memory region         Used Size  Region Size  %age Used
-             RAM:       61936 B         1 GB      0.01%
-        IDT_LIST:          0 GB         2 KB      0.00%
+Expected  = 4
+Predicted = 4
+Result : 1/1
+credence: 82
+image env0003: 1731593 instructions
+image env0003: 2353693 cycles
 ```
 
-The execution is also similar:
+This result is obtained just after the FPGA bitstream loading.
+When MNIST is rerun system is not at initial state. For instance, cache is preloaded.
+
+
+# Simulation get started
+When the development environment is set up, it is now possible to run a simulation.
+Some software applications are available into the **sw/app** directory. Especially, there are benchmark applications such as Dhrystone and CoreMark and other test applications.
+
+To simulate a software application on CVA6 processor, run the following command:
 ```
-west debug
+$ make sim APP=’application to run’
+```
+For instance, if you want to run the **mnist** application, you will have to run :
+```
+$ make sim APP=mnist
 ```
 
-On the hyperterminal, you should have the output :
+**This command:**
+- Compiles CVA6 architecture and testbench with Questa Sim tool.
+- Compiles the software application to be run on CVA6 with RISCV tool chain.
+- Runs the simulation.
+
+Questa tool will open with waveform window. Some signals will be displayed; you are free to add as many signals as you want.
+
+Moreover, all `printf` used in software application will be displayed into the **transcript** window of Questa Sim and save into **uart** file to the root directory.
+
+> Simulation may take lot of time, so you need to be patient to have results.
+
+Simulation is programmed to run 10000000 cycles but the result is displayed before the end of simulation.
+
+For **mnist** application, at the end of the simulation, result is diplayed as following:
 ```
-*** Booting Zephyr OS build zephyr-v3.2.0-327-g869365ab012b  ***
-Begining of execution with depth 12, call number 50, seed value 63728127.000000
-SUCCESS: computed value 868200.000000 - duration: 25.300611 sec 632515274 cycles
+Expected  = 4
+Predicted = 4
+Result : 1/1
+credence: 82
+image env0003: 1731593 instructions
+image env0003: 2316653 cycles
 ```
 
-Your execution duration can be a little different than our, but the computed value should be the same.
+CVA6 software environment is detailed into `sw/app` directory.
+
+# Synthesis and place and route get started
+You can perform synthesis and place and route of the CVA6 architecture.
+
+In the first time, synthesis and place and route are carried in "out of context" mode, that means that the CVA6 architecture is synthetized in the FPGA fabric without consideration of the external IOs constraints.
+
+That allows to have an estimation of the logical resources used by the CVA6 in the FPGA fabric as well as the maximal frequency of CVA6 architecture. They are both major metrics for a computation architecture.
+
+Command to run synthesis and place & route in "out of context" mode:
+```
+$ make cva6_ooc CLK_PERIOD_NS=<period of the architecture in ns>
+```
+For example, if you want to clock the architecture to 50 MHz, you have to run:
+```
+$ make cva6_ooc CLK_PERIOD_NS=20
+```
+By default, synthesis is performed in batch mode, however it is possible to run this command using Vivado GUI:
+```
+$ make cva6_ooc CLK_PERIOD_NS=20 BATCH_MODE=0
+```
+This command generates synthesis and place and route reports in **fpga/reports_cva6_ooc_synth** and **fpga/reports_cva6_ooc_impl**.
+
+
+
+
+
+
+
+
+
+
