@@ -71,7 +71,13 @@ module ariane_testharness #(
   input  logic        jtag_TDI,
   input  logic        jtag_TRSTn,
   output logic        jtag_TDO_data,
-  output logic        jtag_TDO_driven
+  output logic        jtag_TDO_driven,
+  // VGA
+  output logic       hsync,
+  output logic       vsync,
+  output logic [3:0] red,
+  output logic [3:0] green,
+  output logic [3:0] blue
 );
 
   localparam [7:0] hart_id = '0;
@@ -121,14 +127,14 @@ module ariane_testharness #(
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH       ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH          ),
-    .AXI_ID_WIDTH   ( ariane_axi_soc::IdWidth ),
+    .AXI_ID_WIDTH   ( ariane_soc::IdWidth ),
     .AXI_USER_WIDTH ( AXI_USER_WIDTH          )
-  ) slave[ariane_soc::NrSlaves-1:0]();
+  ) slave[ariane_soc::NB_SLAVES-1:0]();
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH            ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH               ),
-    .AXI_ID_WIDTH   ( ariane_axi_soc::IdWidthSlave ),
+    .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
     .AXI_USER_WIDTH ( AXI_USER_WIDTH               )
   ) master[ariane_soc::NB_PERIPHERALS-1:0]();
 
@@ -311,7 +317,7 @@ module ariane_testharness #(
 
 
   axi2mem #(
-    .AXI_ID_WIDTH   ( ariane_axi_soc::IdWidthSlave ),
+    .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
     .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH            ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH               ),
     .AXI_USER_WIDTH ( AXI_USER_WIDTH               )
@@ -368,7 +374,7 @@ module ariane_testharness #(
   logic [AXI_DATA_WIDTH-1:0]    rom_rdata;
 
   axi2mem #(
-    .AXI_ID_WIDTH   ( ariane_axi_soc::IdWidthSlave ),
+    .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
     .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH            ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH               ),
     .AXI_USER_WIDTH ( AXI_USER_WIDTH               )
@@ -404,7 +410,7 @@ module ariane_testharness #(
   `AXI_ASSIGN_TO_REQ(gpio_req, master[ariane_soc::GPIO])
   `AXI_ASSIGN_FROM_RESP(master[ariane_soc::GPIO], gpio_resp)
   axi_err_slv #(
-    .AxiIdWidth ( ariane_axi_soc::IdWidthSlave ),
+    .AxiIdWidth ( ariane_soc::IdWidthSlave ),
     .req_t      ( ariane_axi_soc::req_slv_t    ),
     .resp_t     ( ariane_axi_soc::resp_slv_t   )
   ) i_gpio_err_slv (
@@ -422,7 +428,7 @@ module ariane_testharness #(
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH            ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH               ),
-    .AXI_ID_WIDTH   ( ariane_axi_soc::IdWidthSlave ),
+    .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
     .AXI_USER_WIDTH ( AXI_USER_WIDTH               )
   ) dram();
 
@@ -438,7 +444,7 @@ module ariane_testharness #(
   axi_riscv_atomics_wrap #(
     .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH            ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH               ),
-    .AXI_ID_WIDTH   ( ariane_axi_soc::IdWidthSlave ),
+    .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
     .AXI_USER_WIDTH ( AXI_USER_WIDTH               ),
     .AXI_MAX_WRITE_TXNS ( 1  ),
     .RISCV_WORD_WIDTH   ( 64 )
@@ -452,7 +458,7 @@ module ariane_testharness #(
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH            ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH               ),
-    .AXI_ID_WIDTH   ( ariane_axi_soc::IdWidthSlave ),
+    .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
     .AXI_USER_WIDTH ( AXI_USER_WIDTH               )
   ) dram_delayed();
 
@@ -473,7 +479,7 @@ module ariane_testharness #(
   );*/
 
   axi2mem #(
-    .AXI_ID_WIDTH   ( ariane_axi_soc::IdWidthSlave ),
+    .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
     .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH            ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH               ),
     .AXI_USER_WIDTH ( AXI_USER_WIDTH               )
@@ -531,18 +537,19 @@ module ariane_testharness #(
     '{ idx: ariane_soc::SPI,      start_addr: ariane_soc::SPIBase,      end_addr: ariane_soc::SPIBase + ariane_soc::SPILength           },
     '{ idx: ariane_soc::Ethernet, start_addr: ariane_soc::EthernetBase, end_addr: ariane_soc::EthernetBase + ariane_soc::EthernetLength },
     '{ idx: ariane_soc::GPIO,     start_addr: ariane_soc::GPIOBase,     end_addr: ariane_soc::GPIOBase + ariane_soc::GPIOLength         },
+    '{ idx: ariane_soc::VGA,      start_addr: ariane_soc::VGABase,      end_addr: ariane_soc::VGABase +  ariane_soc::VGALength          },
     '{ idx: ariane_soc::DRAM,     start_addr: ariane_soc::DRAMBase,     end_addr: ariane_soc::DRAMBase + ariane_soc::DRAMLength         }
   };
 
   localparam axi_pkg::xbar_cfg_t AXI_XBAR_CFG = '{
-    NoSlvPorts: unsigned'(ariane_soc::NrSlaves),
+    NoSlvPorts: unsigned'(ariane_soc::NB_SLAVES),
     NoMstPorts: unsigned'(ariane_soc::NB_PERIPHERALS),
     MaxMstTrans: unsigned'(1), // Probably requires update
     MaxSlvTrans: unsigned'(1), // Probably requires update
     FallThrough: 1'b0,
     LatencyMode: axi_pkg::NO_LATENCY,
-    AxiIdWidthSlvPorts: unsigned'(ariane_axi_soc::IdWidth),
-    AxiIdUsedSlvPorts: unsigned'(ariane_axi_soc::IdWidth),
+    AxiIdWidthSlvPorts: unsigned'(ariane_soc::IdWidth),
+    AxiIdUsedSlvPorts: unsigned'(ariane_soc::IdWidth),
     UniqueIds: 1'b0,
     AxiAddrWidth: unsigned'(AXI_ADDRESS_WIDTH),
     AxiDataWidth: unsigned'(AXI_DATA_WIDTH),
@@ -576,7 +583,7 @@ module ariane_testharness #(
   clint #(
     .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH            ),
     .AXI_DATA_WIDTH ( AXI_DATA_WIDTH               ),
-    .AXI_ID_WIDTH   ( ariane_axi_soc::IdWidthSlave ),
+    .AXI_ID_WIDTH   ( ariane_soc::IdWidthSlave ),
     .NR_CORES       ( 1                            ),
     .axi_req_t      ( ariane_axi_soc::req_slv_t    ),
     .axi_resp_t     ( ariane_axi_soc::resp_slv_t   )
@@ -595,27 +602,41 @@ module ariane_testharness #(
   `AXI_ASSIGN_FROM_RESP(master[ariane_soc::CLINT], axi_clint_resp)
 
   // ---------------
+  // VGA
+  // ---------------
+  logic [4:0]    red_o;
+  logic [5:0]    green_o;
+  logic [4:0]    blue_o;
+  
+  assign red[3:0] = red_o[4:1];
+  assign green[3:0] = green_o[5:2];
+  assign blue[3:0] = blue_o[4:1];
+
+  // ---------------
   // Peripherals
   // ---------------
   logic tx, rx;
   logic [1:0] irqs;
 
   ariane_peripherals #(
-    .AxiAddrWidth ( AXI_ADDRESS_WIDTH            ),
-    .AxiDataWidth ( AXI_DATA_WIDTH               ),
-    .AxiIdWidth   ( ariane_axi_soc::IdWidthSlave ),
-    .AxiUserWidth ( AXI_USER_WIDTH               ),
+    .AxiAddrWidth ( AXI_ADDRESS_WIDTH        ),
+    .AxiDataWidth ( AXI_DATA_WIDTH           ),
+    .AxiIdWidth   ( ariane_soc::IdWidthSlave ),
+    .AxiUserWidth ( AXI_USER_WIDTH           ),
     .InclUART     ( 1'b1                     ),
     .InclSPI      ( 1'b0                     ),
     .InclEthernet ( 1'b0                     )
   ) i_ariane_peripherals (
     .clk_i     ( clk_i                        ),
+    .clk_vga_i ( clk                          ), //pxl_clk
     .rst_ni    ( ndmreset_n                   ),
     .plic      ( master[ariane_soc::PLIC]     ),
     .uart      ( master[ariane_soc::UART]     ),
     .spi       ( master[ariane_soc::SPI]      ),
     .ethernet  ( master[ariane_soc::Ethernet] ),
     .timer     ( master[ariane_soc::Timer]    ),
+    .vga       ( master[ariane_soc::VGA]      ),
+    .mvga      ( slave[ariane_soc::MVGA]      ),
     .irq_o     ( irqs                         ),
     .rx_i      ( rx                           ),
     .tx_o      ( tx                           ),
@@ -633,7 +654,13 @@ module ariane_testharness #(
     .spi_clk_o ( ),
     .spi_mosi  ( ),
     .spi_miso  ( ),
-    .spi_ss    ( )
+    .spi_ss    ( ),
+    // VGA interface
+    .hsync     (hsync       ),
+    .vsync     (vsync       ),
+    .red       (red_o       ),
+    .green     (green_o     ),
+    .blue      (blue_o      )
   );
 
   uart_bus #(.BAUD_RATE(115200), .PARITY_EN(0)) i_uart_bus (.rx(tx), .tx(rx), .rx_en(1'b1));
@@ -709,8 +736,8 @@ module ariane_testharness #(
   // to use it
   Axi4PC #(
     .DATA_WIDTH(ariane_axi_soc::DataWidth),
-    .WID_WIDTH(ariane_axi_soc::IdWidthSlave),
-    .RID_WIDTH(ariane_axi_soc::IdWidthSlave),
+    .WID_WIDTH(ariane_soc::IdWidthSlave),
+    .RID_WIDTH(ariane_soc::IdWidthSlave),
     .AWUSER_WIDTH(ariane_axi_soc::UserWidth),
     .WUSER_WIDTH(ariane_axi_soc::UserWidth),
     .BUSER_WIDTH(ariane_axi_soc::UserWidth),

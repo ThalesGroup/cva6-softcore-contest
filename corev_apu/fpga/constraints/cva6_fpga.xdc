@@ -20,3 +20,16 @@ set_multicycle_path -from [get_pins {i_rstgen_main/i_rstgen_bypass/synch_regs_q_
 set_multicycle_path -hold -from [get_pins {i_rstgen_main/i_rstgen_bypass/synch_regs_q_reg[3]/C}] 3
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+

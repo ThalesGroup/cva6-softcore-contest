@@ -23,6 +23,16 @@ build/
 *.out
 *.jou
 *.o
+*.xci
+*.pb
+*.rpt
+*.bin
+*.D
+*.hex
+*.mem
+*.a
+*.coe
+*.riscv
 uart
 work-ver/*
 corev_apu/fpga/work-fpga
@@ -33,6 +43,10 @@ corev_apu/fpga/ariane.cache/
 corev_apu/fpga/ariane.hw/
 corev_apu/fpga/.Xil/
 corev_apu/fpga/mode*
+corev_apu/fpga/*.runs/
+corev_apu/fpga/*.cache/
+corev_apu/fpga/*.hw/
+corev_apu/fpga/reports_*/
 stdout/
 work-dpi/
 tb/riscv-isa-sim/
