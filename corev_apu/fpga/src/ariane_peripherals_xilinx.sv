@@ -975,39 +975,38 @@ module ariane_peripherals #(
     
   // VGA interface
   axi_vga #(
-    .RedWidth(   RedWidth)   ,
-    .GreenWidth(GreenWidth)    ,
-    .BlueWidth(BlueWidth)     ,
-    .HCountWidth(HCountWidth)   ,
-    .VCountWidth(VCountWidth)   ,
-    .AXIAddrWidth   (AxiAddrWidth           ),
-    .AXIDataWidth   (AxiDataWidth           ),
-    .AXIStrbWidth   (AXIStrbWidth           ),
-    .axi_req_t      (ariane_axi_soc::req_t  ),
-    .axi_resp_t     (ariane_axi_soc::resp_t ),
-    .reg_req_t      (reg_vga_req_t          ),
-    .reg_rsp_t      (reg_vga_rsp_t          )
+    .RedWidth     ( RedWidth               ),
+    .GreenWidth   ( GreenWidth             ),
+    .BlueWidth    ( BlueWidth              ),
+    .HCountWidth  ( HCountWidth            ),
+    .VCountWidth  ( VCountWidth            ),
+    .AXIAddrWidth ( AxiAddrWidth           ),
+    .AXIDataWidth ( AxiDataWidth           ),
+    .AXIStrbWidth ( AXIStrbWidth           ),
+    .axi_req_t    ( ariane_axi_soc::req_t  ),
+    .axi_resp_t   ( ariane_axi_soc::resp_t ),
+    .reg_req_t    ( reg_vga_req_t          ),
+    .reg_resp_t   ( reg_vga_rsp_t          )
   ) i_axi_vga (
-    .clk_i          (clk_i          ),
-    .pxl_clk        (clk_vga_i      ),
-    .rst_ni         (rst_ni         ),
+    .clk_i          ( clk_i         ),
+    .rst_ni         ( rst_ni        ),
 
-    .test_mode_en_i (1'b1           ),
+    .test_mode_en_i ( 1'b1          ),
 
     // Regbus config ports
-    .reg_req_i      (vga_reg_req   ),
-    .reg_rsp_o      (vga_reg_rsp   ),
+    .reg_req_i      ( vga_reg_req   ),
+    .reg_rsp_o      ( vga_reg_rsp   ),
 
     // AXI Data ports
-    .axi_req_o      (vga_axi_req   ),
-    .axi_resp_i     (vga_axi_resp  ),
+    .axi_req_o      ( vga_axi_req   ),
+    .axi_resp_i     ( vga_axi_resp  ),
 
     // VGA interface
-    .hsync_o        (hsync         ),
-    .vsync_o        (vsync         ),
-    .red_o          (red           ),
-    .green_o        (green         ),
-    .blue_o         (blue          )
+    .hsync_o        ( hsync         ),
+    .vsync_o        ( vsync         ),
+    .red_o          ( red           ),
+    .green_o        ( green         ),
+    .blue_o         ( blue          )
   );
 
 endmodule

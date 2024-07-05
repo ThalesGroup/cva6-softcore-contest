@@ -92,6 +92,17 @@ ${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/unread.sv
 ${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/popcount.sv
 ${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/exp_backoff.sv
 
+${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/stream_join.sv 
+${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/stream_fifo.sv
+${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/onehot_to_bin.sv 
+${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/lzc.sv
+${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/id_queue.sv
+${CVA6_REPO_DIR}/vendor/pulp-platform/axi/src/axi_burst_splitter.sv
+${CVA6_REPO_DIR}/corev_apu/register_interface/vendor/lowrisc_opentitan/src/prim_subreg_ext.sv
+${CVA6_REPO_DIR}/corev_apu/register_interface/vendor/lowrisc_opentitan/src/prim_subreg_arb.sv
+${CVA6_REPO_DIR}/corev_apu/register_interface/vendor/lowrisc_opentitan/src/prim_subreg_shadow.sv
+${CVA6_REPO_DIR}/corev_apu/register_interface/vendor/lowrisc_opentitan/src/prim_subreg.sv
+
 // Common Cells for example coprocessor
 ${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/counter.sv
 ${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/delta_counter.sv
