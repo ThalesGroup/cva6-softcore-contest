@@ -16,15 +16,16 @@
 `include "register_interface/typedef.svh"
 
 module ariane_peripherals #(
-  parameter int AxiAddrWidth = -1,
-  parameter int AxiDataWidth = -1,
-  parameter int AxiIdWidth   = -1,
-  parameter int AxiUserWidth = 1,
-  parameter bit InclUART     = 1,
-  parameter bit InclSPI      = 0,
-  parameter bit InclEthernet = 0,
-  parameter bit InclGPIO     = 0,
-  parameter bit InclTimer    = 1,
+  parameter int AxiAddrWidth     = -1,
+  parameter int AxiDataWidth     = -1,
+  parameter int AxiIdWidthMaster = -1,
+  parameter int AxiIdWidth       = -1,
+  parameter int AxiUserWidth     = 1,
+  parameter bit InclUART         = 1,
+  parameter bit InclSPI          = 0,
+  parameter bit InclEthernet     = 0,
+  parameter bit InclGPIO         = 0,
+  parameter bit InclTimer        = 1,
   //VGA
   parameter int unsigned RedWidth     = 5,
   parameter int unsigned GreenWidth   = 6,
@@ -986,12 +987,13 @@ module ariane_peripherals #(
     .axi_req_t    ( ariane_axi_soc::req_t  ),
     .axi_resp_t   ( ariane_axi_soc::resp_t ),
     .reg_req_t    ( reg_vga_req_t          ),
-    .reg_resp_t   ( reg_vga_rsp_t          )
+    .reg_rsp_t    ( reg_vga_rsp_t          )
   ) i_axi_vga (
     .clk_i          ( clk_i         ),
+    .pxl_clk        ( clk_i         ),
     .rst_ni         ( rst_ni        ),
 
-    .test_mode_en_i ( 1'b1          ),
+    .test_mode_en_i ( 1'b0          ),
 
     // Regbus config ports
     .reg_req_i      ( vga_reg_req   ),

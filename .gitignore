@@ -46,6 +46,7 @@ corev_apu/fpga/mode*
 corev_apu/fpga/*.runs/
 corev_apu/fpga/*.cache/
 corev_apu/fpga/*.hw/
+corev_apu/fpga/*.srcs/
 corev_apu/fpga/reports_*/
 stdout/
 work-dpi/

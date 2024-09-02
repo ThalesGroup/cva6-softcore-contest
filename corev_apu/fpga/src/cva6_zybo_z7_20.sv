@@ -776,14 +776,15 @@ module cva6_zybo_z7_20 (
   // Peripherals
   // ---------------
   ariane_peripherals #(
-    .AxiAddrWidth ( AxiAddrWidth     ),
-    .AxiDataWidth ( AxiDataWidth     ),
-    .AxiIdWidth   ( AxiIdWidthSlaves ),
-    .AxiUserWidth ( AxiUserWidth     ),
-    .InclUART     ( 1'b1             ),
-    .InclGPIO     ( 1'b0             ),
-    .InclSPI      ( 1'b0             ),
-    .InclEthernet ( 1'b0             )
+    .AxiAddrWidth     ( AxiAddrWidth     ),
+    .AxiDataWidth     ( AxiDataWidth     ),
+    .AxiIdWidthMaster ( AxiIdWidthMaster ),
+    .AxiIdWidth       ( AxiIdWidthSlaves ),
+    .AxiUserWidth     ( AxiUserWidth     ),
+    .InclUART         ( 1'b1             ),
+    .InclGPIO         ( 1'b0             ),
+    .InclSPI          ( 1'b0             ),
+    .InclEthernet     ( 1'b0             )
   ) i_ariane_peripherals (
     .clk_i          ( clk                          ),
     .clk_200MHz_i   ( 1'b0                         ),
