@@ -1,0 +1,28 @@
+if TARGET_OPENHWGROUP_CVA6_GENESYSII
+
+config SYS_BOARD
+	default "cva6_genesysII"
+
+config SYS_VENDOR
+	default "openhwgroup"
+
+config SYS_CPU
+	default "generic"
+
+config SYS_CONFIG_NAME
+	default "openhwgroup_cva6_genesysII"
+
+config SYS_TEXT_BASE
+	default 0x80200000 if SPL
+	default 0x80000000 if !RISCV_SMODE
+	default 0x80200000 if RISCV_SMODE && ARCH_RV64I
+	default 0x80500000 if RISCV_SMODE && ARCH_RV32I
+
+config SPL_TEXT_BASE
+	default 0x08000000
+
+config BOARD_SPECIFIC_OPTIONS # dummy
+    def_bool y
+    select GENERIC_RISCV
+
+endif
