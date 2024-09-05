@@ -42,7 +42,6 @@ bsp_dir = ../bsp
 #--------------------------------------------------------------------
 
 bmarks = \
-	coremark \
 	ddr_test \
 	helloworld \
 	helloworld_printf \

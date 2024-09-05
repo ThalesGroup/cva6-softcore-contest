@@ -40,9 +40,6 @@
 [submodule "core/cache_subsystem/hpdcache"]
 	path = core/cache_subsystem/hpdcache
 	url = https://github.com/openhwgroup/cv-hpdcache.git
-[submodule "corev_apu/fpga/src/axi_vga"]
-	path = corev_apu/fpga/src/axi_vga
-	url = https://github.com/pulp-platform/axi_vga.git
 [submodule "cva6-sdk/buildroot"]
 	path = cva6-sdk/buildroot
 	url = git://git.buildroot.net/buildroot
