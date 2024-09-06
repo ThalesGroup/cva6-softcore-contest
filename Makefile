@@ -691,7 +691,7 @@ program_cva6_fpga:
 	
 sdk:
 	@echo "[FPGA] Building Linux using Buildroot"
-	cd cva6_sdk && make images
+	cd cva6-sdk && make images
 
 
 build-spike:
