@@ -689,6 +689,10 @@ program_cva6_fpga:
 	@echo "[FPGA] Program FPGA"
 	cd corev_apu/fpga && make program_cva6_fpga BOARD=$(BOARD) XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) BATCH_MODE=$(BATCH_MODE)
 	
+sdk:
+	@echo "[FPGA] Building Linux using Buildroot"
+	cd cva6_sdk && make images
+
 
 build-spike:
 	cd tb/riscv-isa-sim && mkdir -p build && cd build && ../configure --prefix=`pwd`/../install --with-fesvr=$(RISCV) --enable-commitlog && make -j8 install
