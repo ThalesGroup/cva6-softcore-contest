@@ -215,7 +215,7 @@ index 0000000000..e86abc98ba
 +	writel(info->fix.smem_start, base + CVGA_LOW_START_ADDR);
 +	writel((uint32_t)0x0, base + CVGA_HIGH_START_ADDR);	
 +	writel(info->fix.smem_len, base + CVGA_FRAME_SIZE);
-+	writel((uint32_t)0xff, base + CVGA_BURST_LENGTH);
++	writel((uint32_t)0xf, base + CVGA_BURST_LENGTH);
 +	
 +	//writel((uint32_t)0x1, base + CVGA_CONTROL); //start
 +	}
