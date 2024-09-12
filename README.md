@@ -67,7 +67,7 @@ In our case, we use this cable to program software applications on the CV32A6 in
 
 2. Generate the bitstream of the FPGA platform:
 ```
-make cva6_fpga
+make cva6_fpga_ddr
 ```
 
 3. When the bitstream is generated, switch on Zybo board and run:
@@ -82,6 +82,11 @@ When the bitstream is loaded, the green LED `done` lights up.
 Now, the hardware is ready and the hyperterminal is connected to the UART output of the FPGA. We can now start the software.
 
 ## Build and boot Linux on the FPGA
+
+To use Linux, you need to generate the bitstream using:
+```
+make cva6_fpga_ddr
+```
 
 ### Building Linux
 
