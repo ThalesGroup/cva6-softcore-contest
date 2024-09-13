@@ -131,7 +131,8 @@ ariane_pkg := \
               corev_apu/register_interface/src/reg_intf.sv           \
               corev_apu/tb/ariane_soc_pkg.sv                         \
               corev_apu/riscv-dbg/src/dm_pkg.sv                      \
-              corev_apu/tb/ariane_axi_soc_pkg.sv
+              corev_apu/tb/ariane_axi_soc_pkg.sv                     \
+              corev_apu/fpga/src/axi_vga/src/axi_vga_reg_pkg.sv
 ariane_pkg := $(addprefix $(root-dir), $(ariane_pkg))
 
 # Test packages
@@ -175,6 +176,8 @@ src :=  core/include/$(target)_config_pkg.sv                                    
         $(wildcard corev_apu/fpga/src/axi_slice/src/*.sv)                            \
         $(wildcard corev_apu/src/axi_riscv_atomics/src/*.sv)                         \
         $(wildcard corev_apu/axi_mem_if/src/*.sv)                                    \
+        $(wildcard corev_apu/fpga/src/axi_vga/src/*.sv)                              \
+        corev_apu/fpga/src/axi_vga/src/afifo.v                                       \
         corev_apu/rv_plic/rtl/rv_plic_target.sv                                      \
         corev_apu/rv_plic/rtl/rv_plic_gateway.sv                                     \
         corev_apu/rv_plic/rtl/plic_regmap.sv                                         \
@@ -192,7 +195,7 @@ src :=  core/include/$(target)_config_pkg.sv                                    
         vendor/pulp-platform/common_cells/src/rstgen_bypass.sv                       \
         vendor/pulp-platform/common_cells/src/rstgen.sv                              \
         vendor/pulp-platform/common_cells/src/addr_decode.sv                         \
-	vendor/pulp-platform/common_cells/src/stream_register.sv                     \
+        vendor/pulp-platform/common_cells/src/stream_register.sv                     \
         vendor/pulp-platform/axi/src/axi_cut.sv                                      \
         vendor/pulp-platform/axi/src/axi_join.sv                                     \
         vendor/pulp-platform/axi/src/axi_delayer.sv                                  \
@@ -210,6 +213,16 @@ src :=  core/include/$(target)_config_pkg.sv                                    
         vendor/pulp-platform/common_cells/src/deprecated/fifo_v2.sv                  \
         vendor/pulp-platform/common_cells/src/stream_delay.sv                        \
         vendor/pulp-platform/common_cells/src/lfsr_16bit.sv                          \
+		vendor/pulp-platform/common_cells/src/fifo_v3.sv                             \
+        vendor/pulp-platform/common_cells/src/stream_join.sv                         \
+        vendor/pulp-platform/common_cells/src/stream_fifo.sv                         \
+        vendor/pulp-platform/common_cells/src/onehot_to_bin.sv                       \
+        vendor/pulp-platform/common_cells/src/lzc.sv                                 \
+        vendor/pulp-platform/common_cells/src/id_queue.sv                            \
+        vendor/pulp-platform/axi/src/axi_burst_splitter.sv                           \
+        corev_apu/register_interface/vendor/lowrisc_opentitan/src/prim_subreg_ext.sv \
+        corev_apu/register_interface/vendor/lowrisc_opentitan/src/prim_subreg_arb.sv \
+        corev_apu/register_interface/vendor/lowrisc_opentitan/src/prim_subreg.sv     \
         vendor/pulp-platform/tech_cells_generic/src/deprecated/cluster_clk_cells.sv  \
         vendor/pulp-platform/tech_cells_generic/src/deprecated/pulp_clk_cells.sv     \
         vendor/pulp-platform/tech_cells_generic/src/rtl/tc_clk.sv                    \
@@ -342,7 +355,7 @@ sim: build
 	echo $(riscv-benchmarks)
 	vsim${questa_version} +permissive $(questa-flags) $(questa-cmd) -lib $(library) +MAX_CYCLES=$(max_cycles) +UVM_TESTNAME=$(test_case) \
 	 $(uvm-flags) $(QUESTASIM_FLAGS)  \
-	${top_level}_optimized +permissive-off +binary_mem=$(APP_PATH)/$(APP).mem | tee sim.log
+	${top_level}_optimized +permissive-off +binary_mem=fw_payload.mem | tee sim.log
 
 
 run-benchmarks: $(riscv-benchmarks)
@@ -676,6 +689,10 @@ program_cva6_fpga:
 	@echo "[FPGA] Program FPGA"
 	cd corev_apu/fpga && make program_cva6_fpga BOARD=$(BOARD) XILINX_PART=$(XILINX_PART) XILINX_BOARD=$(XILINX_BOARD) CLK_PERIOD_NS=$(CLK_PERIOD_NS) BATCH_MODE=$(BATCH_MODE)
 	
+sdk:
+	@echo "[FPGA] Building Linux using Buildroot"
+	cd cva6-sdk && make images
+
 
 build-spike:
 	cd tb/riscv-isa-sim && mkdir -p build && cd build && ../configure --prefix=`pwd`/../install --with-fesvr=$(RISCV) --enable-commitlog && make -j8 install

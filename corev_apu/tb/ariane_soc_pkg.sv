@@ -17,23 +17,33 @@ package ariane_soc;
   localparam int unsigned NumSources = 30;
   localparam int unsigned MaxPriority = 7;
 
-  localparam NrSlaves = 2; // actually masters, but slaves on the crossbar
+  typedef enum int unsigned {
+    CVA6   = 0,
+    DEBUG  = 1,   
+    MVGA   = 2 // dma master port for the engine (transactions) 
+  } axi_master_t;
+  
+  localparam NB_SLAVES = MVGA + 1; // actually masters, but slaves on the crossbar
+  
+  // 4 is recommended by AXI standard, so lets stick to it, do not change
+  localparam IdWidth   = 4;
+  localparam IdWidthSlave = IdWidth + $clog2(NB_SLAVES);
 
   typedef enum int unsigned {
-    DRAM     = 0,
-    GPIO     = 1,
-    Ethernet = 2,
-    SPI      = 3,
-    Timer    = 4,
-    UART     = 5,
-    PLIC     = 6,
-    CLINT    = 7,
-    ROM      = 8,
-    Debug    = 9
-  } axi_slaves_t;
+    DRAM     =  0,
+    VGA      =  1,
+    GPIO     =  2,
+    Ethernet =  3,
+    SPI      =  4,
+    Timer    =  5,
+    UART     =  6,
+    PLIC     =  7,
+    CLINT    =  8,
+    ROM      =  9,
+    Debug    =  10
+  } axi_slaves_t; // must be in order from highest address to lowest
 
   localparam NB_PERIPHERALS = Debug + 1;
-
 
   localparam logic[63:0] DebugLength    = 64'h1000;
   localparam logic[63:0] ROMLength      = 64'h10000;
@@ -44,6 +54,7 @@ package ariane_soc;
   localparam logic[63:0] SPILength      = 64'h800000;
   localparam logic[63:0] EthernetLength = 64'h10000;
   localparam logic[63:0] GPIOLength     = 64'h1000;
+  localparam logic[63:0] VGALength      = 64'h1000;
   localparam logic[63:0] DRAMLength     = 64'h40000000; // 1GByte of DDR (split between two chips on Genesys2)
   localparam logic[63:0] SRAMLength     = 64'h1800000;  // 24 MByte of SRAM
   // Instantiate AXI protocol checkers
@@ -59,6 +70,7 @@ package ariane_soc;
     SPIBase      = 64'h2000_0000,
     EthernetBase = 64'h3000_0000,
     GPIOBase     = 64'h4000_0000,
+    VGABase      = 64'h5000_0000,
     DRAMBase     = 64'h8000_0000
   } soc_bus_start_t;
 

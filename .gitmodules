@@ -40,3 +40,15 @@
 [submodule "core/cache_subsystem/hpdcache"]
 	path = core/cache_subsystem/hpdcache
 	url = https://github.com/openhwgroup/cv-hpdcache.git
+[submodule "cva6-sdk/buildroot"]
+	path = cva6-sdk/buildroot
+	url = git://git.buildroot.net/buildroot
+[submodule "cva6-sdk/riscv-isa-sim"]
+	path = cva6-sdk/riscv-isa-sim
+	url = https://github.com/riscv/riscv-isa-sim.git
+[submodule "cva6-sdk/riscv-tests"]
+	path = cva6-sdk/riscv-tests
+	url = https://github.com/riscv/riscv-tests.git
+[submodule "cva6-sdk/vitetris"]
+	path = cva6-sdk/vitetris
+	url = https://github.com/pulp-platform/vitetris.git

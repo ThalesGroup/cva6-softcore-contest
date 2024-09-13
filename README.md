@@ -6,8 +6,9 @@ https://cva6.readthedocs.io/en/latest/
 
 Checkout the repository and initialize all submodules:
 ```
-$ git clone https://github.com/ThalesGroup/cva6-softcore-contest.git
-$ git submodule update --init --recursive
+git clone https://github.com/ThalesGroup/cva6-softcore-contest.git
+git checkout vga_linux
+git submodule update --init --recursive
 ```
 
 Do not forget to check all the details of the contest in [Annonce RISC-V contest 2023-2024 v2.pdf](./Annonce%20RISC-V%20contest%202023-2024%20v2.pdf).
@@ -66,12 +67,12 @@ In our case, we use this cable to program software applications on the CV32A6 in
 
 2. Generate the bitstream of the FPGA platform:
 ```
-$ make cva6_fpga
+make cva6_fpga_ddr
 ```
 
 3. When the bitstream is generated, switch on Zybo board and run:
 ```
-$ make program_cva6_fpga
+make program_cva6_fpga
 ```
 When the bitstream is loaded, the green LED `done` lights up.
 ![alt text](./docs/pictures/20201204_160542.jpg)
@@ -79,6 +80,58 @@ When the bitstream is loaded, the green LED `done` lights up.
 4. Get a hyperterminal configured on /dev/ttyUSB0 115200-8-N-1
 
 Now, the hardware is ready and the hyperterminal is connected to the UART output of the FPGA. We can now start the software.
+
+## Build and boot Linux on the FPGA
+
+To use Linux, you need to generate the bitstream using:
+```
+make cva6_fpga_ddr
+```
+
+### Building Linux
+
+This project uses Buildroot to build a small Linux image that can be run on CVA6. Several steps are needed before booting Linux. OpenSBI and U-Boot are used to interface with the CVA6 platform and provide needed functions to Linux. The `cva6-sdk` folder contains everything that is needed. To build the images, run:
+```
+make sdk
+```
+If you want to add files to Linux' file system, you can simply add them to the `cva6-sdk/rootfs/` folder.
+
+### Running Linux on Zybo
+
+To run Linux on the Zybo FPGA, you will need a RISC-V version of GDB, if you don't already have it, a version is compiled by Buildroot when you build the Linux image. You can find it at `cva6-sdk/buildroot/output/host/bin/riscv32-buildroot-linux-gnu-gdb`.
+Flash the bitstream as explained previously and then run the following command from the root of the project:
+```
+openocd -f corev_apu/fpga/cva6.cfg
+```
+If it produces error, try resetting CVA6 by clicking `BTN3` of the board.
+In a separate terminal, go to the `cva6-sdk/install32` folder and run the following command:
+```
+/path/to//riscv32-buildroot-linux-gnu-gdb fw_payload.elf
+```
+This will start GDB from which you will have to run the following commands:
+```
+tar ext :3333
+restore uImage binary 0x90000000
+load
+set $a0=0
+set $a1=0x11200
+c
+```
+These commands copy the images in CVA6's memory and setup the needed arguments to start the boot sequence.
+The `c` command will start the execution of the different programs starting with OpenOCD, the U-Boot and finally Linux, all is automated and should take about 2-3 minutes to get inside Linux.
+
+### Setting up the VGA link
+
+Plug the PmodVGA dongle into the `JC` and `JD` Pmod connectors of the Zybo board (between the HS2 and the serial adapters).
+In Linux, run the following commands:
+```
+dd if=/dev/zero of=/dev/fb0 count=1200
+devmem 0x50000000 8 0x1
+export SDL_VIDEODRIVER=dummy
+chocolate-doom
+``` 
+This will start Doom running on the VGA display. There are other test programs to play with the VGA display such as the `fb-test-*` suite or `fbv`.
+Have fun!
 
 ## Get started with software environment
 

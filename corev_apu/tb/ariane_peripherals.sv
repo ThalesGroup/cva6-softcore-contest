@@ -8,6 +8,8 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+`include "axi/assign.svh"
+`include "axi/typedef.svh"
 `include "register_interface/assign.svh"
 `include "register_interface/typedef.svh"
 
@@ -21,15 +23,24 @@ module ariane_peripherals #(
     parameter bit InclSPI      = 0,
     parameter bit InclEthernet = 0,
     parameter bit InclGPIO     = 0,
-    parameter bit InclTimer    = 1
+    parameter bit InclTimer    = 1,
+    //VGA
+    parameter int unsigned RedWidth     = 5,
+    parameter int unsigned GreenWidth   = 6,
+    parameter int unsigned BlueWidth    = 5,
+    parameter int unsigned HCountWidth  = 32,
+    parameter int unsigned VCountWidth  = 32
 ) (
     input  logic       clk_i           , // Clock
+    input  logic       clk_vga_i       ,
     input  logic       rst_ni          , // Asynchronous reset active low
     AXI_BUS.Slave      plic            ,
     AXI_BUS.Slave      uart            ,
     AXI_BUS.Slave      spi             ,
     AXI_BUS.Slave      ethernet        ,
     AXI_BUS.Slave      timer           ,
+    AXI_BUS.Slave      vga             , 
+    AXI_BUS.Master     mvga            ,
     output logic [1:0] irq_o           ,
     // UART
     input  logic       rx_i            ,
@@ -51,7 +62,13 @@ module ariane_peripherals #(
     output logic       spi_clk_o       ,
     output logic       spi_mosi        ,
     input  logic       spi_miso        ,
-    output logic       spi_ss
+    output logic       spi_ss          ,
+    // VGA
+    output logic                  hsync,
+    output logic                  vsync,
+    output logic [RedWidth-1:0]   red  ,
+    output logic [GreenWidth-1:0] green,
+    output logic [BlueWidth-1:0]  blue
 );
 
     // ---------------
@@ -60,7 +77,7 @@ module ariane_peripherals #(
     logic [ariane_soc::NumSources-1:0] irq_sources;
 
     // Unused interrupt sources
-    assign irq_sources[ariane_soc::NumSources-1:7] = '0;
+    assign irq_sources[ariane_soc::NumSources-1:8] = '0;
 
     REG_BUS #(
         .ADDR_WIDTH ( 32 ),
@@ -616,4 +633,163 @@ module ariane_peripherals #(
             .irq_o   ( irq_sources[6:3] )
         );
     end
+
+    // ---------------
+    // 7. VGA 
+    // ---------------
+
+    // RegBus interface
+    
+    // RegBus parameters
+    localparam int unsigned RegBusAddrWidth = 32;
+    localparam int unsigned RegBusDataWidth = 32;
+    localparam int unsigned RegBusStrbWidth =  4;
+    localparam int unsigned AXIStrbWidth  =  8;
+  
+  
+    `REG_BUS_TYPEDEF_ALL(reg_vga, logic [RegBusAddrWidth-1:0], logic [RegBusDataWidth-1:0], logic [RegBusStrbWidth-1:0])
+  
+    REG_BUS #(
+      .ADDR_WIDTH ( RegBusAddrWidth  ),
+      .DATA_WIDTH ( RegBusDataWidth  )
+    ) i_vga_regbus (clk_i );
+
+    reg_vga_req_t vga_reg_req;
+    reg_vga_rsp_t vga_reg_rsp;
+  
+    `REG_BUS_ASSIGN_TO_REQ(vga_reg_req, i_vga_regbus)
+    `REG_BUS_ASSIGN_FROM_RSP(i_vga_regbus, vga_reg_rsp)
+   
+    logic         vga_penable;
+    logic         vga_pwrite;
+    logic [31:0]  vga_paddr;
+    logic         vga_psel;
+    logic [31:0]  vga_pwdata;
+    logic [31:0]  vga_prdata;
+    logic         vga_pready;
+    logic         vga_pslverr;
+
+    axi2apb_64_32 #(
+        .AXI4_ADDRESS_WIDTH ( AxiAddrWidth  ),
+        .AXI4_RDATA_WIDTH   ( AxiDataWidth  ),
+        .AXI4_WDATA_WIDTH   ( AxiDataWidth  ),
+        .AXI4_ID_WIDTH      ( AxiIdWidth    ),
+        .AXI4_USER_WIDTH    ( AxiUserWidth  ),
+        .BUFF_DEPTH_SLAVE   ( 2             ),
+        .APB_ADDR_WIDTH     ( 32            )
+    ) i_axi2apb_64_32_vga (
+        .ACLK      ( clk_i          ),
+        .ARESETn   ( rst_ni         ),
+        .test_en_i ( 1'b0           ),
+        .AWID_i    ( vga.aw_id     ),
+        .AWADDR_i  ( vga.aw_addr   ),
+        .AWLEN_i   ( vga.aw_len    ),
+        .AWSIZE_i  ( vga.aw_size   ),
+        .AWBURST_i ( vga.aw_burst  ),
+        .AWLOCK_i  ( vga.aw_lock   ),
+        .AWCACHE_i ( vga.aw_cache  ),
+        .AWPROT_i  ( vga.aw_prot   ),
+        .AWREGION_i( vga.aw_region ),
+        .AWUSER_i  ( vga.aw_user   ),
+        .AWQOS_i   ( vga.aw_qos    ),
+        .AWVALID_i ( vga.aw_valid  ),
+        .AWREADY_o ( vga.aw_ready  ),
+        .WDATA_i   ( vga.w_data    ),
+        .WSTRB_i   ( vga.w_strb    ),
+        .WLAST_i   ( vga.w_last    ),
+        .WUSER_i   ( vga.w_user    ),
+        .WVALID_i  ( vga.w_valid   ),
+        .WREADY_o  ( vga.w_ready   ),
+        .BID_o     ( vga.b_id      ),
+        .BRESP_o   ( vga.b_resp    ),
+        .BVALID_o  ( vga.b_valid   ),
+        .BUSER_o   ( vga.b_user    ),
+        .BREADY_i  ( vga.b_ready   ),
+        .ARID_i    ( vga.ar_id     ),
+        .ARADDR_i  ( vga.ar_addr   ),
+        .ARLEN_i   ( vga.ar_len    ),
+        .ARSIZE_i  ( vga.ar_size   ),
+        .ARBURST_i ( vga.ar_burst  ),
+        .ARLOCK_i  ( vga.ar_lock   ),
+        .ARCACHE_i ( vga.ar_cache  ),
+        .ARPROT_i  ( vga.ar_prot   ),
+        .ARREGION_i( vga.ar_region ),
+        .ARUSER_i  ( vga.ar_user   ),
+        .ARQOS_i   ( vga.ar_qos    ),
+        .ARVALID_i ( vga.ar_valid  ),
+        .ARREADY_o ( vga.ar_ready  ),
+        .RID_o     ( vga.r_id      ),
+        .RDATA_o   ( vga.r_data    ),
+        .RRESP_o   ( vga.r_resp    ),
+        .RLAST_o   ( vga.r_last    ),
+        .RUSER_o   ( vga.r_user    ),
+        .RVALID_o  ( vga.r_valid   ),
+        .RREADY_i  ( vga.r_ready   ),
+        .PENABLE   ( vga_penable   ),
+        .PWRITE    ( vga_pwrite    ),
+        .PADDR     ( vga_paddr     ),
+        .PSEL      ( vga_psel      ),
+        .PWDATA    ( vga_pwdata    ),
+        .PRDATA    ( vga_prdata    ),
+        .PREADY    ( vga_pready    ),
+        .PSLVERR   ( vga_pslverr   )
+    );
+
+    apb_to_reg i_apb_to_reg_vga (
+        .clk_i     ( clk_i       ),
+        .rst_ni    ( rst_ni      ),
+        .penable_i ( vga_penable ),
+        .pwrite_i  ( vga_pwrite  ),
+        .paddr_i   ( vga_paddr   ),
+        .psel_i    ( vga_psel    ),
+        .pwdata_i  ( vga_pwdata  ),
+        .prdata_o  ( vga_prdata  ),
+        .pready_o  ( vga_pready  ),
+        .pslverr_o ( vga_pslverr ),
+        .reg_o     ( i_vga_regbus)
+    );
+    
+    // AXI interface master
+    ariane_axi_soc::req_t  vga_axi_req;
+    ariane_axi_soc::resp_t vga_axi_resp;
+    `AXI_ASSIGN_FROM_REQ(mvga, vga_axi_req)
+    `AXI_ASSIGN_TO_RESP(vga_axi_resp, mvga)
+    
+    // VGA interface
+    axi_vga #(
+      .RedWidth(   RedWidth)   ,
+      .GreenWidth(GreenWidth)    ,
+      .BlueWidth(BlueWidth)     ,
+      .HCountWidth(HCountWidth)   ,
+      .VCountWidth(VCountWidth)   ,
+      .AXIAddrWidth   (AxiAddrWidth           ),
+      .AXIDataWidth   (AxiDataWidth           ),
+      .AXIStrbWidth   (AXIStrbWidth           ),
+      .axi_req_t      (ariane_axi_soc::req_t  ),
+      .axi_resp_t     (ariane_axi_soc::resp_t ),
+      .reg_req_t      (reg_vga_req_t          ),
+      .reg_rsp_t      (reg_vga_rsp_t          )
+    ) i_axi_vga (
+      .clk_i          (clk_i          ),
+      .pxl_clk        (clk_vga_i      ),
+      .rst_ni         (rst_ni         ),
+
+      .test_mode_en_i (1'b1           ),
+
+      // Regbus config ports
+      .reg_req_i      (vga_reg_req   ),
+      .reg_rsp_o      (vga_reg_rsp   ),
+
+      // AXI Data ports
+      .axi_req_o      (vga_axi_req   ),
+      .axi_resp_i     (vga_axi_resp  ),
+
+      // VGA interface
+      .hsync_o        (hsync         ),
+      .vsync_o        (vsync         ),
+      .red_o          (red           ),
+      .green_o        (green         ),
+      .blue_o         (blue          )
+    );
+
 endmodule

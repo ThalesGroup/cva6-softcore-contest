@@ -1,0 +1,113 @@
+/dts-v1/;
+
+/ {
+	#address-cells = <0x01>;
+	#size-cells = <0x01>;
+	compatible = "eth,ariane-bare-dev";
+	model = "eth,ariane-bare";
+
+	cpus {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+		timebase-frequency = <0x17d7840>;
+
+		cpu@0 {
+			clock-frequency = <0x2faf080>;
+			device_type = "cpu";
+			reg = <0x00>;
+			status = "okay";
+			compatible = "eth, ariane\0riscv";
+			riscv,isa = "rv32ima";
+			mmu-type = "riscv,sv32";
+			tlb-split;
+
+			interrupt-controller {
+				#interrupt-cells = <0x01>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+				phandle = <0x02>;
+			};
+		};
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x40000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		ranges;
+
+		buffer@0 {
+			no-map;
+			reg = <0xa0000000 0x10000000>;
+			phandle = <0x01>;
+		};
+	};
+
+	chosen {
+		stdout-path = "/soc/uart@10000000:115200";
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		ranges;
+
+		vga@a0000000 {
+			compatible = "cvga-framebuffer";
+			reg = <0xa0000000 0x96000 0x50000000 0x1000>;
+			width = <0x280>;
+			height = <0x1e0>;
+			stride = <0x500>;
+			vga_mode = <0x00>;
+			format = "r5g6b5";
+			clock-frequency = <0x2faf080>;
+			memory-region = <0x01>;
+		};
+	};
+
+	soc {
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		compatible = "eth,ariane-bare-soc\0simple-bus";
+		ranges;
+
+		clint@2000000 {
+			compatible = "riscv,clint0";
+			interrupts-extended = <0x02 0x03 0x02 0x07>;
+			reg = <0x2000000 0xc0000>;
+			reg-names = "control";
+		};
+
+		interrupt-controller@c000000 {
+			#address-cells = <0x00>;
+			#interrupt-cells = <0x01>;
+			compatible = "riscv,plic0";
+			interrupt-controller;
+			interrupts-extended = <0x02 0x0b 0x02 0x09>;
+			reg = <0xc000000 0x4000000>;
+			riscv,max-priority = <0x07>;
+			riscv,ndev = <0x1e>;
+			phandle = <0x03>;
+		};
+
+		uart@10000000 {
+			compatible = "ns16550a";
+			reg = <0x10000000 0x1000>;
+			clock-frequency = <0x2faf080>;
+			current-speed = <0x1c200>;
+			interrupt-parent = <0x03>;
+			interrupts = <0x01>;
+			reg-shift = <0x02>;
+			reg-io-width = <0x04>;
+		};
+
+		timer@18000000 {
+			compatible = "pulp,apb_timer";
+			interrupts = <0x04 0x05 0x06 0x07>;
+			reg = <0x18000000 0x1000>;
+			interrupt-parent = <0x03>;
+			reg-names = "control";
+		};
+	};
+};

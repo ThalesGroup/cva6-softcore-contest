@@ -337,7 +337,7 @@ assign addr_map = '{
 };
 
 localparam axi_pkg::xbar_cfg_t AXI_XBAR_CFG = '{
-  NoSlvPorts:         ariane_soc::NrSlaves,
+  NoSlvPorts:         ariane_soc::NB_SLAVES,
   NoMstPorts:         ariane_soc::NB_PERIPHERALS,
   MaxMstTrans:        1, // Probably requires update
   MaxSlvTrans:        1, // Probably requires update

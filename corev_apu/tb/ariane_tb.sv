@@ -43,7 +43,7 @@ module ariane_tb;
     jtag_pkg::debug_mode_if_t  debug_mode_if = new;
 
     logic [8:0] jtag_conf_reg, jtag_conf_rego; //22bits but actually only the last 9bits are used
-    localparam BEGIN_MEM_INSTR = 32'h80000080;
+    localparam BEGIN_MEM_INSTR = 32'h80000000;
 
     // cva6 configuration
     localparam config_pkg::cva6_cfg_t CVA6Cfg = cva6_config_pkg::cva6_cfg;
@@ -82,7 +82,7 @@ module ariane_tb;
 
     localparam int unsigned CLOCK_PERIOD = 20ns; //50MHz as for the Zybo kit
 
-    localparam NUM_WORDS = 2**18;
+    localparam NUM_WORDS = 2**24;
     logic clk_i;
     logic rst_ni;
     logic rtc_i;
@@ -178,7 +178,7 @@ module ariane_tb;
         debug_mode_if.set_hartsel(FC_CORE_ID, jtag_TCK, jtag_TMS, jtag_TRSTn, jtag_TDI, jtag_TDO_data);
         $display("[TB] %t - set_hartsel", $realtime);
 
-   	$display("[TB] %t - Halting the Core", $realtime);
+   	    $display("[TB] %t - Halting the Core", $realtime);
     	debug_mode_if.halt_harts(jtag_TCK, jtag_TMS, jtag_TRSTn, jtag_TDI, jtag_TDO_data);
     
 
@@ -189,13 +189,19 @@ module ariane_tb;
 
     
         // write dpc to addr_i so that we know where we resume
-	$display("[TB] %t - Writing the boot address into dpc", $realtime);
+	    $display("[TB] %t - Writing the boot address into dpc", $realtime);
         debug_mode_if.write_reg_abstract_cmd(riscv::CSR_DPC, BEGIN_MEM_INSTR, jtag_TCK, jtag_TMS, jtag_TRSTn, jtag_TDI, jtag_TDO_data);
 
     
         // we have set dpc and loaded the binary, we can go now
         $display("[TB] %t - Resuming the CORE", $realtime);
         debug_mode_if.resume_harts(jtag_TCK, jtag_TMS, jtag_TRSTn, jtag_TDI, jtag_TDO_data);
+
+        $display("[TB] %t - Setting DTB in regs", $realtime);
+        dut.i_ariane.i_cva6.issue_stage_i.i_issue_read_operands.gen_fpga_regfile.i_ariane_regfile_fpga.mem[0][10] = 32'h1;
+        dut.i_ariane.i_cva6.issue_stage_i.i_issue_read_operands.gen_fpga_regfile.i_ariane_regfile_fpga.mem[1][10] = 32'h1;
+        dut.i_ariane.i_cva6.issue_stage_i.i_issue_read_operands.gen_fpga_regfile.i_ariane_regfile_fpga.mem[0][11] = 32'h11200;
+        dut.i_ariane.i_cva6.issue_stage_i.i_issue_read_operands.gen_fpga_regfile.i_ariane_regfile_fpga.mem[1][11] = 32'h11200;
 
     end
 

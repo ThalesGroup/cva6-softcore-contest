@@ -1,0 +1,16 @@
+#ifndef __CONFIG_H
+#define __CONFIG_H
+
+#include <linux/sizes.h>
+
+#define CONFIG_SYS_SDRAM_BASE		0x80000000
+#define CONFIG_SYS_INIT_SP_ADDR		(CONFIG_SYS_SDRAM_BASE + SZ_2M)
+
+#define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + SZ_2M)
+
+#define CONFIG_SYS_MALLOC_LEN       SZ_8M
+#define CONFIG_SYS_BOOTM_LEN        SZ_64M
+
+#define CONFIG_SYS_MAX_FLASH_BANKS 1
+#define CONFIG_SYS_FLASH_BASE 0x0
+#endif
