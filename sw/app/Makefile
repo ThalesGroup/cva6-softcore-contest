@@ -87,12 +87,40 @@ INCS += -I$(src_dir)/../bsp/config \
 	
 FLAGS_STR:="$(RISCV_CFLAGS)  $(RISCV_LDFLAGS) "
 
-CFLAGS ?=-march=rv32im_zicsr -mabi=ilp32 -DPREALLOCATE=1 -fvisibility=hidden -DSTDIO_THRU_UART -O3 -mcmodel=medany   -static  -Wall -pedantic 
+
+CFLAGS  ?=	-march=rv32imac_zba_zbb_zbs_zbc_zicsr_zifencei \
+		-mabi=ilp32 \
+		-DPREALLOCATE=1 \
+		-fvisibility=hidden \
+		-DSTDIO_THRU_UART \
+		-O3 \
+		-mcmodel=medany \
+		-fno-tree-loop-distribute-patterns\
+		-funroll-all-loops \
+		-falign-jumps=4 \
+		-falign-functions=16 \
+		-static \
+		-Wall \
+		-pedantic 
 
 RISCV_CFLAGS :=-DPERFORMANCE_RUN=1 \
 		-DITERATIONS=3 \
 		-DFLAGS_STR=\"$(FLAGS_STR)\" \
-		-march=rv32im_zicsr -mabi=ilp32 -DPREALLOCATE=1 -fvisibility=hidden -DSTDIO_THRU_UART -O3 -mcmodel=medany   -static  -Wall -pedantic 
+		-march=rv32imac_zba_zbb_zbs_zbc_zicsr_zifencei \
+		-mabi=ilp32 \
+		-DPREALLOCATE=1 \
+		-fvisibility=hidden \
+		-DSTDIO_THRU_UART \
+		-O3 \
+		-mcmodel=medany \
+		-fno-tree-loop-distribute-patterns\
+		-funroll-all-loops \
+		-falign-jumps=4 \
+		-falign-functions=16 \
+		-static \
+		-Wall \
+		-pedantic 
+
 
 RISCV_LDFLAGS=-L./ -lcva6 -static -nostartfiles -T $(src_dir)/../bsp/config/link.ld
 
