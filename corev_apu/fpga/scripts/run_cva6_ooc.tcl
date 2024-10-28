@@ -41,15 +41,21 @@ set_msg_config -id {[Synth 8-5858]} -new_severity "info"
 
 set_msg_config -id {[Synth 8-4480]} -limit 1000
 
-set_property include_dirs { "src/axi_sd_bridge/include" "../src/common_cells/include" } [current_fileset]
+set_property include_dirs { \
+	"src/axi_sd_bridge/include" \
+	"../../vendor/pulp-platform/common_cells/include" \
+	"../../vendor/pulp-platform/axi/include" \
+	"../../core/cache_subsystem/hpdcache/rtl/include" \
+	"../register_interface/include" \
+} [current_fileset]
 
 source scripts/add_sources.tcl
 
-set_property top ariane [current_fileset]
+set_property top cva6 [current_fileset]
 
-read_verilog -sv {src/zybo-z7-20.svh ../src/common_cells/include/common_cells/registers.svh}
+read_verilog -sv {src/zybo-z7-20.svh ../../vendor/pulp-platform/common_cells/include/common_cells/registers.svh}
 set file "src/zybo-z7-20.svh"
-set registers "../src/common_cells/include/common_cells/registers.svh"
+set registers "../../vendor/pulp-platform/common_cells/include/common_cells/registers.svh"
 
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file" "$registers"]]
 set_property -dict { file_type {Verilog Header} is_global_include 1} -objects $file_obj
