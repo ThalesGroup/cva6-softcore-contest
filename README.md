@@ -10,7 +10,7 @@ $ git clone https://github.com/ThalesGroup/cva6-softcore-contest.git
 $ git submodule update --init --recursive
 ```
 
-Do not forget to check all the details of the contest in [Annonce RISC-V contest 2023-2024 v2.pdf](./Annonce%20RISC-V%20contest%202023-2024%20v2.pdf).
+Do not forget to check all the details of the contest in [Annonce RISC-V contest 2024-2025.pdf](./Annonce%20RISC-V%20contest%202024-2025.pdf).
 
 This repository contains the files needed for the 2021-2022 contest focusing on energy efficiency. The 2020-2021 contest focusing on the performance can be retrieved in this repository under the cv32a6_contest_2020 GitHub tag.
 
@@ -23,16 +23,16 @@ Other simulation tools and versions will receive no support from the organizatio
 
 ## Vitis/Vivado setting up
 For the contest, the CVA6 processor will be implemented on Zybo Z7-20 board from Digilent. This board integrates a Zynq 7000 FPGA from Xilinx. 
-To do so, **Vitis 2020.1** environment from Xilinx needs to be installed.
+To do so, **Vitis 2024.1** environment from Xilinx needs to be installed.
 
 Furthermore, Digilent provides board files for each development board.
 
 These files ease the creation of new projects with automated configuration of several complicated components such as Zynq Processing System and memory interfaces.
 
-All guidelines to install **vitis 2020.1** and **Zybo Z7-20** board files are explained in
+All guidelines to install **vitis 2024.1** and **Zybo Z7-20** board files are explained in
 https://reference.digilentinc.com/reference/programmable-logic/guides/installation.
 
-**Be careful about your linux distribution and the supported version of Vitis 2020.1 environment.**
+**Be careful about your linux distribution and the supported version of Vitis 2024.1 environment.**
 
 
 
@@ -81,6 +81,13 @@ When the bitstream is loaded, the green LED `done` lights up.
 Now, the hardware is ready and the hyperterminal is connected to the UART output of the FPGA. We can now start the software.
 
 ## Get started with software environment
+
+The executables of MNIST & CoreMark applications are already available in **sw/app**, but can be recompiled. 
+
+To get the CoreMark source files, apply the patch **coremark.patch**:
+```
+git apply coremark.patch
+```
 
 ### Building the docker image
 
@@ -211,8 +218,8 @@ Expected  = 4
 Predicted = 4
 Result : 1/1
 credence: 82
-image env0003: 1731593 instructions
-image env0003: 2353693 cycles
+image env0003: 1753389 instructions
+image env0003: 2818904 cycles
 ```
 
 This result is obtained just after the FPGA bitstream loading.
@@ -251,8 +258,8 @@ Expected  = 4
 Predicted = 4
 Result : 1/1
 credence: 82
-image env0003: 1731593 instructions
-image env0003: 2316653 cycles
+image env0003: 1753389 instructions
+image env0003: 2721823 cycles
 ```
 
 CVA6 software environment is detailed into `sw/app` directory.
@@ -276,7 +283,7 @@ By default, synthesis is performed in batch mode, however it is possible to run 
 ```
 $ make cva6_ooc CLK_PERIOD_NS=20 BATCH_MODE=0
 ```
-This command generates synthesis and place and route reports in **fpga/reports_cva6_ooc_synth** and **fpga/reports_cva6_ooc_impl**.
+This command generates synthesis and place and route reports in **corev_apu/fpga/reports_cva6_ooc_synth** and **corev_apu/fpga/reports_cva6_ooc_impl**.
 
 
 

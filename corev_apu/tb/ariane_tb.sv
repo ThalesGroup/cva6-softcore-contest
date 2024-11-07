@@ -80,7 +80,7 @@ module ariane_tb;
     // toggle with RTC period
     localparam int unsigned RTC_CLOCK_PERIOD = 30.517us;*/
 
-    localparam int unsigned CLOCK_PERIOD = 20ns; //50MHz as for the Zybo kit
+   localparam int unsigned CLOCK_PERIOD = 25ns; //40MHz as for the Zybo kit
 
     localparam NUM_WORDS = 2**18;
     logic clk_i;

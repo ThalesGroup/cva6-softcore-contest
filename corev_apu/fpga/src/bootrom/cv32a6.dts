@@ -33,14 +33,14 @@
     device_type = "memory";
     reg = <0x80000000 0x8000000>;
   };
-  leds {
+ /* leds {
     compatible = "gpio-leds";
     heartbeat-led {
       gpios = <&xlnx_gpio 1 0>;
       linux,default-trigger = "heartbeat";
       retain-state-suspended;
     };
-  };
+  };*/
   L26: soc {
     #address-cells = <1>;
     #size-cells = <1>;
@@ -88,7 +88,7 @@
       interrupt-parent = <&PLIC0>;
       reg-names = "control";
     };
-    xps-spi@20000000 {
+    /*xps-spi@20000000 {
       compatible = "xlnx,xps-spi-2.00.b", "xlnx,xps-spi-2.00.a";
       #address-cells = <1>;
       #size-cells = <0>;
@@ -117,8 +117,8 @@
       //   //interrupts = < 2 2 >;
       //   //interrupt-parent = <&PLIC0>;
       // };
-    };
-    eth: lowrisc-eth@30000000 {
+    };*/
+    /*eth: lowrisc-eth@30000000 {
       compatible = "lowrisc-eth";
       device_type = "network";
       interrupt-parent = <&PLIC0>;
@@ -141,6 +141,6 @@
       xlnx,is-dual = <0x1>;
       xlnx,tri-default = <0xffffffff>;
       xlnx,tri-default-2 = <0xffffffff>;
-    };
+    };*/
   };
 };
