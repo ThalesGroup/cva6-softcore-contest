@@ -88,7 +88,7 @@ INCS += -I$(src_dir)/../bsp/config \
 FLAGS_STR:="$(RISCV_CFLAGS)  $(RISCV_LDFLAGS) "
 
 
-CFLAGS  ?=	-march=rv32imac_zba_zbb_zbs_zbc_zicsr_zifencei \
+CFLAGS  ?=	-march=rv32im_zicsr \
 		-mabi=ilp32 \
 		-DPREALLOCATE=1 \
 		-fvisibility=hidden \
@@ -106,7 +106,7 @@ CFLAGS  ?=	-march=rv32imac_zba_zbb_zbs_zbc_zicsr_zifencei \
 RISCV_CFLAGS :=-DPERFORMANCE_RUN=1 \
 		-DITERATIONS=3 \
 		-DFLAGS_STR=\"$(FLAGS_STR)\" \
-		-march=rv32imac_zba_zbb_zbs_zbc_zicsr_zifencei \
+		-march=rv32im_zicsr \
 		-mabi=ilp32 \
 		-DPREALLOCATE=1 \
 		-fvisibility=hidden \
