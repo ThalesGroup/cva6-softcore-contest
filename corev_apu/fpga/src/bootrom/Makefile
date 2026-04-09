@@ -53,7 +53,7 @@ $(MAIN): $(DTB) $(OBJS_C) $(OBJS_S) linker.lds
 	@echo "PYTHON >= $(MAIN_SV)"
 
 clean:
-	$(RM) $(OBJS_C) $(OBJS_S) $(MAIN) $(MAIN_BIN) $(MAIN_IMG) *.dtb
+	$(RM) $(OBJS_C) $(OBJS_S) $(MAIN) $(MAIN_BIN) $(MAIN_IMG) $(MAIN_SV) *.dtb
 
 all: $(MAIN) $(MAIN_BIN) $(MAIN_IMG) $(MAIN_SV)
 	@echo "zero stage bootloader has been compiled!"
