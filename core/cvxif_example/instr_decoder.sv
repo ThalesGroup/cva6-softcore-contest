@@ -68,7 +68,7 @@ module instr_decoder #(
           rs3_ready = NrRgprPorts == 3 ? (~CoproInstr[i].resp.register_read[2] || register_i.rs_valid[2]) : 1'b1;
           issue_ready_o = rs1_ready && rs2_ready && rs3_ready;
         end
-        opcode_o = CoproInstr[i].opcode;
+        opcode_o = opcode_t'(CoproInstr[i].opcode); // fix bug in Questa 10.7
         id_o     = issue_req_i.id;
         hartid_o = issue_req_i.hartid;
         rd_o     = issue_req_i.instr[11:7];
