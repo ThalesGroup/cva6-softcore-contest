@@ -1186,6 +1186,18 @@ module decoder
           end
         end
 
+
+        riscv::OpcodeCustom0: begin
+            instruction_o.fu  = ALU;
+            instruction_o.rs1 = instr.r4type.rs1;
+            instruction_o.rs2 = instr.r4type.rs2;
+            instruction_o.rd  = instr.r4type.rd;
+            imm_select        = RS3;  // rs3 into result field
+            instruction_o.op = ADD
+            //TODO check if there is illegal instruction cases
+          end
+        end
+
         riscv::OpcodeOpFp: begin
           if (CVA6Cfg.FpPresent && fs_i != riscv::Off && ((CVA6Cfg.RVH && (!v_i || vfs_i != riscv::Off)) || !CVA6Cfg.RVH)) begin // only generate decoder if FP extensions are enabled (static)
             instruction_o.fu  = FPU;
