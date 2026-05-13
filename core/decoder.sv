@@ -1188,14 +1188,13 @@ module decoder
 
 
         riscv::OpcodeCustom0: begin
-            instruction_o.fu  = ALU;
-            instruction_o.rs1 = instr.r4type.rs1;
-            instruction_o.rs2 = instr.r4type.rs2;
-            instruction_o.rd  = instr.r4type.rd;
-            imm_select        = RS3;  // rs3 into result field
-            instruction_o.op = ADD
-            //TODO check if there is illegal instruction cases
-          end
+          instruction_o.fu  = ALU;
+          instruction_o.rs1 = instr.r4type.rs1;
+          instruction_o.rs2 = instr.r4type.rs2;
+          instruction_o.rd  = instr.r4type.rd;
+          imm_select        = RS3;
+          instruction_o.op  = ariane_pkg::MOVC;
+          is_control_flow_instr_o = 1'b0;
         end
 
         riscv::OpcodeOpFp: begin
