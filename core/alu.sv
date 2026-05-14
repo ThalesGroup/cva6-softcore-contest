@@ -317,7 +317,7 @@ module alu
       // Comparison Operations
       SLTS, SLTU: result_o = {{CVA6Cfg.XLEN - 1{1'b0}}, less};
       //Register move Conditional
-      CMOV : result_o = (fu_data_i.operand_b) ? fu_data_i.operand_a : fu_data_i.imm;
+      CMOV : result_o = (fu_data_i.operand_b == 0) ? fu_data_i.operand_a : fu_data_i.imm;
       default: ;  // default case to suppress unique warning
     endcase
 

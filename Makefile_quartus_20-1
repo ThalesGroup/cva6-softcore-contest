@@ -257,7 +257,6 @@ incdir := vendor/pulp-platform/common_cells/include/ vendor/pulp-platform/axi/in
 
 # Compile and sim flags
 compile_flag     += +cover=bcfst+/dut -incr -64 -nologo -quiet -suppress 13262 -suppress 8602 -permissive -svinputport=compat +define+$(defines)
-questa-flags += -suppress 7061
 
 uvm-flags        += +UVM_NO_RELNOTES +UVM_VERBOSITY=LOW
 questa-flags     += -t 1ns -64 -coverage -classdebug $(gui-sim) $(QUESTASIM_FLAGS) +tohost_addr=$(tohost_addr)
@@ -313,9 +312,22 @@ vcs: vcs_build
 	cd $(vcs-library) && ./simv  $(if $(VERDI), -verdi -do $(root-dir)/util/init_testharness.do,) +permissive -sv_lib ../work-dpi/ariane_dpi +PRELOAD=$(elf-bin) +permissive-off ++$(elf-bin)| tee vcs.log
 
 # Build the TB and module using QuestaSim
-build: $(library) $(library)/.build-srcs $(library)/.build-tb
-	# Optimize top level
-	$(VOPT) $(compile_flag) -work $(library)  $(top_level) -o $(top_level)_optimized +acc -check_synthesis
+# build: $(library) $(library)/.build-srcs $(library)/.build-tb
+# 	# Optimize top level
+# 	$(VOPT) $(compile_flag) -work $(library)  $(top_level) -o $(top_level)_optimized +acc -check_synthesis
+
+build: $(library)
+	# On supprime l'ancien dossier pour être sûr à 100%
+	rm -rf $(library) && vlib $(library)
+	# On compile TOUT d'un seul bloc pour que ModelSim gère l'ordre lui-même
+	$(VLOG) $(compile_flag) -timescale "1ns / 1ns" -work $(library) \
+		$(list_incdir) \
+		core/include/$(target)_config_pkg.sv \
+		$(filter %.sv,$(ariane_pkg)) \
+		-f core/Flist.cva6 \
+		$(filter %.sv,$(src)) \
+		$(tbs)
+	@echo "Compilation terminée avec succès."
 
 uart_src_vhdl := $(wildcard corev_apu/fpga/src/apb_uart/src/*.vhd)
 uart_src_vhdl := $(addprefix $(root-dir), $(uart_src_vhdl))
@@ -342,12 +354,17 @@ $(library):
 
 # target used to run simulation, make sim APP=<software application to run on CVA6>
 # if you want to run in batch mode, use make <testname> batch-mode=1
+# sim: build
+# 	echo $(riscv-benchmarks)
+# 	vsim${questa_version} +permissive $(questa-flags) $(questa-cmd) -lib $(library) +MAX_CYCLES=$(max_cycles) +UVM_TESTNAME=$(test_case) \
+# 	 $(uvm-flags) $(QUESTASIM_FLAGS)  \
+# 	${top_level}_optimized +permissive-off +binary_mem=$(APP_PATH)/$(APP).mem | tee sim.log
+
 sim: build
 	echo $(riscv-benchmarks)
-	vsim${questa_version} +permissive $(questa-flags) $(questa-cmd) -lib $(library) +MAX_CYCLES=$(max_cycles) +UVM_TESTNAME=$(test_case) \
+	$(VSIM) +permissive -voptargs="+acc" $(questa-flags) $(questa-cmd) -lib $(library) +MAX_CYCLES=$(max_cycles) +UVM_TESTNAME=$(test_case) \
 	 $(uvm-flags) $(QUESTASIM_FLAGS)  \
-	${top_level}_optimized +permissive-off +binary_mem=$(APP_PATH)/$(APP).mem | tee sim.log
-
+	$(top_level) +permissive-off +binary_mem=$(APP_PATH)/$(APP).mem | tee sim.log
 
 run-benchmarks: $(riscv-benchmarks)
 	$(MAKE) check-benchmarks

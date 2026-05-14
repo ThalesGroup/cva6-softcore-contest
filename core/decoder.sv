@@ -1193,7 +1193,7 @@ module decoder
           instruction_o.rs2 = instr.r4type.rs2;
           instruction_o.rd  = instr.r4type.rd;
           imm_select        = RS3;
-          instruction_o.op  = ariane_pkg::MOVC;
+          instruction_o.op  = ariane_pkg::CMOV;
           is_control_flow_instr_o = 1'b0;
         end
 

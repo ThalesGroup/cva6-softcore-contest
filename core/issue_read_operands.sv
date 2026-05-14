@@ -631,7 +631,7 @@ module issue_read_operands
     assign rs3_valid[i] = rs3_available[i];
     assign rs3_fpr[i] = (CVA6Cfg.FpPresent && ariane_pkg::is_imm_fpr(issue_instr_i[i].op));
     // this will always check on any custom instruction
-    assign rs3_gpr_cvxif[i] = (CVA6Cfg.CvxifEn && OPERANDS_PER_INSTR && issue_instr_i[i].op == OFFLOAD);
+    assign rs3_gpr_cvxif[i] = (CVA6Cfg.CvxifEn && OPERANDS_PER_INSTR && issue_instr_i[i].op == OFFLOAD) || (issue_instr_i[i].op == CMOV);
 
   end
 
@@ -1185,7 +1185,7 @@ module issue_read_operands
   end
 
   //pragma translate_off
-  initial begin
+  //initial begin
   //   assert (OPERANDS_PER_INSTR == 2 || (OPERANDS_PER_INSTR == 3 && CVA6Cfg.CvxifEn))
   //   else
   //     $fatal(

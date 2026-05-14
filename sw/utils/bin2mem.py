@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # Copyright (c) 2020 Thales.
-# 
+#
 # Copyright and related rights are licensed under the Apache
 # License, Version 2.0 (the "License"); you may not use this file except in
 # compliance with the License.  You may obtain a copy of the License at
@@ -20,7 +20,7 @@
 # Project Name:   CVA6 softcore
 # Language:       Python
 #
-# Description:    Script to generate mem data file for simulation from binary 
+# Description:    Script to generate mem data file for simulation from binary
 #                 application file.
 #
 # =========================================================================== #
@@ -41,7 +41,10 @@ if(len(sys.argv) < 2):
     print("Usage bin2mem.py FILENAME")
     quit()
 
-filename = sys.argv[1].removesuffix('.bin') + ".mem"
+if sys.argv[1].endswith('.bin'):
+    filename = sys.argv[1][:-4] + ".mem"
+else:
+    filename = sys.argv[1] + ".mem"
 
 mem_file  = open(filename,    'wb')
 
@@ -51,7 +54,7 @@ with open(sys.argv[1], "rb") as f:
         bytes_read_inv = bytes_read[::-1]
         mem_file.write(b"%s\n" %binascii.hexlify(bytes_read_inv) )
         bytes_read = f.read(8)
-    
+
 ###############################################################################
 # close all files
 ###############################################################################

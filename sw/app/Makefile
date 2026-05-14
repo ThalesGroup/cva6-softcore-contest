@@ -1,5 +1,5 @@
 # Copyright (c) 2020 Thales.
-# 
+#
 # Copyright and related rights are licensed under the Apache
 # License, Version 2.0 (the "License"); you may not use this file except in
 # compliance with the License.  You may obtain a copy of the License at
@@ -47,7 +47,8 @@ bmarks = \
 	helloworld \
 	helloworld_printf \
 	mnist \
-	fft
+	fft \
+	test_cmov
 
 #--------------------------------------------------------------------
 # Build rules
@@ -60,7 +61,7 @@ RISCV_AR ?= $(RISCV_PREFIX)ar
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
 
 
-SRC_BSP_C=$(wildcard $(bsp_dir)/hal/*.c) $(wildcard $(bsp_dir)/drivers/uart/*.c) 
+SRC_BSP_C=$(wildcard $(bsp_dir)/hal/*.c) $(wildcard $(bsp_dir)/drivers/uart/*.c)
 SRC_BSP_S=$(wildcard $(bsp_dir)/hal/*.S)
 
 
@@ -69,7 +70,7 @@ OBJ_BSP_S=$(SRC_BSP_S:.S=.o)
 OBJ_BSP= $(OBJ_BSP_S) $(OBJ_BSP_C)
 
 
-OBJ_APP=$(wildcard $(src_dir)/*.o) 
+OBJ_APP=$(wildcard $(src_dir)/*.o)
 
 INCS += -I$(src_dir)/../bsp/config \
 	-I$(src_dir)/../bsp/drivers/uart \
@@ -94,7 +95,7 @@ CFLAGS  ?=	-march=rv32im_zicsr \
 		-falign-functions=16 \
 		-static \
 		-Wall \
-		-pedantic 
+		-pedantic
 
 RISCV_CFLAGS :=-DPERFORMANCE_RUN=1 \
 		-DITERATIONS=3 \
@@ -112,7 +113,7 @@ RISCV_CFLAGS :=-DPERFORMANCE_RUN=1 \
 		-falign-functions=16 \
 		-static \
 		-Wall \
-		-pedantic 
+		-pedantic
 
 
 RISCV_LDFLAGS=-L./ -lcva6 -static -nostartfiles -T $(src_dir)/../bsp/config/link.ld
@@ -143,7 +144,7 @@ endef
 
 $(foreach bmark,$(bmarks),$(eval $(call generate_rules,$(bmark))))
 
-%.D: %.riscv  
+%.D: %.riscv
 	$(RISCV_OBJDUMP) -D $< > $@
 
 %.hex: %.riscv
