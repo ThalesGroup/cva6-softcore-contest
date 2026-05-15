@@ -631,7 +631,7 @@ module issue_read_operands
     assign rs3_valid[i] = rs3_available[i];
     assign rs3_fpr[i] = (CVA6Cfg.FpPresent && ariane_pkg::is_imm_fpr(issue_instr_i[i].op));
     // this will always check on any custom instruction
-    assign rs3_gpr_cvxif[i] = (CVA6Cfg.CvxifEn && OPERANDS_PER_INSTR && issue_instr_i[i].op == OFFLOAD) || (issue_instr_i[i].op == CMOV);
+    assign rs3_gpr_cvxif[i] = (CVA6Cfg.CvxifEn && OPERANDS_PER_INSTR && issue_instr_i[i].op == OFFLOAD) || (CVA6Cfg.CMOV && issue_instr_i[i].op == CMOV);
 
   end
 
@@ -767,7 +767,7 @@ module issue_read_operands
       if (forward_rs2[i]) begin
         fu_data_n[i].operand_b = rs2_res[i];
       end
-      if ((CVA6Cfg.FpPresent || (CVA6Cfg.CvxifEn && OPERANDS_PER_INSTR == 3) || issue_instr_i[i].op == CMOV) && forward_rs3[i]) begin
+      if ((CVA6Cfg.FpPresent || (CVA6Cfg.CvxifEn && OPERANDS_PER_INSTR == 3) || (CVA6Cfg.CMOV && issue_instr_i[i].op == CMOV)) && forward_rs3[i]) begin
         fu_data_n[i].imm = imm_forward_rs3;
       end
 
@@ -1185,14 +1185,14 @@ module issue_read_operands
   end
 
   //pragma translate_off
-  //initial begin
-  //   assert (OPERANDS_PER_INSTR == 2 || (OPERANDS_PER_INSTR == 3 && CVA6Cfg.CvxifEn))
-  //   else
-  //     $fatal(
-  //         1,
-  //         "If CVXIF is enable, ariane regfile can have either 2 or 3 read ports. Else it has 2 read ports."
-  //     );
-  // end
+  initial begin
+     assert (OPERANDS_PER_INSTR == 2 || (OPERANDS_PER_INSTR == 3 && (CVA6Cfg.CvxifEn || CVA6Cfg.CMOV)))
+     else
+       $fatal(
+           1,
+           "If CVXIF is enable, ariane regfile can have either 2 or 3 read ports. Else it has 2 read ports."
+       );
+   end
 
   // FPU does not declare that it will return a result the subsequent cycle so
   // it is not possible for issue stage to know when ALU2 can be used if there
