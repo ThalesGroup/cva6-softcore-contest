@@ -8,24 +8,29 @@ _start :
   li  t1, 0
   li  t2, 8
 
+  #Check normal behavior
+  .insn r4 0x0b, 0, 0, t3, t0, t1, t2
+
+
+  #Check if forwarding works for rs3
+
+  li t1, 1
+
+  add t2, t2, t3
 
   .insn r4 0x0b, 0, 0, t3, t0, t1, t2
 
-  bne t3, t0, fail
+  #check if stalling works for rs3
 
-  success :
-    li a0, 0
-    j end
+  li t4, 0x80001000
 
-  fail :
-    li a0, 1
-    j end
+  add t2, t2, 5
 
-  end :
-    ret
+  sw t2, 0(t4)
 
+  lw t2, 0(t4)
 
-
+  .insn r4 0x0b, 0, 0, t3, t0, t1, t2
 
 
 

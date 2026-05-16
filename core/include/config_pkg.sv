@@ -140,7 +140,7 @@ package config_pkg;
     logic [NrMaxRules-1:0][63:0] CachedRegionLength;
     // CV-X-IF coprocessor interface enable
     bit                          CvxifEn;
-    bit                          CMOV 
+    bit                          CMOV;
     // NOC bus type
     noc_type_e                   NOCType;
     // AXI address width
