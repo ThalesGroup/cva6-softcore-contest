@@ -1188,13 +1188,24 @@ module decoder
 
 
         riscv::OpcodeCustom0: begin
-          instruction_o.fu  = ALU;
           instruction_o.rs1 = instr.r4type.rs1;
           instruction_o.rs2 = instr.r4type.rs2;
           instruction_o.rd  = instr.r4type.rd;
           imm_select        = RS3;
-          instruction_o.op  = ariane_pkg::CMOV;
           is_control_flow_instr_o = 1'b0;
+          unique case (instr.r4type.funct2)
+               2'b00 : begin
+                instruction_o.fu  = ALU;
+                instruction_o.op  = ariane_pkg::CMOV;
+              end
+              2'b01 : begin
+                if (CVA6Cfg.FpPresent && fs_i != riscv::Off && ((CVA6Cfg.RVH && (!v_i || vfs_i != riscv::Off)) || !CVA6Cfg.RVH)) begin // only generate decoder if FP extensions are enabled (static)
+                  instruction_o.fu  = FPU;
+                  instruction_o.op  = ariane_pkg::CFMOV;
+                end
+              end
+            default : illegal_instr = 1'b1;
+          endcase
         end
 
         riscv::OpcodeOpFp: begin

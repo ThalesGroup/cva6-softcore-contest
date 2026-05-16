@@ -499,6 +499,7 @@ package ariane_pkg;
     ZIP,
     // Mov instructions
     CMOV
+    CFMOV
   } fu_op;
 
   function automatic logic op_is_branch(input fu_op op);
@@ -523,7 +524,8 @@ package ariane_pkg;
       FCMP,  // Comparisons
       FCLASS,  // Classifications
       [VFMIN : VFCPKCD_D],  // Additional Vectorial FP ops
-      ACCEL_OP_FS1:
+      ACCEL_OP_FS1,
+      CFMOV:
       return 1'b1;  // Accelerator instructions
       default: return 1'b0;  // all other ops
     endcase
@@ -539,7 +541,8 @@ package ariane_pkg;
       FCVT_F2F,  // Vectorial F2F Conversions requrie target
       [FSGNJ : FMV_F2X],  // Sign Injections and moves mapped to SGNJ
       FCMP,  // Comparisons
-      [VFMIN : VFCPKCD_D]:
+      [VFMIN : VFCPKCD_D],
+      CFMOV:
       return 1'b1;  // Additional Vectorial FP ops
       default: return 1'b0;  // all other ops
     endcase
@@ -552,7 +555,8 @@ package ariane_pkg;
     unique case (op) inside
       [FADD : FSUB],  // ADD/SUB need inputs as Operand B/C
       [FMADD : FNMADD],  // Fused Computational Operations
-      [VFCPKAB_S : VFCPKCD_D]:
+      [VFCPKAB_S : VFCPKCD_D],
+      CFMOV:
       return 1'b1;  // Vectorial FP cast and pack ops
       default: return 1'b0;  // all other ops
     endcase
@@ -570,7 +574,8 @@ package ariane_pkg;
       FMV_X2F,  // GPR-FPR Moves
       [VFMIN : VFSGNJX],  // Vectorial MIN/MAX and SGNJ
       [VFCPKAB_S : VFCPKCD_D],  // Vectorial FP cast and pack ops
-      ACCEL_OP_FD:
+      ACCEL_OP_FD,
+      CFMOV:
       return 1'b1;  // Accelerator instructions
       default: return 1'b0;  // all other ops
     endcase

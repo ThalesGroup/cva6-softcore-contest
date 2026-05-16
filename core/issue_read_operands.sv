@@ -748,7 +748,8 @@ module issue_read_operands
         fu_data_n[i].imm = (CVA6Cfg.FpPresent && is_imm_fpr(issue_instr_i[i].op)) ?
             {{CVA6Cfg.XLEN - CVA6Cfg.FLen{1'b0}}, operand_c_regfile[i]} :
             issue_instr_i[i].op == OFFLOAD ? operand_c_regfile[i] :
-            issue_instr_i[i].op == CMOV ? operand_c_regfile[i] : issue_instr_i[i].result;
+            issue_instr_i[i].op == CMOV ? operand_c_regfile[i] :
+            issue_instr_i[i].op == CFMOV ? operand_c_regfile[i] : issue_instr_i[i].result;
       end else begin
         fu_data_n[i].imm = (CVA6Cfg.FpPresent && is_imm_fpr(issue_instr_i[i].op)) ?
             {{CVA6Cfg.XLEN - CVA6Cfg.FLen{1'b0}}, operand_c_regfile[i]} : issue_instr_i[i].result;
@@ -767,7 +768,7 @@ module issue_read_operands
       if (forward_rs2[i]) begin
         fu_data_n[i].operand_b = rs2_res[i];
       end
-      if ((CVA6Cfg.FpPresent || (CVA6Cfg.CvxifEn && OPERANDS_PER_INSTR == 3) || (CVA6Cfg.CMOV && issue_instr_i[i].op == CMOV)) && forward_rs3[i]) begin
+      if ((CVA6Cfg.FpPresent || (CVA6Cfg.CvxifEn && OPERANDS_PER_INSTR == 3) || (CVA6Cfg.CMOV && (issue_instr_i[i].op == CMOV || issue_instr_i[i].op == CFMOV))) && forward_rs3[i]) begin
         fu_data_n[i].imm = imm_forward_rs3;
       end
 
