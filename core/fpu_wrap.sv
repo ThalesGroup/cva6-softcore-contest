@@ -392,6 +392,9 @@ module fpu_wrap
           vec_replication = 1'b0;  // no replication, R bit used for op
           fpu_srcfmt_d    = fpnew_pkg::FP64;  // Cast from FP64
         end
+        FCMOV: begin
+          fpu_op_d    = fpnew_pkg::FCMOV;
+        end
         // No changes per default
         default: ;  //nothing
       endcase

@@ -1201,7 +1201,7 @@ module decoder
               2'b01 : begin
                 if (CVA6Cfg.FpPresent && fs_i != riscv::Off && ((CVA6Cfg.RVH && (!v_i || vfs_i != riscv::Off)) || !CVA6Cfg.RVH)) begin // only generate decoder if FP extensions are enabled (static)
                   instruction_o.fu  = FPU;
-                  instruction_o.op  = ariane_pkg::CFMOV;
+                  instruction_o.op  = ariane_pkg::FCMOV;
                 end
               end
             default : illegal_instr = 1'b1;

@@ -12,9 +12,9 @@ package cva6_config_pkg;
 
   localparam CVA6ConfigXlen = 32;
 
-  localparam CVA6ConfigRVF = 0;
-  localparam CVA6ConfigF16En = 0;
-  localparam CVA6ConfigF16AltEn = 0;
+  localparam CVA6ConfigRVF = 1;
+  localparam CVA6ConfigF16En = 1;
+  localparam CVA6ConfigF16AltEn = 1;
   localparam CVA6ConfigF8En = 1;
   localparam CVA6ConfigFVecEn = 0;
 
@@ -83,6 +83,7 @@ package cva6_config_pkg;
       AxiUserWidth: unsigned'(CVA6ConfigDataUserWidth),
       MemTidWidth: unsigned'(CVA6ConfigMemTidWidth),
       NrLoadBufEntries: unsigned'(CVA6ConfigNrLoadBufEntries),
+      CMOV: bit'(1),
       RVF: bit'(CVA6ConfigRVF),
       RVD: bit'(CVA6ConfigRVF),
       XF16: bit'(CVA6ConfigF16En),
@@ -96,7 +97,6 @@ package cva6_config_pkg;
       RVH: bit'(CVA6ConfigHExtEn),
       RVZCB: bit'(CVA6ConfigZcbExtEn),
       RVZCMT: bit'(0),
-      CMOV: bit'(1),
       RVZCMP: bit'(CVA6ConfigZcmpExtEn),
       XFVec: bit'(CVA6ConfigFVecEn),
       CvxifEn: bit'(CVA6ConfigCvxifEn),
