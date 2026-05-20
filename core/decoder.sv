@@ -1193,6 +1193,7 @@ module decoder
           instruction_o.rd  = instr.r4type.rd;
           imm_select        = RS3;
           is_control_flow_instr_o = 1'b0;
+          illegal_instr     = 1'b0;
           unique case (instr.r4type.funct2)
                2'b00 : begin
                 instruction_o.fu  = ALU;
@@ -1202,6 +1203,8 @@ module decoder
                 if (CVA6Cfg.FpPresent && fs_i != riscv::Off && ((CVA6Cfg.RVH && (!v_i || vfs_i != riscv::Off)) || !CVA6Cfg.RVH)) begin // only generate decoder if FP extensions are enabled (static)
                   instruction_o.fu  = FPU;
                   instruction_o.op  = ariane_pkg::FCMOV;
+                end else begin
+                  illegal_instr     = 1'b1;
                 end
               end
             default : illegal_instr = 1'b1;

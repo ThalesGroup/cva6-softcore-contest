@@ -12,10 +12,10 @@ package cva6_config_pkg;
 
   localparam CVA6ConfigXlen = 32;
 
-  localparam CVA6ConfigRVF = 0;
-  localparam CVA6ConfigF16En = 1;
-  localparam CVA6ConfigF16AltEn = 1;
-  localparam CVA6ConfigF8En = 1;
+  localparam CVA6ConfigRVF = 1;
+  localparam CVA6ConfigF16En = 0;
+  localparam CVA6ConfigF16AltEn = 0;
+  localparam CVA6ConfigF8En = 0;
   localparam CVA6ConfigFVecEn = 0;
 
   localparam CVA6ConfigCvxifEn = 0;
@@ -85,7 +85,7 @@ package cva6_config_pkg;
       NrLoadBufEntries: unsigned'(CVA6ConfigNrLoadBufEntries),
       CMOV: bit'(1),
       RVF: bit'(CVA6ConfigRVF),
-      RVD: bit'(CVA6ConfigRVF),
+      RVD: bit'(0),
       XF16: bit'(CVA6ConfigF16En),
       XF16ALT: bit'(CVA6ConfigF16AltEn),
       XF8: bit'(CVA6ConfigF8En),
