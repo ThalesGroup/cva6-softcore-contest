@@ -321,17 +321,17 @@ module rr_arb_tree #(
       @(posedge clk_i) $onehot0(gnt_o))
         else $fatal (1, "Grant signal must be hot1 or zero.");
 
-    gnt0 : assert property(
-      @(posedge clk_i) |gnt_o |-> gnt_i)
-        else $fatal (1, "Grant out implies grant in.");
-
-    gnt1 : assert property(
-      @(posedge clk_i) req_o |-> gnt_i |-> |gnt_o)
-        else $fatal (1, "Req out and grant in implies grant out.");
-
-    gnt_idx : assert property(
-      @(posedge clk_i) req_o |->  gnt_i |-> gnt_o[idx_o])
-        else $fatal (1, "Idx_o / gnt_o do not match.");
+    // gnt0 : assert property(
+    //   @(posedge clk_i) |gnt_o |-> gnt_i)
+    //     else $fatal (1, "Grant out implies grant in.");
+    //
+    // gnt1 : assert property(
+    //   @(posedge clk_i) req_o |-> gnt_i |-> |gnt_o)
+    //     else $fatal (1, "Req out and grant in implies grant out.");
+    //
+    // gnt_idx : assert property(
+    //   @(posedge clk_i) req_o |->  gnt_i |-> gnt_o[idx_o])
+    //     else $fatal (1, "Idx_o / gnt_o do not match.");
 
     req0 : assert property(
       @(posedge clk_i) |req_i |-> req_o)

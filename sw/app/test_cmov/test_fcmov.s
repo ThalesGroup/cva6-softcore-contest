@@ -1,47 +1,60 @@
+.section .data
+.align 4
+buffer:
+  .word 0
+  .word 0
+  .word 0
+  .word 0           # pour fsw plus tard
+  .word 0
+  .word 0
+
 .section .text.init
 .globl _start
 _start:
-  .fill 32, 4, 0x00000013  # Remplit avec des NOP
+  # === 1. Activer le FPU (OBLIGATOIRE) ===
+  li   t0, 0x6000
+  csrs mstatus, t0
 
-  # Charger les constantes flottantes en mémoire
-  # 3.0 = 0x40400000, 0.0 = 0x00000000, 8.0 = 0x41000000
-  li   t0, 0x40400000      # 3.0f en hex
-  li   t1, 0x41000000      # 8.0f en hex
-  li   t2, 0x80001100      # adresse temporaire pour les constantes
+  # === 2. NOPs (si vraiment nécessaire) ===
+  .fill 32, 4, 0x00000013
 
+  # === 3. Préparer les constantes FP ===
+  la   t2, buffer
+
+  li   t0, 0x40400000      # 3.0f
   sw   t0, 0(t2)
-  sw   zero, 4(t2)
+  sw   zero, 4(t2)         # 0.0f
+  li   t1, 0x41000000      # 8.0f
   sw   t1, 8(t2)
 
-  flw  ft0, 0(t2)          # ft0 = 3.0  (rs1)
-  flw  ft1, 4(t2)          # ft1 = 0.0  (rs2 → condition: rs2==0 → prend rs1)
-  flw  ft2, 8(t2)          # ft2 = 8.0  (rs3)
+  flw  ft0, 0(t2)
+  flw  ft1, 4(t2)
+  flw  ft2, 8(t2)
 
-  # Check normal behavior
-  # ft1 == 0.0 donc ft3 = ft0 = 3.0
+  # === 4. Test FCMOV normal ===
+  # ft1 == 0.0 → ft3 = ft0 = 3.0
   .insn r4 0x0b, 0, 1, ft3, ft0, ft1, ft2
 
-  # Check if forwarding works for rs3
-  # ft1 = 1.0, ft2 = ft2 + ft3
-  li   t0, 0x3F800000      # 1.0f en hex
+  # === 5. Test forwarding rs3 ===
+  li   t0, 0x3F800000      # 1.0f
   sw   t0, 0(t2)
-  flw  ft1, 0(t2)          # ft1 = 1.0  (rs2 → condition: rs2!=0 → prend rs3)
+  flw  ft1, 0(t2)          # ft1 = 1.0
 
-  fadd.s ft2, ft2, ft3     # ft2 = ft2 + ft3 (equivalent add t2, t2, t3)
+  fadd.s ft2, ft2, ft3     # ft2 utilisé immédiatement après
 
-  # ft1 != 0.0 donc ft3 = ft2
   .insn r4 0x0b, 0, 1, ft3, ft0, ft1, ft2
 
-  # Check if stalling works for rs3
-  li   t4, 0x80001000
-  li   t0, 0x40A00000      # 5.0f en hex
+  # === 6. Test stall rs3 ===
+  li   t0, 0x40A00000      # 5.0f
   sw   t0, 0(t2)
-  flw  ft5, 0(t2)          # ft5 = 5.0
+  flw  ft5, 0(t2)
 
-  fadd.s ft2, ft2, ft5     # ft2 = ft2 + 5.0 (equivalent add t2, t2, 5)
+  fadd.s ft2, ft2, ft5
 
-  fsw  ft2, 0(t4)
-  flw  ft2, 0(t4)
+  fsw  ft2, 12(t2)
+  flw  ft2, 12(t2)
 
-  # ft1 != 0.0 donc ft3 = ft2
   .insn r4 0x0b, 0, 1, ft3, ft0, ft1, ft2
+
+end:
+  j end
