@@ -1194,7 +1194,7 @@ module decoder
           imm_select        = RS3;
           is_control_flow_instr_o = 1'b0;
           illegal_instr     = 1'b0;
-          unique case (instr.r4type.funct2)
+          unique case (instr.r4type.funct3)
                2'b00 : begin
                 instruction_o.fu  = ALU;
                 instruction_o.op  = ariane_pkg::CMOV;
@@ -1208,6 +1208,16 @@ module decoder
                 end
               end
             default : illegal_instr = 1'b1;
+          endcase
+
+          // check format
+          unique case (instr.rftype.fmt)
+            // Only process instruction if corresponding extension is active (static)
+            2'b00:   if (~CVA6Cfg.RVF) illegal_instr = 1'b1;
+            2'b01:   if (~CVA6Cfg.RVD) illegal_instr = 1'b1;
+            2'b10:   if (~CVA6Cfg.XF16 & ~CVA6Cfg.XF16ALT) illegal_instr = 1'b1;
+            2'b11:   if (~CVA6Cfg.XF8) illegal_instr = 1'b1;
+            default: illegal_instr = 1'b1;
           endcase
         end
 
