@@ -345,11 +345,14 @@ module scoreboard #(
     for (genvar j = 0; j < CVA6Cfg.NrWbPorts; j++) begin
       assert property (
         @(posedge clk_i) disable iff (!rst_ni) wt_valid_i[i] && wt_valid_i[j] && (i != j) |-> (trans_id_i[i] != trans_id_i[j]))
-      else
-        $fatal(
+        else begin
+          $display("i=%0d j=%0d trans_id[i]=%0d trans_id[j]=%0d valid[i]=%0b valid[j]=%0b",
+             i, j, trans_id_i[i], trans_id_i[j], wt_valid_i[i], wt_valid_i[j]);
+          $fatal(
             1,
             "Two or more functional units are retiring instructions with the same transaction id!"
-        );
+          );
+        end
     end
   end
   //pragma translate_on

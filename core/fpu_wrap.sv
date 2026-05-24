@@ -89,7 +89,7 @@ module fpu_wrap
         },  // CONV
         UnitTypes: '{
             '{default: fpnew_pkg::PARALLEL},  // ADDMUL
-            '{default: fpnew_pkg::MERGED},  // DIVSQRT
+            '{default: fpnew_pkg::DISABLED},  // DIVSQRT
             '{default: fpnew_pkg::PARALLEL},  // NONCOMP
             '{default: fpnew_pkg::MERGED}
         },  // CONV

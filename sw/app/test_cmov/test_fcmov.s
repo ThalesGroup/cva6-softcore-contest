@@ -7,6 +7,8 @@ _start:
 
 .section .text
 actual_code:
+
+    .fill 32, 4, 0x00000013  # Remplit avec des NOP
     # === 1. Activer le FPU ===
     lui  t0, 0x2
     nop
@@ -15,7 +17,8 @@ actual_code:
     nop
     nop
 
-    # === Préparer les constantes FP (Espacées de 8 octets pour le L1 Cache) ===
+    # === Préparer les constantes FP (Espacées de 8 octets pour le L1 Cache, j'ai eu des problème
+    # quand c'était pas alignés sur 8 octet) ===
     la   t2, buffer
 
     li   t0, 0x40400000      # 3.0f
@@ -53,11 +56,7 @@ actual_code:
     li   t0, 0x40A00000      # 5.0f
     sw   t0, 0(t2)
     nop
-    flw  ft5, 0(t2)
-    fadd.s ft2, ft2, ft5
-    fsw  ft2, 12(t2)
-    nop
-    flw  ft2, 12(t2)
+    flw  ft2, 0(t2)
     .insn r4 0x0b, 1, 0, ft3, ft0, ft1, ft2
 
 end:
