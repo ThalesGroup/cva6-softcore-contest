@@ -541,8 +541,7 @@ package ariane_pkg;
       FCVT_F2F,  // Vectorial F2F Conversions requrie target
       [FSGNJ : FMV_F2X],  // Sign Injections and moves mapped to SGNJ
       FCMP,  // Comparisons
-      [VFMIN : VFCPKCD_D],
-      FCMOV:
+      [VFMIN : VFCPKCD_D]:
       return 1'b1;  // Additional Vectorial FP ops
       default: return 1'b0;  // all other ops
     endcase

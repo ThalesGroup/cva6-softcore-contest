@@ -30,6 +30,8 @@ actual_code:
     li   t1, 0x41000000      # 8.0f
     sw   t1, 16(t2)
 
+    li   t4, 0x00000000      # 8.0f
+
     fence
     fence.i
 
@@ -41,22 +43,19 @@ actual_code:
     nop
 
     # test comportement normal
-    .insn r4 0x0b, 1, 0, ft3, ft0, ft1, ft2
+    .insn r4 0x0b, 1, 0, ft3, ft0, t4, ft2
 
     # test forwarding rs3
-    li   t0, 0x3F800000      # 1.0f
-    sw   t0, 0(t2)
-    nop
-    flw  ft1, 0(t2)
+    li   t4, 0x00000001      # 1.0f
     fadd.s ft2, ft2, ft3
-    .insn r4 0x0b, 1, 0, ft3, ft0, ft1, ft2
+    .insn r4 0x0b, 1, 0, ft3, ft0, t4, ft2
 
     # test stall rs3
     li   t0, 0x40A00000      # 5.0f
     sw   t0, 0(t2)
     nop
     flw  ft2, 0(t2)
-    .insn r4 0x0b, 1, 0, ft3, ft0, ft1, ft2
+    .insn r4 0x0b, 1, 0, ft3, ft0, t4, ft2
 
 end:
     j end
