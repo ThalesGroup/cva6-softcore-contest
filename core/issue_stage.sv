@@ -189,6 +189,75 @@ module issue_stage
   logic [CVA6Cfg.TRANS_ID_BITS-1:0] x_id_iro_sb;
 
   // ---------------------------------------------------------
+  // 1. Renaming instructions
+  // ---------------------------------------------------------
+
+  logic [CVA6Cfg.NrIssuePorts-1:0] we_i;
+  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] rgpr_renamed_instr_i;
+  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_i;
+
+  always_comb begin : rgpr_we
+    for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
+      if (decoded_instr_i[i].fu != FPU) begin
+        we_i[i] = 1'b1;
+      end
+    end
+  end
+
+  assign we_i =
+  register_allocation_table #(
+        .CVA6Cfg      (CVA6Cfg),
+        .DATA_WIDTH   (CVA6Cfg.XLEN),
+        .NR_READ_PORTS(CVA6Cfg.NrRgprPorts),
+        .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth)
+  ) i_register_allocation_table (
+      .rst_ni,
+      .we_i                    (we_i),
+      .decoded_instr_i         (decoded_instr_i),
+      .renamed_instr_o         (rgpr_renamed_instr_i)
+  );
+
+  if (CVA6Cfg.FpPresent) begin
+    logic [CVA6Cfg.NrIssuePorts-1:0] fp_we_i;
+    scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] fpr_renamed_instr_i;
+
+    always_comb begin : fpr_we
+      for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
+        if (decoded_instr_i[i].fu == FPU) begin
+          fp_we_i[i] = 1'b1;
+        end
+      end
+    end
+
+    register_allocation_table #(
+        .CVA6Cfg      (CVA6Cfg),
+        .DATA_WIDTH   (CVA6Cfg.FLen),
+        .NR_READ_PORTS(3),
+        .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth)
+    ) i_fp_register_allocation_table (
+        .rst_ni,
+        .we_i                    (fp_we_i),
+        .decoded_instr_i         (decoded_instr_i),
+        .renamed_instr_o         (fpr_renamed_instr_i)
+    );
+  end
+
+  if (CVA6Cfg.FpPresent) begin
+    for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
+      if (fp_we_i == 1'b1) begin
+        renamed_instr_i[i] = fpr_renamed_instr_i[i];
+      else begin
+        renamed_instr_i[i] = rgpr_renamed_instr_i[i];
+      end
+    end
+  else begin
+    renamed_instr_i = rgpr_renamed_instr_i;
+  end
+
+
+
+
+  // ---------------------------------------------------------
   // 2. Manage instructions in a scoreboard
   // ---------------------------------------------------------
   scoreboard #(
@@ -211,7 +280,7 @@ module issue_stage
       .commit_instr_o,
       .commit_drop_o,
       .commit_ack_i,
-      .decoded_instr_i         (decoded_instr_i),
+      .decoded_instr_i         (renamed_instr_i),
       .orig_instr_i,
       .decoded_instr_valid_i   (decoded_instr_valid_i),
       .decoded_instr_ack_o     (decoded_instr_ack_o),

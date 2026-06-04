@@ -69,6 +69,8 @@ package cva6_config_pkg;
 
   localparam CVA6ConfigRvfiTrace = 1;
 
+  localparam CVA6ConfigRegAddrWidth = 6;
+
   localparam config_pkg::cva6_user_cfg_t cva6_cfg = '{
       XLEN: unsigned'(CVA6ConfigXlen),
       VLEN: unsigned'(32),
@@ -83,6 +85,7 @@ package cva6_config_pkg;
       AxiUserWidth: unsigned'(CVA6ConfigDataUserWidth),
       MemTidWidth: unsigned'(CVA6ConfigMemTidWidth),
       NrLoadBufEntries: unsigned'(CVA6ConfigNrLoadBufEntries),
+      RegAddrWidth = unsigned'(CVA6ConfigRegAddrWidth),
       CMOV: bit'(1),
       RVF: bit'(CVA6ConfigRVF),
       RVD: bit'(0),

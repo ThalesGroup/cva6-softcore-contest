@@ -56,7 +56,7 @@ package ariane_pkg;
   localparam logic [31:0] ARIANE_MARCHID = 32'd3;
 
   // 32 registers
-  localparam REG_ADDR_SIZE = 5;
+  localparam REG_ADDR_SIZE = 6;
 
   // Read ports for general purpose register files
   localparam NR_RGPR_PORTS = 2;

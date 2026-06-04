@@ -31,6 +31,7 @@ module ariane_regfile_fpga #(
     parameter int unsigned           DATA_WIDTH    = 32,
     parameter int unsigned           NR_READ_PORTS = 2,
     parameter bit                    ZERO_REG_ZERO = 0
+    parameter int unsigned           ADDR_WIDTH    = 5;
 ) (
     // clock and reset
     input  logic                                             clk_i,
@@ -38,15 +39,14 @@ module ariane_regfile_fpga #(
     // disable clock gates for testing
     input  logic                                             test_en_i,
     // read port
-    input  logic [        NR_READ_PORTS-1:0][           4:0] raddr_i,
+    input  logic [        NR_READ_PORTS-1:0][ADDR_WIDTH-1:0] raddr_i,
     output logic [        NR_READ_PORTS-1:0][DATA_WIDTH-1:0] rdata_o,
     // write port
-    input  logic [CVA6Cfg.NrCommitPorts-1:0][           4:0] waddr_i,
+    input  logic [CVA6Cfg.NrCommitPorts-1:0][ADDR_WIDTH-1:0] waddr_i,
     input  logic [CVA6Cfg.NrCommitPorts-1:0][DATA_WIDTH-1:0] wdata_i,
     input  logic [CVA6Cfg.NrCommitPorts-1:0]                 we_i
 );
 
-  localparam ADDR_WIDTH = 5;
   localparam NUM_WORDS = 2 ** ADDR_WIDTH;
   localparam LOG_NR_WRITE_PORTS = CVA6Cfg.NrCommitPorts == 1 ? 1 : $clog2(CVA6Cfg.NrCommitPorts);
 
