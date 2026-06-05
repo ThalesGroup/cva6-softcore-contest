@@ -34,12 +34,9 @@ module register_allocation_table #(
 ) (
     input  logic                                         rst_ni,
     input  logic [CVA6Cfg.NrIssuePorts-1:0]              we_i,
-    input  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] decoded_instr_i,
+    input  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] decoded_instr_i, //May be unnecessary to pass the entirety of the struct scoreboard_entry_t
     output scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_o,
 );
-
-  localparam NUM_WORDS = 2 ** ADDR_WIDTH;
-  localparam LOG_NR_WRITE_PORTS = CVA6Cfg.NrCommitPorts == 1 ? 1 : $clog2(CVA6Cfg.NrCommitPorts);
 
   localparam NUM_REG = 2 ** ADDR_WIDTH;
 
@@ -55,18 +52,24 @@ module register_allocation_table #(
   end
 
   //renames the dest reg
-  always_comb begin : renaming_dest
+  always_comb begin : renaming_dst
     for (int unsigned i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
-      if we_i[i] begin
-        decoded_instr_i[i].rs1 = rat[decoded_instr_i[i].rs1];
-        decoded_instr_i[i].rs2 = rat[decoded_instr_i[i].rs2];
-        //if result is used as third operand we also rename it
-        if (NR_READ_PORTS == 3 && decoded_instr_i[i].use_imm == 1'b0) begin
-          decoded_instr_i[i].result = rat[decoded_instr_i[i].result];
-        end
+      if (we_i[i] && (decoded_instr_i[i].illegal_instr == 1'b0)) begin
         rat[decoded_instr_i[i].rd]= renaming_pointer;
         decoded_instr_i[i].rd = renaming_pointer;
         renaming_pointer = renaming_pointer + 1;
+      end
+    end
+  end
+
+  //renames the source reg
+  always_comb begin : renaming_src
+    for (int unsigned i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
+      decoded_instr_i[i].rs1 = rat[decoded_instr_i[i].rs1];
+      decoded_instr_i[i].rs2 = rat[decoded_instr_i[i].rs2];
+      //if result is used as third operand we also rename it
+      if (NR_READ_PORTS == 3 && decoded_instr_i[i].use_imm == 1'b0) begin
+        decoded_instr_i[i].result = rat[decoded_instr_i[i].result];
       end
     end
   end

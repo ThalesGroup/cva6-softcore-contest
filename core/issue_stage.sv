@@ -194,12 +194,14 @@ module issue_stage
 
   logic [CVA6Cfg.NrIssuePorts-1:0] we_i;
   scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] rgpr_renamed_instr_i;
-  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_i;
 
+  //We only modify the RAT corrsponding to the correct registers
   always_comb begin : rgpr_we
-    for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
-      if (decoded_instr_i[i].fu != FPU) begin
-        we_i[i] = 1'b1;
+    if (!CVA6Cfg.FpPresent) begin
+      we_i = '1;
+    else begin
+      for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
+        we_i[i] = !is_rd_fpr(decoded_instr_i[i].op);
       end
     end
   end
@@ -223,16 +225,14 @@ module issue_stage
 
     always_comb begin : fpr_we
       for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
-        if (decoded_instr_i[i].fu == FPU) begin
-          fp_we_i[i] = 1'b1;
-        end
+        fp_we_i[i] = is_rd_fpr(decoded_instr_i[i].op);
       end
     end
 
     register_allocation_table #(
         .CVA6Cfg      (CVA6Cfg),
         .DATA_WIDTH   (CVA6Cfg.FLen),
-        .NR_READ_PORTS(3),
+        .NR_READ_PORTS(3), //from what i understand fp enabled means always 3 Operands
         .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth)
     ) i_fp_register_allocation_table (
         .rst_ni,
@@ -242,19 +242,18 @@ module issue_stage
     );
   end
 
-  if (CVA6Cfg.FpPresent) begin
-    for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
-      if (fp_we_i == 1'b1) begin
-        renamed_instr_i[i] = fpr_renamed_instr_i[i];
-      else begin
-        renamed_instr_i[i] = rgpr_renamed_instr_i[i];
+  always_comb begin : fpr_we
+    if (CVA6Cfg.FpPresent) begin
+      for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
+        decoded_instr_i[i].rd = is_rd_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rd : rgpr_renamed_instr_i[i].rd;
+        decoded_instr_i[i].rs1 = is_rs1_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rs1 : rgpr_renamed_instr_i[i].rs1;
+        decoded_instr_i[i].rs2 = is_rs2_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rs2 : rgpr_renamed_instr_i[i].rs2;
+        decoded_instr_i[i].result = is_imm_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].result : rgpr_renamed_instr_i[i].result;
       end
+    else begin
+      decoded_instr_i = rgpr_renamed_instr_i;
     end
-  else begin
-    renamed_instr_i = rgpr_renamed_instr_i;
   end
-
-
 
 
   // ---------------------------------------------------------
@@ -280,7 +279,7 @@ module issue_stage
       .commit_instr_o,
       .commit_drop_o,
       .commit_ack_i,
-      .decoded_instr_i         (renamed_instr_i),
+      .decoded_instr_i         (decoded_instr_i),
       .orig_instr_i,
       .decoded_instr_valid_i   (decoded_instr_valid_i),
       .decoded_instr_ack_o     (decoded_instr_ack_o),
