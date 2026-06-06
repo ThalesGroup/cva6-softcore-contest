@@ -141,7 +141,7 @@ module issue_stage
     // CVXIF destination register - EX_STAGE
     input logic [4:0] x_rd_i,
     // Destination register in register file - COMMIT_STAGE
-    input logic [CVA6Cfg.NrCommitPorts-1:0][4:0] waddr_i,
+    input logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] waddr_i,
     // Value to write to register file - COMMIT_STAGE
     input logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.XLEN-1:0] wdata_i,
     // GPR write enable - COMMIT_STAGE
@@ -194,6 +194,7 @@ module issue_stage
 
   logic [CVA6Cfg.NrIssuePorts-1:0] we_i;
   scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] rgpr_renamed_instr_i;
+  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_i;
 
   //We only modify the RAT corrsponding to the correct registers
   always_comb begin : rgpr_we
@@ -213,10 +214,13 @@ module issue_stage
         .NR_READ_PORTS(CVA6Cfg.NrRgprPorts),
         .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth)
   ) i_register_allocation_table (
-      .rst_ni,
-      .we_i                    (we_i),
-      .decoded_instr_i         (decoded_instr_i),
-      .renamed_instr_o         (rgpr_renamed_instr_i)
+        .clk_i,
+        .rst_ni,
+        .we_i                    (fp_we_i),
+        .commit_valid_i          (),
+        .commit_old_phys_i       (),
+        .decoded_instr_i         (decoded_instr_i),
+        .renamed_instr_o         (fpr_renamed_instr_i)
   );
 
   if (CVA6Cfg.FpPresent) begin
@@ -235,23 +239,27 @@ module issue_stage
         .NR_READ_PORTS(3), //from what i understand fp enabled means always 3 Operands
         .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth)
     ) i_fp_register_allocation_table (
+        .clk_i,
         .rst_ni,
         .we_i                    (fp_we_i),
+        .commit_valid_i          (//un variable qui dit si le commit est valid check le scoreboard pour voir ce qui correspond),
+        .commit_old_phys_i       (//rajouter une sortie sur scoreboard pour pour pouvoir récupérer cette valeur),
         .decoded_instr_i         (decoded_instr_i),
         .renamed_instr_o         (fpr_renamed_instr_i)
     );
   end
 
-  always_comb begin : fpr_we
+  always_comb begin : reg_sel
+    renamed_instr_i = decoded_instr_i;
     if (CVA6Cfg.FpPresent) begin
       for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
-        decoded_instr_i[i].rd = is_rd_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rd : rgpr_renamed_instr_i[i].rd;
-        decoded_instr_i[i].rs1 = is_rs1_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rs1 : rgpr_renamed_instr_i[i].rs1;
-        decoded_instr_i[i].rs2 = is_rs2_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rs2 : rgpr_renamed_instr_i[i].rs2;
-        decoded_instr_i[i].result = is_imm_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].result : rgpr_renamed_instr_i[i].result;
+        renamed_instr_i[i].rd = is_rd_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rd : rgpr_renamed_instr_i[i].rd;
+        renamed_instr_i[i].rs1 = is_rs1_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rs1 : rgpr_renamed_instr_i[i].rs1;
+        renamed_instr_i[i].rs2 = is_rs2_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rs2 : rgpr_renamed_instr_i[i].rs2;
+        renamed_instr_i[i].result = is_imm_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].result : rgpr_renamed_instr_i[i].result;
       end
     else begin
-      decoded_instr_i = rgpr_renamed_instr_i;
+      renamed_instr_i = rgpr_renamed_instr_i;
     end
   end
 
@@ -279,7 +287,7 @@ module issue_stage
       .commit_instr_o,
       .commit_drop_o,
       .commit_ack_i,
-      .decoded_instr_i         (decoded_instr_i),
+      .decoded_instr_i         (renamed_instr_i),
       .orig_instr_i,
       .decoded_instr_valid_i   (decoded_instr_valid_i),
       .decoded_instr_ack_o     (decoded_instr_ack_o),

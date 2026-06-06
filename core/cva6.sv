@@ -94,6 +94,7 @@ module cva6
 
     // ID/EX/WB Stage
     localparam type scoreboard_entry_t = struct packed {
+      logic [CVA6Cfg.RegAddrWidth-1:0] prev_rat_pt: //previous rat pointer that hold the current value of rd
       logic [CVA6Cfg.VLEN-1:0] pc;  // PC of instruction
       logic [CVA6Cfg.TRANS_ID_BITS-1:0] trans_id;      // this can potentially be simplified, we could index the scoreboard entry
       // with the transaction id in any case make the width more generic
@@ -1284,7 +1285,7 @@ module cva6
   dcache_req_o_t [NumPorts-1:0] dcache_req_from_cache;
 
   // D$ request
-  // Since ZCMT is only enable for embdeed class so MMU should be disable. 
+  // Since ZCMT is only enable for embdeed class so MMU should be disable.
   // Cache port 0 is being ultilize in implicit read access in ZCMT extension.
   if (CVA6Cfg.RVZCMT & ~(CVA6Cfg.MmuPresent)) begin
     assign dcache_req_to_cache[0] = dcache_req_ports_id_cache;

@@ -32,48 +32,82 @@ module register_allocation_table #(
     parameter int unsigned           NR_READ_PORTS = 2,
     parameter int unsigned           ADDR_WIDTH    = 5;
 ) (
-    input  logic                                         rst_ni,
-    input  logic [CVA6Cfg.NrIssuePorts-1:0]              we_i,
-    input  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] decoded_instr_i, //May be unnecessary to pass the entirety of the struct scoreboard_entry_t
-    output scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_o,
-);
+    input logic                                               clk_i,
+    input logic                                               rst_ni,
+    input logic [CVA6Cfg.NrIssuePorts-1:0]                    we_i,
+    input logic [CVA6Cfg.NrIssuePorts-1:0]                    commit_valid_i,
+    input logic  [ADDR_WIDTH-1:0][CVA6Cfg.NrIssuePorts-1:0]   commit_old_phys_i,
 
+    input  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] decoded_instr_i, //May be unnecessary to pass the entirety of the struct scoreboard_entry_t
+    output scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_o
+);
   localparam NUM_REG = 2 ** ADDR_WIDTH;
 
-  //Next writable register
-  logic [NUM_REG-1:0] renaming_pointer;
+  //keeps track of free physical registers
+  logic [NUM_REG-1:0] free_regs;
+  logic [NUM_REG-1:0] free_regs_masked [CVA6Cfg.NrIssuePorts:0];
+  logic [ADDR_WIDTH-1:0] alloc_idx     [CVA6Cfg.NrIssuePorts-1:0];
+
+  assign free_regs_masked[0] = free_regs;
+
+  //priority encoder cascade to get index for each instr
+  for (genvar i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin : g_alloc
+      lzc #(
+          .WIDTH(NUM_REG),
+          .MODE(1'b0))
+      i_lzc (
+          .in_i   (free_regs_masked[i]),
+          .cnt_o  (alloc_idx[i]),
+          .empty_o()
+      );
+
+      assign free_regs_masked[i+1] = (we_i[i] && (decoded_instr_i[i].illegal_instr == 1'b0) ?
+        (free_regs_masked[i] & ~(NUM_REG'(1) << alloc_idx[i])) :
+        free_regs_masked[i];
+  end
+
   // RAT of size nb register i.e 32 containing adress of physical register
   logic [ADDR_WIDTH-1:0] rat[31:0];
 
-  always_comb begin : renaming_dest
-    if (rst_ni == 1'b0) begin
-      renaming_pointer = '0;
-    end
-  end
+always_comb begin : renaming
+    for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
+        renamed_instr_o[i] = decoded_instr_i[i];
 
-  //renames the dest reg
-  always_comb begin : renaming_dst
-    for (int unsigned i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
-      if (we_i[i] && (decoded_instr_i[i].illegal_instr == 1'b0)) begin
-        rat[decoded_instr_i[i].rd]= renaming_pointer;
-        decoded_instr_i[i].rd = renaming_pointer;
-        renaming_pointer = renaming_pointer + 1;
+        // Renaming destination
+        if (we_i[i] && !decoded_instr_i[i].illegal_instr) begin
+            renamed_instr_o[i].rat_prev_pt = rat[decoded_instr_i[i].rd];
+            renamed_instr_o[i].rd          = alloc_idx[i];
+        end
+
+        // Renaming sources
+        renamed_instr_o[i].rs1 = rat[decoded_instr_i[i].rs1];
+        renamed_instr_o[i].rs2 = rat[decoded_instr_i[i].rs2];
+        if (NR_READ_PORTS == 3 && !decoded_instr_i[i].use_imm) begin
+            renamed_instr_o[i].result = rat[decoded_instr_i[i].result];
+        end
+    end
+end
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      free_regs <= '1;
+      for (int i = 0; i < 32; i++)
+        rat[i] <= ADDR_WIDTH'(i);
+    end else begin
+      free_regs <= free_regs_masked[CVA6Cfg.NrIssuePorts];
+      for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
+        if (commit_valid_i[i]) begin
+          free_regs[commit_old_phys_i[i]] <= 1'b1;
+        end
+      end
+      for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
+        if (we_i[i] && !decoded_instr_i[i].illegal_instr) begin
+          rat[decoded_instr_i[i].rd] <= alloc_idx[i];
+        end
       end
     end
   end
 
-  //renames the source reg
-  always_comb begin : renaming_src
-    for (int unsigned i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
-      decoded_instr_i[i].rs1 = rat[decoded_instr_i[i].rs1];
-      decoded_instr_i[i].rs2 = rat[decoded_instr_i[i].rs2];
-      //if result is used as third operand we also rename it
-      if (NR_READ_PORTS == 3 && decoded_instr_i[i].use_imm == 1'b0) begin
-        decoded_instr_i[i].result = rat[decoded_instr_i[i].result];
-      end
-    end
-  end
-
-  renamed_instr_o <= decoded_instr_i;
+end
 
 endmodule
