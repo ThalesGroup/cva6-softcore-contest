@@ -154,6 +154,8 @@ module issue_stage
     output logic [CVA6Cfg.NrCommitPorts-1:0] commit_drop_o,
     // Commit acknowledge - COMMIT_STAGE
     input logic [CVA6Cfg.NrCommitPorts-1:0] commit_ack_i,
+    // old physical register of committed instr - COMMIT_STAGE
+    input logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] commit_old_phys_i,
     // Issue stall - PERF_COUNTERS
     output logic stall_issue_o,
     // Information dedicated to RVFI - RVFI
@@ -193,7 +195,7 @@ module issue_stage
   // ---------------------------------------------------------
 
   logic [CVA6Cfg.NrIssuePorts-1:0] we_i;
-  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] rgpr_renamed_instr_i;
+  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] gpr_renamed_instr_i;
   scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_i;
 
   //We only modify the RAT corrsponding to the correct registers
@@ -207,7 +209,6 @@ module issue_stage
     end
   end
 
-  assign we_i =
   register_allocation_table #(
         .CVA6Cfg      (CVA6Cfg),
         .DATA_WIDTH   (CVA6Cfg.XLEN),
@@ -217,10 +218,11 @@ module issue_stage
         .clk_i,
         .rst_ni,
         .we_i                    (fp_we_i),
-        .commit_valid_i          (),
-        .commit_old_phys_i       (),
+        .commit_valid_i          (commit_ack_i),
+        .commit_old_phys_i       (commit_old_phys_i),
+        .commit_rd_i             (waddr_i),
         .decoded_instr_i         (decoded_instr_i),
-        .renamed_instr_o         (fpr_renamed_instr_i)
+        .renamed_instr_o         (gpr_renamed_instr_i)
   );
 
   if (CVA6Cfg.FpPresent) begin
@@ -242,24 +244,26 @@ module issue_stage
         .clk_i,
         .rst_ni,
         .we_i                    (fp_we_i),
-        .commit_valid_i          (//un variable qui dit si le commit est valid check le scoreboard pour voir ce qui correspond),
-        .commit_old_phys_i       (//rajouter une sortie sur scoreboard pour pour pouvoir récupérer cette valeur),
+        .commit_valid_i          (commit_ack_i),
+        .commit_old_phys_i       (commit_old_phys_i),
+        .commit_rd_i             (waddr_i),
         .decoded_instr_i         (decoded_instr_i),
         .renamed_instr_o         (fpr_renamed_instr_i)
     );
   end
 
   always_comb begin : reg_sel
-    renamed_instr_i = decoded_instr_i;
     if (CVA6Cfg.FpPresent) begin
+      renamed_instr_i = decoded_instr_i;
       for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
-        renamed_instr_i[i].rd = is_rd_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rd : rgpr_renamed_instr_i[i].rd;
-        renamed_instr_i[i].rs1 = is_rs1_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rs1 : rgpr_renamed_instr_i[i].rs1;
-        renamed_instr_i[i].rs2 = is_rs2_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rs2 : rgpr_renamed_instr_i[i].rs2;
-        renamed_instr_i[i].result = is_imm_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].result : rgpr_renamed_instr_i[i].result;
+        renamed_instr_i[i].rd = is_rd_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rd : gpr_renamed_instr_i[i].rd;
+        renamed_instr_i[i].old_phys = is_rd_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].old_phys : gpr_renamed_instr_i[i].old_phys;
+        renamed_instr_i[i].rs1 = is_rs1_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rs1 : gpr_renamed_instr_i[i].rs1;
+        renamed_instr_i[i].rs2 = is_rs2_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rs2 : gpr_renamed_instr_i[i].rs2;
+        renamed_instr_i[i].result = is_imm_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].result : gpr_renamed_instr_i[i].result;
       end
     else begin
-      renamed_instr_i = rgpr_renamed_instr_i;
+      renamed_instr_i = gpr_renamed_instr_i;
     end
   end
 

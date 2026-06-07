@@ -94,7 +94,7 @@ module cva6
 
     // ID/EX/WB Stage
     localparam type scoreboard_entry_t = struct packed {
-      logic [CVA6Cfg.RegAddrWidth-1:0] prev_rat_pt: //previous rat pointer that hold the current value of rd
+      logic [CVA6Cfg.RegAddrWidth-1:0] old_phys: //previous rat pointer that hold the current value of rd
       logic [CVA6Cfg.VLEN-1:0] pc;  // PC of instruction
       logic [CVA6Cfg.TRANS_ID_BITS-1:0] trans_id;      // this can potentially be simplified, we could index the scoreboard entry
       // with the transaction id in any case make the width more generic
@@ -514,6 +514,7 @@ module cva6
   // --------------
   scoreboard_entry_t [CVA6Cfg.NrCommitPorts-1:0] commit_instr_id_commit;
   logic [CVA6Cfg.NrCommitPorts-1:0] commit_drop_id_commit;
+  logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] commit_old_phys_i_commit;
   logic [CVA6Cfg.NrCommitPorts-1:0] commit_ack_commit_id;
 
   // --------------
@@ -897,6 +898,7 @@ module cva6
       .commit_instr_o       (commit_instr_id_commit),
       .commit_drop_o        (commit_drop_id_commit),
       .commit_ack_i         (commit_ack_commit_id),
+      .commit_old_phys_i    (commit_old_phys_i_commit),
       // Performance Counters
       .stall_issue_o        (stall_issue),
       //RVFI
@@ -1069,6 +1071,7 @@ module cva6
       .commit_instr_i    (commit_instr_id_commit),
       .commit_drop_i     (commit_drop_id_commit),
       .commit_ack_o      (commit_ack_commit_id),
+      .commit_old_phys_o (commit_old_phys_i),
       .commit_macro_ack_o(commit_macro_ack),
       .waddr_o           (waddr_commit_id),
       .wdata_o           (wdata_commit_id),

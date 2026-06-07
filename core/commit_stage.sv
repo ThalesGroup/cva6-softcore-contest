@@ -40,6 +40,8 @@ module commit_stage
     input logic [CVA6Cfg.NrCommitPorts-1:0] commit_drop_i,
     // Acknowledge that we are indeed committing - ISSUE_STAGE
     output logic [CVA6Cfg.NrCommitPorts-1:0] commit_ack_o,
+    // old register of the committed instr - ISSUE_STAGE
+    output logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] commit_old_phys_o,
     // Acknowledge that we are indeed committing - CSR_REGFILE
     output logic [CVA6Cfg.NrCommitPorts-1:0] commit_macro_ack_o,
     // Register file write address - ISSUE_STAGE
@@ -106,6 +108,10 @@ module commit_stage
 
   for (genvar i = 0; i < CVA6Cfg.NrCommitPorts; i++) begin : gen_waddr
     assign waddr_o[i] = commit_instr_i[i].rd;
+  end
+
+  for (genvar i = 0; i < CVA6Cfg.NrCommitPorts; i++) begin : gen_old_phys
+    assign commit_old_phys_o[i] = commit_instr_i[i].old_phys;
   end
 
   assign pc_o = commit_instr_i[0].pc;

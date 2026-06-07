@@ -36,7 +36,8 @@ module register_allocation_table #(
     input logic                                               rst_ni,
     input logic [CVA6Cfg.NrIssuePorts-1:0]                    we_i,
     input logic [CVA6Cfg.NrIssuePorts-1:0]                    commit_valid_i,
-    input logic  [ADDR_WIDTH-1:0][CVA6Cfg.NrIssuePorts-1:0]   commit_old_phys_i,
+    input logic [CVA6Cfg.NrIssuePorts-1:0][ADDR_WIDTH-1:0]    commit_old_phys_i,
+    input logic [CVA6Cfg.NrIssuePorts-1:0][ADDR_WIDTH-1:0]    commit_rd_i, // architectural register wrote by commit
 
     input  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] decoded_instr_i, //May be unnecessary to pass the entirety of the struct scoreboard_entry_t
     output scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_o
@@ -61,7 +62,7 @@ module register_allocation_table #(
           .empty_o()
       );
 
-      assign free_regs_masked[i+1] = (we_i[i] && (decoded_instr_i[i].illegal_instr == 1'b0) ?
+      assign free_regs_masked[i+1] = (we_i[i] && (decoded_instr_i[i].illegal_instr == 1'b0) && ) ?
         (free_regs_masked[i] & ~(NUM_REG'(1) << alloc_idx[i])) :
         free_regs_masked[i];
   end
@@ -75,7 +76,7 @@ always_comb begin : renaming
 
         // Renaming destination
         if (we_i[i] && !decoded_instr_i[i].illegal_instr) begin
-            renamed_instr_o[i].rat_prev_pt = rat[decoded_instr_i[i].rd];
+            renamed_instr_o[i].old_phys = rat[decoded_instr_i[i].rd];
             renamed_instr_o[i].rd          = alloc_idx[i];
         end
 
