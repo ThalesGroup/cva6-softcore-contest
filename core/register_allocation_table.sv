@@ -9,7 +9,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
-// Engineer:       Francesco Conti - f.conti@unibo.it
+// Engineer:       Fieux Telmo - fieuxtelmo@gmail.com
 //
 // Additional contributions by:
 //                 Markus Wegmann - markus.wegmann@technokrat.ch
@@ -97,6 +97,8 @@ end
       for (int i = 0; i < 32; i++)
         rat[i] <= ADDR_WIDTH'(i);
     end else begin
+
+      //rollback
       if(rollback_we_i) begin
         free_regs[rat[rollback_rd_i]] <= 1'b1;
         rat[rollback_rd_i] <= rollback_old_phys_i;
@@ -105,7 +107,7 @@ end
         free_regs <= free_regs_masked[CVA6Cfg.NrIssuePorts];
         for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
           if (commit_valid_i[i]) begin
-            free_regs[commit_old_phys_i[i]] <= 1'b1;
+            free_regs[commit_old_phys_i[i]] <= 1'b1; //freeing old reg
           end
         end
         for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin

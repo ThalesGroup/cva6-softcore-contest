@@ -149,6 +149,8 @@ package config_pkg;
     int unsigned                 AxiDataWidth;
     // AXI ID width
     int unsigned                 AxiIdWidth;
+    // Reg address width
+    int unsigned                 RegAddrWidth;
     // AXI User width
     int unsigned                 AxiUserWidth;
     // AXI burst in write
@@ -246,6 +248,7 @@ package config_pkg;
     int unsigned AxiDataWidth;
     int unsigned AxiIdWidth;
     int unsigned AxiUserWidth;
+    int unsigned RegAddrWidth;
     int unsigned MEM_TID_WIDTH;
     int unsigned NrLoadBufEntries;
     bit          RVF;

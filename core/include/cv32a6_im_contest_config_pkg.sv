@@ -85,7 +85,7 @@ package cva6_config_pkg;
       AxiUserWidth: unsigned'(CVA6ConfigDataUserWidth),
       MemTidWidth: unsigned'(CVA6ConfigMemTidWidth),
       NrLoadBufEntries: unsigned'(CVA6ConfigNrLoadBufEntries),
-      RegAddrWidth = unsigned'(CVA6ConfigRegAddrWidth),
+      RegAddrWidth : unsigned'(CVA6ConfigRegAddrWidth),
       CMOV: bit'(1),
       RVF: bit'(CVA6ConfigRVF),
       RVD: bit'(0),

@@ -255,19 +255,6 @@ module scoreboard
         mem_n[commit_pointer_q[i]].sbe.valid = 1'b0;
       end
     end
-
-    // ------
-    // Flush
-    // ------
-    if (flush_i) begin
-      for (int unsigned i = 0; i < CVA6Cfg.NR_SB_ENTRIES; i++) begin
-        // set all valid flags for all entries to zero
-        mem_n[i].issued       = 1'b0;
-        mem_n[i].cancelled    = 1'b0;
-        mem_n[i].sbe.valid    = 1'b0;
-        mem_n[i].sbe.ex.valid = 1'b0;
-      end
-    end
   end
 
   assign bmiss = resolved_branch_i.valid && resolved_branch_i.is_mispredict;
@@ -308,17 +295,68 @@ module scoreboard
     assign fwd_o.sbe[i] = mem_q[i].sbe;
   end
 
+  typedef enum logic [1:0] {
+    NORMAL,
+    WALKBACK
+  } state_t;
+
+  state_t state_n, state_q;
+  logic [CVA6Cfg.TRANS_ID_BITS-1:0] rollback_pointer_n, rollback_pointer_q;
+
+
+  always_comb begin : rollback
+    state_n        = state_q;
+    walkback_ptr_n = walkback_ptr_q;
+    rollback_rd_o = '0;
+    rollback_we_o = 1'b0;
+    rollback_old_phys_o = '0;
+    rollback_op_o = ADD;
+
+    case (state_n)
+      NORMAL :
+        if (flush_i) begin
+          state_n = WALKBACK;
+          rollback_pointer_n = issue_pointer[0]-1;
+        end
+      WALKBACK :
+        rollback_rd_o = mem_q[rollback_pointer_q].sbe.rd;
+        rollback_we_o = mem_q[rollback_pointer_q].issued;
+        rollback_old_phys_o = mem_q[rollback_pointer_q].sbe.old_phys;
+        rollback_op_o = mem_q[rollback_pointer_q].sbe.op;
+
+        if (rollback_pointer_q == commit_pointer_q[0]) begin
+          state_n = NORMAL;
+          // Flush
+          for (int unsigned i = 0; i < CVA6Cfg.NR_SB_ENTRIES; i++) begin
+            // set all valid flags for all entries to zero
+            mem_n[i].issued       = 1'b0;
+            mem_n[i].cancelled    = 1'b0;
+            mem_n[i].sbe.valid    = 1'b0;
+            mem_n[i].sbe.ex.valid = 1'b0;
+          end
+        end else begin
+          rollback_pointer_n = walkback_ptr_q - 1;
+        end
+    endcase
+  end
+
+
   // sequential process
   always_ff @(posedge clk_i or negedge rst_ni) begin : regs
     if (!rst_ni) begin
       mem_q            <= '{default: sb_mem_t'(0)};
       commit_pointer_q <= '0;
       issue_pointer_q  <= '0;
+      state_q          <= NORMAL;
     end else begin
       issue_pointer_q <= issue_pointer_n;
       mem_q <= mem_n;
       mem_q[x_id_i].sbe.rd <= (x_transaction_accepted_i && ~x_issue_writeback_i) ? 5'b0 : mem_n[x_id_i].sbe.rd;
       commit_pointer_q <= commit_pointer_n;
+      if (state_n == WALKBACK) begin
+        state_q <= state_n;
+        rollback_pointer_q <= rollback_pointer_n;
+      end
     end
   end
 
