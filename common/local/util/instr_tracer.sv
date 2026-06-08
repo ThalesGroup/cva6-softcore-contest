@@ -34,7 +34,7 @@ module instr_tracer #(
   input logic                    fetch_ack,
   input logic                    issue_ack, // issue acknowledged
   input scoreboard_entry_t       issue_sbe, // issue scoreboard entry
-  input logic [1:0][4:0]         waddr, // WB stage
+  input logic [1:0][CVA6Cfg.RegAddrWidth-1:0] waddr, // WB stage
   input logic [1:0][63:0]        wdata,
   input logic [1:0]              we_gpr,
   input logic [1:0]              we_fpr,
@@ -63,8 +63,8 @@ module instr_tracer #(
   // store resolved branches, get (mis-)predictions
   bp_resolve_t bp [$];
   // shadow copy of the register files
-  logic [63:0] gp_reg_file [32];
-  logic [63:0] fp_reg_file [32];
+  logic [63:0] gp_reg_file [2 ** CVA6Cfg.RegAddrWidth];
+  logic [63:0] fp_reg_file [2 ** CVA6Cfg.RegAddrWidth];
   // 64 bit clock tick count
   longint unsigned clk_ticks;
   int f, commit_log;
@@ -218,7 +218,7 @@ module instr_tracer #(
   endfunction
 
   function void printInstr(scoreboard_entry_t sbe, logic [31:0] instr, logic [63:0] result, logic [CVA6Cfg.PLEN-1:0] paddr, riscv::priv_lvl_t priv_lvl, logic debug_mode, bp_resolve_t bp);
-    automatic instr_trace_item #(
+    instr_trace_item #(
       .CVA6Cfg(CVA6Cfg),
       .bp_resolve_t(bp_resolve_t),
       .scoreboard_entry_t(scoreboard_entry_t)
@@ -232,7 +232,7 @@ module instr_tracer #(
   endfunction
 
   function void printException(logic [CVA6Cfg.VLEN-1:0] pc, logic [63:0] cause, logic [63:0] tval);
-    automatic ex_trace_item #(
+    ex_trace_item #(
       .CVA6Cfg(CVA6Cfg),
       .interrupts_t(interrupts_t),
       .INTERRUPTS(INTERRUPTS)

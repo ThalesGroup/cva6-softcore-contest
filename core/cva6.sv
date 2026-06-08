@@ -1079,7 +1079,7 @@ module cva6
       .commit_instr_i    (commit_instr_id_commit),
       .commit_drop_i     (commit_drop_id_commit),
       .commit_ack_o      (commit_ack_commit_id),
-      .commit_old_phys_o (commit_old_phys_i),
+      .commit_old_phys_o (commit_old_phys_i_commit),
       .commit_macro_ack_o(commit_macro_ack),
       .waddr_o           (waddr_commit_id),
       .wdata_o           (wdata_commit_id),

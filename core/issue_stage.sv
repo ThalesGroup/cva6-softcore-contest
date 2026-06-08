@@ -197,7 +197,7 @@ module issue_stage
   // ---------------------------------------------------------
 
   logic [CVA6Cfg.NrIssuePorts-1:0] we_i;
-  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] gpr_renamed_instr_i;
+  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] gpr_renamed_instr_i, fpr_renamed_instr_i;
   scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_i;
   logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_rd_i;
   logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_old_phys_i;
@@ -211,9 +211,9 @@ module issue_stage
   always_comb begin : gpr_we
     if (!CVA6Cfg.FpPresent) begin
       we_i = '1;
-      gpr_rollback_we_i = rollback_wb_i ? 1'b1 : 1'b0;
-    else begin
-      gpr_rollback_we_i = (rollback_wb_i && is_rd_fpr(rollback_op_i)) ? 1'b0 : 1'b1;
+      gpr_rollback_we_i = rollback_we_i ? 1'b1 : 1'b0;
+    end else begin
+      gpr_rollback_we_i = (rollback_we_i && is_rd_fpr(rollback_op_i)) ? 1'b0 : 1'b1;
       for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
         we_i[i] = !is_rd_fpr(decoded_instr_i[i].op);
       end
@@ -224,11 +224,12 @@ module issue_stage
         .CVA6Cfg      (CVA6Cfg),
         .DATA_WIDTH   (CVA6Cfg.XLEN),
         .NR_READ_PORTS(CVA6Cfg.NrRgprPorts),
-        .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth)
+        .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth),
+        .scoreboard_entry_t ( scoreboard_entry_t )
   ) i_register_allocation_table (
         .clk_i,
         .rst_ni,
-        .we_i                    (fp_we_i),
+        .we_i                    (we_i),
         .commit_valid_i          (commit_ack_i),
         .commit_old_phys_i       (commit_old_phys_i),
         .rollback_rd_i           (rollback_rd_i),
@@ -240,11 +241,10 @@ module issue_stage
 
   if (CVA6Cfg.FpPresent) begin
     logic [CVA6Cfg.NrIssuePorts-1:0] fp_we_i;
-    scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] fpr_renamed_instr_i;
     logic                                         fpr_rollback_we_i;
 
     always_comb begin : fpr_we
-      fpr_rollback_we_i = (rollback_wb_i && is_rd_fpr(rollback_op_i)) ? 1'b1 : 1'b0;
+      fpr_rollback_we_i = (rollback_we_i && is_rd_fpr(rollback_op_i)) ? 1'b1 : 1'b0;
       for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
         fp_we_i[i] = is_rd_fpr(decoded_instr_i[i].op);
       end
@@ -254,7 +254,8 @@ module issue_stage
         .CVA6Cfg      (CVA6Cfg),
         .DATA_WIDTH   (CVA6Cfg.FLen),
         .NR_READ_PORTS(3), //from what i understand fp enabled means always 3 Operands
-        .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth)
+        .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth),
+        .scoreboard_entry_t ( scoreboard_entry_t )
     ) i_fp_register_allocation_table (
         .clk_i,
         .rst_ni,
@@ -279,7 +280,7 @@ module issue_stage
         renamed_instr_i[i].rs2 = is_rs2_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].rs2 : gpr_renamed_instr_i[i].rs2;
         renamed_instr_i[i].result = is_imm_fpr(decoded_instr_i[i].op) ? fpr_renamed_instr_i[i].result : gpr_renamed_instr_i[i].result;
       end
-    else begin
+    end else begin
       renamed_instr_i = gpr_renamed_instr_i;
     end
   end

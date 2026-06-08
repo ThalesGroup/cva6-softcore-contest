@@ -114,7 +114,7 @@ module issue_read_operands
     output logic x_issue_writeback_o,
     output logic [CVA6Cfg.TRANS_ID_BITS-1:0] x_id_o,
     // Destination register in the register file - COMMIT_STAGE
-    input logic [CVA6Cfg.NrCommitPorts-1:0][4:0] waddr_i,
+    input logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] waddr_i,
     // Value to write to register file - COMMIT_STAGE
     input logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.XLEN-1:0] wdata_i,
     // GPR write enable - COMMIT_STAGE
@@ -978,10 +978,10 @@ module issue_read_operands
   // Integer Register File
   // ----------------------
   logic [  CVA6Cfg.NrRgprPorts-1:0][CVA6Cfg.XLEN-1:0] rdata;
-  logic [  CVA6Cfg.NrRgprPorts-1:0][             4:0] raddr_pack;
+  logic [  CVA6Cfg.NrRgprPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] raddr_pack;
 
   // pack signals
-  logic [CVA6Cfg.NrCommitPorts-1:0][             4:0] waddr_pack;
+  logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] waddr_pack;
   logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.XLEN-1:0] wdata_pack;
   logic [CVA6Cfg.NrCommitPorts-1:0]                   we_pack;
 
@@ -1040,7 +1040,7 @@ module issue_read_operands
   logic [2:0][CVA6Cfg.FLen-1:0] fprdata;
 
   // pack signals
-  logic [2:0][4:0] fp_raddr_pack;
+  logic [2:0][CVA6Cfg.RegAddrWidth-1:0] fp_raddr_pack;
   logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.XLEN-1:0] fp_wdata_pack;
 
   always_comb begin : assign_fp_raddr_pack

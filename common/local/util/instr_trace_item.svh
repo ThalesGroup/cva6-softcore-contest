@@ -33,8 +33,8 @@ class instr_trace_item #(
     scoreboard_entry_t sbe;
     logic [31:0]       pc;
     logic [31:0]       instr;
-    logic [63:0]       gp_reg_file [32];
-    logic [63:0]       fp_reg_file [32];
+    logic [63:0]       gp_reg_file [2 ** CVA6Cfg.RegAddrWidth];
+    logic [63:0]       fp_reg_file [2 ** CVA6Cfg.RegAddrWidth];
     logic [4:0]        read_regs [$];
     logic              read_fpr [$];
     logic [4:0]        result_regs [$];
@@ -48,8 +48,8 @@ class instr_trace_item #(
     logic [4:0] rs1, rs2, rs3, rd;
 
     // constructor creating a new instruction trace item, e.g.: a single instruction with all relevant information
-    function new (time simtime, longint unsigned cycle, scoreboard_entry_t sbe, logic [31:0] instr, logic [63:0] gp_reg_file [32],
-                logic [63:0] fp_reg_file [32], logic [63:0] result, logic [CVA6Cfg.PLEN-1:0] paddr, riscv::priv_lvl_t priv_lvl, logic debug_mode, bp_resolve_t bp);
+    function new (time simtime, longint unsigned cycle, scoreboard_entry_t sbe, logic [31:0] instr, logic [63:0] gp_reg_file [2 ** CVA6Cfg.RegAddrWidth],
+                logic [63:0] fp_reg_file [2 ** CVA6Cfg.RegAddrWidth], logic [63:0] result, logic [CVA6Cfg.PLEN-1:0] paddr, riscv::priv_lvl_t priv_lvl, logic debug_mode, bp_resolve_t bp);
         this.simtime  = simtime;
         this.cycle    = cycle;
         this.pc       = sbe.pc;

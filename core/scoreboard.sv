@@ -89,12 +89,12 @@ module scoreboard
     // Issue pointer - RVFI
     output logic [ CVA6Cfg.NrIssuePorts-1:0][CVA6Cfg.TRANS_ID_BITS-1:0] rvfi_issue_pointer_o,
     // Commit pointer - RVFI
-    output logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.TRANS_ID_BITS-1:0] rvfi_commit_pointer_o
+    output logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.TRANS_ID_BITS-1:0] rvfi_commit_pointer_o,
 
-    output logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_rd_i;
-    output logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_old_phys_i;
-    output logic                                         rollback_we_i;
-    fu_op                                                rollback_op_i;
+    output logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_rd_o,
+    output logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_old_phys_o,
+    output logic                                         rollback_we_o,
+    fu_op                                                rollback_op_o
 
 );
 
@@ -121,6 +121,15 @@ module scoreboard
 
   logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.TRANS_ID_BITS-1:0] commit_pointer_n, commit_pointer_q;
   logic [$clog2(CVA6Cfg.NrCommitPorts):0] num_commit;
+
+  typedef enum logic [1:0] {
+    NORMAL,
+    WALKBACK
+  } state_t;
+
+  state_t state_n, state_q;
+  logic [CVA6Cfg.TRANS_ID_BITS-1:0] rollback_pointer_n, rollback_pointer_q;
+
 
   for (genvar i = 0; i < CVA6Cfg.NR_SB_ENTRIES; i++) begin
     assign still_issued[i] = mem_q[i].issued & ~mem_q[i].cancelled;
@@ -255,6 +264,20 @@ module scoreboard
         mem_n[commit_pointer_q[i]].sbe.valid = 1'b0;
       end
     end
+
+    // ------------
+    // Flush
+    // ------------
+    if ((rollback_pointer_q == commit_pointer_q[0]) && state_q == WALKBACK) begin
+      // Flush
+      for (int unsigned i = 0; i < CVA6Cfg.NR_SB_ENTRIES; i++) begin
+        // set all valid flags for all entries to zero
+        mem_n[i].issued       = 1'b0;
+        mem_n[i].cancelled    = 1'b0;
+        mem_n[i].sbe.valid    = 1'b0;
+        mem_n[i].sbe.ex.valid = 1'b0;
+      end
+    end
   end
 
   assign bmiss = resolved_branch_i.valid && resolved_branch_i.is_mispredict;
@@ -295,30 +318,23 @@ module scoreboard
     assign fwd_o.sbe[i] = mem_q[i].sbe;
   end
 
-  typedef enum logic [1:0] {
-    NORMAL,
-    WALKBACK
-  } state_t;
-
-  state_t state_n, state_q;
-  logic [CVA6Cfg.TRANS_ID_BITS-1:0] rollback_pointer_n, rollback_pointer_q;
-
 
   always_comb begin : rollback
     state_n        = state_q;
-    walkback_ptr_n = walkback_ptr_q;
+    rollback_pointer_n = rollback_pointer_q;
     rollback_rd_o = '0;
     rollback_we_o = 1'b0;
     rollback_old_phys_o = '0;
     rollback_op_o = ADD;
 
-    case (state_n)
-      NORMAL :
+    case (state_q)
+      NORMAL : begin
         if (flush_i) begin
           state_n = WALKBACK;
           rollback_pointer_n = issue_pointer[0]-1;
         end
-      WALKBACK :
+      end
+      WALKBACK : begin
         rollback_rd_o = mem_q[rollback_pointer_q].sbe.rd;
         rollback_we_o = mem_q[rollback_pointer_q].issued;
         rollback_old_phys_o = mem_q[rollback_pointer_q].sbe.old_phys;
@@ -326,17 +342,10 @@ module scoreboard
 
         if (rollback_pointer_q == commit_pointer_q[0]) begin
           state_n = NORMAL;
-          // Flush
-          for (int unsigned i = 0; i < CVA6Cfg.NR_SB_ENTRIES; i++) begin
-            // set all valid flags for all entries to zero
-            mem_n[i].issued       = 1'b0;
-            mem_n[i].cancelled    = 1'b0;
-            mem_n[i].sbe.valid    = 1'b0;
-            mem_n[i].sbe.ex.valid = 1'b0;
-          end
         end else begin
-          rollback_pointer_n = walkback_ptr_q - 1;
+          rollback_pointer_n = rollback_pointer_q - 1;
         end
+      end
     endcase
   end
 

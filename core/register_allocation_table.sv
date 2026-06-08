@@ -26,11 +26,14 @@
 //                 maintained keeping track of write acesses.
 //
 
-module register_allocation_table #(
+module register_allocation_table
+#(
     parameter config_pkg::cva6_cfg_t CVA6Cfg       = config_pkg::cva6_cfg_empty,
     parameter int unsigned           DATA_WIDTH    = 32,
     parameter int unsigned           NR_READ_PORTS = 2,
-    parameter int unsigned           ADDR_WIDTH    = 5;
+    parameter int unsigned           ADDR_WIDTH    = 5,
+
+    parameter type scoreboard_entry_t = logic
 ) (
     input logic                                               clk_i,
     input logic                                               rst_ni,
@@ -64,7 +67,7 @@ module register_allocation_table #(
           .empty_o()
       );
 
-      assign free_regs_masked[i+1] = (we_i[i] && (decoded_instr_i[i].illegal_instr == 1'b0)) ?
+      assign free_regs_masked[i+1] = (we_i[i] && (decoded_instr_i[i].ex.valid == 1'b0)) ?
         (free_regs_masked[i] & ~(NUM_REG'(1) << alloc_idx[i])) :
         free_regs_masked[i];
   end
@@ -72,24 +75,24 @@ module register_allocation_table #(
   // RAT of size nb register i.e 32 containing adress of physical register
   logic [ADDR_WIDTH-1:0] rat[31:0];
 
-always_comb begin : renaming
-    for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
-        renamed_instr_o[i] = decoded_instr_i[i];
+  always_comb begin : renaming
+      for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
+          renamed_instr_o[i] = decoded_instr_i[i];
 
-        // Renaming destination
-        if (we_i[i] && !decoded_instr_i[i].illegal_instr) begin
-            renamed_instr_o[i].old_phys = rat[decoded_instr_i[i].rd];
-            renamed_instr_o[i].rd          = alloc_idx[i];
-        end
+          // Renaming destination
+          if (we_i[i] && !decoded_instr_i[i].ex.valid ) begin
+              renamed_instr_o[i].old_phys = rat[decoded_instr_i[i].rd];
+              renamed_instr_o[i].rd          = alloc_idx[i];
+          end
 
-        // Renaming sources
-        renamed_instr_o[i].rs1 = rat[decoded_instr_i[i].rs1];
-        renamed_instr_o[i].rs2 = rat[decoded_instr_i[i].rs2];
-        if (NR_READ_PORTS == 3 && !decoded_instr_i[i].use_imm) begin
-            renamed_instr_o[i].result = rat[decoded_instr_i[i].result];
-        end
-    end
-end
+          // Renaming sources
+          renamed_instr_o[i].rs1 = rat[decoded_instr_i[i].rs1];
+          renamed_instr_o[i].rs2 = rat[decoded_instr_i[i].rs2];
+          if (NR_READ_PORTS == 3 && !decoded_instr_i[i].use_imm) begin
+              renamed_instr_o[i].result = rat[decoded_instr_i[i].result];
+          end
+      end
+  end
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
@@ -111,14 +114,11 @@ end
           end
         end
         for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
-          if (we_i[i] && !decoded_instr_i[i].illegal_instr) begin
+          if (we_i[i] && !decoded_instr_i[i].ex.valid) begin
             rat[decoded_instr_i[i].rd] <= alloc_idx[i];
           end
         end
       end
     end
   end
-
-end
-
 endmodule

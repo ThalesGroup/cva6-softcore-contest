@@ -133,6 +133,7 @@ ${CVA6_REPO_DIR}/core/ariane_regfile_ff.sv
 ${CVA6_REPO_DIR}/core/ariane_regfile_fpga.sv
 // NOTE: scoreboard.sv modified for DSIM (unchanged for other simulators)
 ${CVA6_REPO_DIR}/core/scoreboard.sv
+${CVA6_REPO_DIR}/core/register_allocation_table.sv
 ${CVA6_REPO_DIR}/core/store_buffer.sv
 ${CVA6_REPO_DIR}/core/amo_buffer.sv
 ${CVA6_REPO_DIR}/core/store_unit.sv
@@ -192,7 +193,7 @@ ${CVA6_REPO_DIR}/vendor/pulp-platform/tech_cells_generic/src/rtl/tc_sram.sv
 ${CVA6_REPO_DIR}/common/local/util/sram.sv
 ${CVA6_REPO_DIR}/common/local/util/sram_cache.sv
 
-// MMU 
+// MMU
 ${CVA6_REPO_DIR}/core/cva6_mmu/cva6_mmu.sv
 ${CVA6_REPO_DIR}/core/cva6_mmu/cva6_ptw.sv
 ${CVA6_REPO_DIR}/core/cva6_mmu/cva6_tlb.sv

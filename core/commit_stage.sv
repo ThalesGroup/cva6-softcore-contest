@@ -45,7 +45,7 @@ module commit_stage
     // Acknowledge that we are indeed committing - CSR_REGFILE
     output logic [CVA6Cfg.NrCommitPorts-1:0] commit_macro_ack_o,
     // Register file write address - ISSUE_STAGE
-    output logic [CVA6Cfg.NrCommitPorts-1:0][4:0] waddr_o,
+    output logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] waddr_o,
     // Register file write data - ISSUE_STAGE
     output logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.XLEN-1:0] wdata_o,
     // Register file write enable - ISSUE_STAGE
