@@ -37,7 +37,9 @@ module register_allocation_table #(
     input logic [CVA6Cfg.NrIssuePorts-1:0]                    we_i,
     input logic [CVA6Cfg.NrIssuePorts-1:0]                    commit_valid_i,
     input logic [CVA6Cfg.NrIssuePorts-1:0][ADDR_WIDTH-1:0]    commit_old_phys_i,
-    input logic [CVA6Cfg.NrIssuePorts-1:0][ADDR_WIDTH-1:0]    commit_rd_i, // architectural register wrote by commit
+    input logic [ADDR_WIDTH-1:0]                              rollback_rd_i, // architectural register to rollback
+    input logic [ADDR_WIDTH-1:0]                              rollback_old_phys_i, // architectural register to rollback
+    input logic                                               rollback_we_i, // rollback is enabled
 
     input  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] decoded_instr_i, //May be unnecessary to pass the entirety of the struct scoreboard_entry_t
     output scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_o
@@ -62,7 +64,7 @@ module register_allocation_table #(
           .empty_o()
       );
 
-      assign free_regs_masked[i+1] = (we_i[i] && (decoded_instr_i[i].illegal_instr == 1'b0) && ) ?
+      assign free_regs_masked[i+1] = (we_i[i] && (decoded_instr_i[i].illegal_instr == 1'b0)) ?
         (free_regs_masked[i] & ~(NUM_REG'(1) << alloc_idx[i])) :
         free_regs_masked[i];
   end
@@ -95,15 +97,21 @@ end
       for (int i = 0; i < 32; i++)
         rat[i] <= ADDR_WIDTH'(i);
     end else begin
-      free_regs <= free_regs_masked[CVA6Cfg.NrIssuePorts];
-      for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
-        if (commit_valid_i[i]) begin
-          free_regs[commit_old_phys_i[i]] <= 1'b1;
+      if(rollback_we_i) begin
+        free_regs[rat[rollback_rd_i]] <= 1'b1;
+        rat[rollback_rd_i] <= rollback_old_phys_i;
+        free_regs <= free_regs;
+      end else begin
+        free_regs <= free_regs_masked[CVA6Cfg.NrIssuePorts];
+        for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
+          if (commit_valid_i[i]) begin
+            free_regs[commit_old_phys_i[i]] <= 1'b1;
+          end
         end
-      end
-      for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
-        if (we_i[i] && !decoded_instr_i[i].illegal_instr) begin
-          rat[decoded_instr_i[i].rd] <= alloc_idx[i];
+        for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
+          if (we_i[i] && !decoded_instr_i[i].illegal_instr) begin
+            rat[decoded_instr_i[i].rd] <= alloc_idx[i];
+          end
         end
       end
     end

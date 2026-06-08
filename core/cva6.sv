@@ -100,9 +100,9 @@ module cva6
       // with the transaction id in any case make the width more generic
       fu_t fu;  // functional unit to use
       fu_op op;  // operation to perform in each functional unit
-      logic [REG_ADDR_SIZE-1:0] rs1;  // register source address 1
-      logic [REG_ADDR_SIZE-1:0] rs2;  // register source address 2
-      logic [REG_ADDR_SIZE-1:0] rd;  // register destination address
+      logic [CVA6Cfg.RegAddrWidth-1:0] rs1;  // register source address 1
+      logic [CVA6Cfg.RegAddrWidth-1:0] rs2;  // register source address 2
+      logic [CVA6Cfg.RegAddrWidth-1:0] rd;  // register destination address
       logic [CVA6Cfg.XLEN-1:0] result;  // for unfinished instructions this field also holds the immediate,
       // for unfinished floating-point that are partly encoded in rs2, this field also holds rs2
       // for unfinished floating-point fused operations (FMADD, FMSUB, FNMADD, FNMSUB)
@@ -525,10 +525,17 @@ module cva6
   // --------------
   // COMMIT <-> ID
   // --------------
-  logic [CVA6Cfg.NrCommitPorts-1:0][4:0] waddr_commit_id;
+  logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] waddr_commit_id;
   logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.XLEN-1:0] wdata_commit_id;
   logic [CVA6Cfg.NrCommitPorts-1:0] we_gpr_commit_id;
   logic [CVA6Cfg.NrCommitPorts-1:0] we_fpr_commit_id;
+
+  // --------------
+  // ISSUE <-> CONTROLLER
+  // --------------
+
+  logic rollback_en_controller;
+
   // --------------
   // CSR <-> *
   // --------------
@@ -905,7 +912,8 @@ module cva6
       .rvfi_issue_pointer_o (rvfi_issue_pointer),
       .rvfi_commit_pointer_o(rvfi_commit_pointer),
       .rvfi_rs1_o           (rvfi_rs1),
-      .rvfi_rs2_o           (rvfi_rs2)
+      .rvfi_rs2_o           (rvfi_rs2),
+      .rollback_en_o        (rollback_en_controller)
   );
 
   // ---------
@@ -1276,6 +1284,7 @@ module cva6
       .hfence_gvma_i         (hfence_gvma_commit_controller),
       .flush_commit_i        (flush_commit),
       .flush_acc_i           (flush_acc)
+      .rollback_en_i         (rollback_en_controller)
   );
 
   // -------------------

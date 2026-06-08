@@ -12,7 +12,9 @@
 // Date: 08.04.2017
 // Description: Scoreboard - keeps track of all decoded, issued and committed instructions
 
-module scoreboard #(
+module scoreboard
+  import ariane_pkg::*;
+#(
     parameter config_pkg::cva6_cfg_t CVA6Cfg = config_pkg::cva6_cfg_empty,
     parameter type bp_resolve_t = logic,
     parameter type exception_t = logic,
@@ -88,6 +90,12 @@ module scoreboard #(
     output logic [ CVA6Cfg.NrIssuePorts-1:0][CVA6Cfg.TRANS_ID_BITS-1:0] rvfi_issue_pointer_o,
     // Commit pointer - RVFI
     output logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.TRANS_ID_BITS-1:0] rvfi_commit_pointer_o
+
+    output logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_rd_i;
+    output logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_old_phys_i;
+    output logic                                         rollback_we_i;
+    fu_op                                                rollback_op_i;
+
 );
 
   // this is the FIFO struct of the issue queue

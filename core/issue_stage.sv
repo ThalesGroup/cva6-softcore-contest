@@ -165,7 +165,9 @@ module issue_stage
     // Information dedicated to RVFI - RVFI
     output logic [CVA6Cfg.NrIssuePorts-1:0][CVA6Cfg.XLEN-1:0] rvfi_rs1_o,
     // Information dedicated to RVFI - RVFI
-    output logic [CVA6Cfg.NrIssuePorts-1:0][CVA6Cfg.XLEN-1:0] rvfi_rs2_o
+    output logic [CVA6Cfg.NrIssuePorts-1:0][CVA6Cfg.XLEN-1:0] rvfi_rs2_o,
+    // Is rollback active
+    output logic                                              rollback_en_o
 );
   // ---------------------------------------------------
   // Scoreboard (SB) <-> Issue and Read Operands (IRO)
@@ -197,12 +199,21 @@ module issue_stage
   logic [CVA6Cfg.NrIssuePorts-1:0] we_i;
   scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] gpr_renamed_instr_i;
   scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_i;
+  logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_rd_i;
+  logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_old_phys_i;
+  logic                                         rollback_we_i;
+  fu_op                                         rollback_op_i;
+  logic                                         gpr_rollback_we_i;
+
+  assign rollback_en_o = rollback_we_i;
 
   //We only modify the RAT corrsponding to the correct registers
-  always_comb begin : rgpr_we
+  always_comb begin : gpr_we
     if (!CVA6Cfg.FpPresent) begin
       we_i = '1;
+      gpr_rollback_we_i = rollback_wb_i ? 1'b1 : 1'b0;
     else begin
+      gpr_rollback_we_i = (rollback_wb_i && is_rd_fpr(rollback_op_i)) ? 1'b0 : 1'b1;
       for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
         we_i[i] = !is_rd_fpr(decoded_instr_i[i].op);
       end
@@ -220,7 +231,9 @@ module issue_stage
         .we_i                    (fp_we_i),
         .commit_valid_i          (commit_ack_i),
         .commit_old_phys_i       (commit_old_phys_i),
-        .commit_rd_i             (waddr_i),
+        .rollback_rd_i           (rollback_rd_i),
+        .rollback_old_phys_i     (rollback_old_phys_i),
+        .rollback_we_i           (gpr_rollback_we_i),
         .decoded_instr_i         (decoded_instr_i),
         .renamed_instr_o         (gpr_renamed_instr_i)
   );
@@ -228,8 +241,10 @@ module issue_stage
   if (CVA6Cfg.FpPresent) begin
     logic [CVA6Cfg.NrIssuePorts-1:0] fp_we_i;
     scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] fpr_renamed_instr_i;
+    logic                                         fpr_rollback_we_i;
 
     always_comb begin : fpr_we
+      fpr_rollback_we_i = (rollback_wb_i && is_rd_fpr(rollback_op_i)) ? 1'b1 : 1'b0;
       for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
         fp_we_i[i] = is_rd_fpr(decoded_instr_i[i].op);
       end
@@ -246,7 +261,9 @@ module issue_stage
         .we_i                    (fp_we_i),
         .commit_valid_i          (commit_ack_i),
         .commit_old_phys_i       (commit_old_phys_i),
-        .commit_rd_i             (waddr_i),
+        .rollback_rd_i           (rollback_rd_i),
+        .rollback_old_phys_i     (rollback_old_phys_i),
+        .rollback_we_i           (fpr_rollback_we_i),
         .decoded_instr_i         (decoded_instr_i),
         .renamed_instr_o         (fpr_renamed_instr_i)
     );
@@ -308,7 +325,11 @@ module issue_stage
       .x_we_i,
       .x_rd_i,
       .rvfi_issue_pointer_o,
-      .rvfi_commit_pointer_o
+      .rvfi_commit_pointer_o,
+      .rollback_rd_o           (rollback_rd_i),
+      .rollback_old_phys_o     (rollback_old_phys_i),
+      .rollback_op_o           (rollback_op_i),
+      .rollback_we_o           (rollback_we_i)
   );
 
   // ---------------------------------------------------------

@@ -78,7 +78,9 @@ module controller
     // Flush request from commit stage - COMMIT_STAGE
     input logic flush_commit_i,
     // Flush request from accelerator - ACC_DISPATCHER
-    input logic flush_acc_i
+    input logic flush_acc_i,
+    // The rat and scoreboard are currently in rollback mode - ISSUE_STAGE
+    input logic rollback_en_i
 );
 
   // active fence - high if we are currently flushing the dcache
@@ -104,8 +106,8 @@ module controller
     // ------------
     // Mis-predict
     // ------------
-    // flush on mispredict
-    if (resolved_branch_i.is_mispredict) begin
+    // flush on mispredict. Maintain flush mode while rollback is active
+    if (resolved_branch_i.is_mispredict || rollback_en_i) begin
       // flush only un-issued instructions
       flush_unissued_instr_o = 1'b1;
       // and if stage
