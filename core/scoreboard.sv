@@ -339,29 +339,35 @@ module scoreboard
     rollback_old_phys_o = '0;
     rollback_op_o = ADD;
 
-    case (state_q)
-      NORMAL : begin
-        if (bmiss) begin
-          bmiss_trans_id_n = after_flu_wb;
+    if (flush_i) begin
+      state_n            = NORMAL;
+      rollback_pointer_n = '0;
+      bmiss_trans_id_n   = '0;
+    end else begin
+      case (state_q)
+        NORMAL : begin
+          if (bmiss) begin
+            bmiss_trans_id_n = after_flu_wb;
+          end
+          if (flush_unissued_instr_i && !flush_i) begin
+            state_n = WALKBACK;
+            rollback_pointer_n = issue_pointer[0]-1;
+          end
         end
-        if (flush_unissued_instr_i && !flush_i) begin
-          state_n = WALKBACK;
-          rollback_pointer_n = issue_pointer[0]-1;
+        WALKBACK : begin
+          if (rollback_pointer_q == bmiss_trans_id_q) begin
+            state_n = NORMAL;
+            rollback_we_o = 1'b0;
+          end else begin
+            rollback_rd_o = mem_q[rollback_pointer_q].sbe.rd;
+            rollback_we_o = mem_q[rollback_pointer_q].issued;
+            rollback_old_phys_o = mem_q[rollback_pointer_q].sbe.old_phys;
+            rollback_op_o = mem_q[rollback_pointer_q].sbe.op;
+            rollback_pointer_n = rollback_pointer_q - 1;
+          end
         end
-      end
-      WALKBACK : begin
-        if (rollback_pointer_q == bmiss_trans_id_q) begin
-          state_n = NORMAL;
-          rollback_we_o = 1'b0;
-        end else begin
-          rollback_rd_o = mem_q[rollback_pointer_q].sbe.rd;
-          rollback_we_o = mem_q[rollback_pointer_q].issued;
-          rollback_old_phys_o = mem_q[rollback_pointer_q].sbe.old_phys;
-          rollback_op_o = mem_q[rollback_pointer_q].sbe.op;
-          rollback_pointer_n = rollback_pointer_q - 1;
-        end
-      end
-    endcase
+      endcase
+    end
   end
 
 
