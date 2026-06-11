@@ -46,6 +46,8 @@ module commit_stage
     output logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] commit_new_phys_o,
     // architectural destination register of the committed instr - ISSUE_STAGE
     output logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] commit_rd_o,
+    // op of the committed instr - ISSUE_STAGE
+    output fu_op [CVA6Cfg.NrCommitPorts-1:0] commit_op_o,
     // Acknowledge that we are indeed committing - CSR_REGFILE
     output logic [CVA6Cfg.NrCommitPorts-1:0] commit_macro_ack_o,
     // Register file write address - ISSUE_STAGE
@@ -118,6 +120,7 @@ module commit_stage
     assign commit_old_phys_o[i] = commit_instr_i[i].old_phys;
     assign commit_new_phys_o[i] = commit_instr_i[i].rd;
     assign commit_rd_o[i] = commit_instr_i[i].arch_rd;
+    assign commit_op_o[i] = commit_instr_i[i].op;
   end
 
   assign pc_o = commit_instr_i[0].pc;

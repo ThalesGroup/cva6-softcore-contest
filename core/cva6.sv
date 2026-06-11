@@ -518,6 +518,7 @@ module cva6
   logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] commit_old_phys_i_commit;
   logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] commit_new_phys_i_commit;
   logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] commit_rd_i_commit;
+  fu_op [CVA6Cfg.NrCommitPorts-1:0] commit_op_i_commit;
   logic [CVA6Cfg.NrCommitPorts-1:0] commit_ack_commit_id;
 
   // --------------
@@ -911,6 +912,7 @@ module cva6
       .commit_old_phys_i    (commit_old_phys_i_commit),
       .commit_new_phys_i    (commit_new_phys_i_commit),
       .commit_rd_i          (commit_rd_i_commit),
+      .commit_op_i          (commit_op_i_commit),
       // Performance Counters
       .stall_issue_o        (stall_issue),
       //RVFI
@@ -1087,6 +1089,7 @@ module cva6
       .commit_old_phys_o (commit_old_phys_i_commit),
       .commit_new_phys_o (commit_new_phys_i_commit),
       .commit_rd_o       (commit_rd_i_commit),
+      .commit_op_o       (commit_op_i_commit),
       .commit_macro_ack_o(commit_macro_ack),
       .waddr_o           (waddr_commit_id),
       .wdata_o           (wdata_commit_id),

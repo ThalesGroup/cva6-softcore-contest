@@ -33,7 +33,8 @@ module register_allocation_table
     parameter int unsigned           DATA_WIDTH    = 32,
     parameter int unsigned           NR_READ_PORTS = 2,
     parameter int unsigned           ADDR_WIDTH    = 5,
-    parameter logic                  RAT_TYPE      = 1'b0, //0 for issue_rat 1 for commit_rat
+    parameter logic                  COMMIT_RAT    = 1'b0, //0 for issue_rat 1 for commit_rat
+    parameter logic                  FPR_RAT       = 1'b0, //0 for if gpr rat else 1
     parameter type scoreboard_entry_t = logic
 ) (
     input logic                                               clk_i,
@@ -41,6 +42,7 @@ module register_allocation_table
     input logic [CVA6Cfg.NrIssuePorts-1:0]                    we_i,
     input logic [CVA6Cfg.NrIssuePorts-1:0]                    commit_valid_i,
     input logic [CVA6Cfg.NrIssuePorts-1:0][ADDR_WIDTH-1:0]    commit_rd_i,
+    input fu_op [CVA6Cfg.NrIssuePorts-1:0]                    commit_op_i,
     input logic [CVA6Cfg.NrIssuePorts-1:0][ADDR_WIDTH-1:0]    commit_old_phys_i,
     input logic [CVA6Cfg.NrIssuePorts-1:0][ADDR_WIDTH-1:0]    commit_new_phys_i,
     input logic [ADDR_WIDTH-1:0]                              rollback_rd_i, // architectural register to rollback
@@ -48,7 +50,7 @@ module register_allocation_table
     input logic                                               rollback_we_i, // rollback is enabled
 
     input  scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] decoded_instr_i, //May be unnecessary to pass the entirety of the struct scoreboard_entry_t
-    input  logic [CVA6Cfg.NrIssuePorts-1:0]              decoded_instr_valid_i,
+    input  logic              [CVA6Cfg.NrIssuePorts-1:0] decoded_instr_ack_i,
     output scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_o,
 
     output rat_table_t                  rat_state_o,
@@ -75,7 +77,7 @@ module register_allocation_table
           .empty_o()
       );
 
-      assign free_regs_masked[i+1] = (we_i[i] && decoded_instr_valid_i[i] && (decoded_instr_i[i].rd != '0)) ?
+      assign free_regs_masked[i+1] = (we_i[i] && decoded_instr_ack_i[i] && (decoded_instr_i[i].rd != '0)) ?
         (free_regs_masked[i] & ~(NUM_REG'(1) << alloc_idx[i])) :
         free_regs_masked[i];
   end
@@ -91,7 +93,7 @@ module register_allocation_table
       renamed_instr_o[i].arch_rd = decoded_instr_i[i].rd;
 
       // Renaming destination
-      if (we_i[i] && decoded_instr_valid_i[i] && (decoded_instr_i[i].rd != '0)) begin
+      if (we_i[i] && decoded_instr_ack_i[i] && (decoded_instr_i[i].rd != '0)) begin
         renamed_instr_o[i].old_phys = rat_q.rat[decoded_instr_i[i].rd];
         renamed_instr_o[i].rd          = alloc_idx[i];
       end else begin
@@ -106,14 +108,15 @@ module register_allocation_table
       end
     end
 
+    //updating free list after commit
     if (!rat_restore_en_i) begin
       rat_n.free_regs = free_regs_masked[CVA6Cfg.NrIssuePorts];
       for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
-        if (commit_valid_i[i]) begin
+        if (commit_valid_i[i] && ((is_rd_fpr(commit_op_i) && FPR_RAT==1'b1) || (!is_rd_fpr(commit_op_i) && FPR_RAT==1'b0))) begin
           rat_n.free_regs[commit_old_phys_i[i]] = 1'b1; //freeing old reg
           //locking new reg. Useless for issue rat but necessary for commit rat
           rat_n.free_regs[commit_new_phys_i[i]] = 1'b0;
-          if (RAT_TYPE == 1'b1 && commit_rd_i[i] != '0) begin
+          if (COMMIT_RAT == 1'b1 && commit_rd_i[i] != '0) begin
             rat_n.rat[commit_rd_i[i]] = commit_new_phys_i[i];
           end
         end
@@ -121,7 +124,7 @@ module register_allocation_table
 
       end
       for (int i = 0; i < CVA6Cfg.NrIssuePorts; i++) begin
-        if (we_i[i] && decoded_instr_valid_i[i] && (decoded_instr_i[i].rd != '0)) begin
+        if (we_i[i] && decoded_instr_ack_i[i] && (decoded_instr_i[i].rd != '0)) begin
           rat_n.rat[decoded_instr_i[i].rd] = alloc_idx[i];
         end
       end
