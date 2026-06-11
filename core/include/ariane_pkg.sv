@@ -265,6 +265,15 @@ package ariane_pkg;
 `endif
 
   // ---------------
+  // ISSUE Stage
+  // ---------------
+
+  typedef struct packed {
+    logic [31:0][REG_ADDR_SIZE-1:0] rat;
+    logic [(2**REG_ADDR_SIZE)-1:0] free_regs;
+  } rat_table_t;
+
+  // ---------------
   // EX Stage
   // ---------------
 

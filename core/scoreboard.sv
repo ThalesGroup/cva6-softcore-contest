@@ -129,6 +129,7 @@ module scoreboard
 
   state_t state_n, state_q;
   logic [CVA6Cfg.TRANS_ID_BITS-1:0] rollback_pointer_n, rollback_pointer_q;
+  logic [CVA6Cfg.TRANS_ID_BITS-1:0] bmiss_trans_id_n, bmiss_trans_id_q;
 
 
   for (genvar i = 0; i < CVA6Cfg.NR_SB_ENTRIES; i++) begin
@@ -268,8 +269,8 @@ module scoreboard
     // ------------
     // Flush
     // ------------
-    if ((rollback_pointer_q == commit_pointer_q[0]) && state_q == WALKBACK) begin
-      // Flush
+    if (flush_i) begin
+      // flush
       for (int unsigned i = 0; i < CVA6Cfg.NR_SB_ENTRIES; i++) begin
         // set all valid flags for all entries to zero
         mem_n[i].issued       = 1'b0;
@@ -278,6 +279,17 @@ module scoreboard
         mem_n[i].sbe.ex.valid = 1'b0;
       end
     end
+
+    // ------------
+    // End of rollback after branch misprediction
+    // ------------
+    if (state_q == WALKBACK) begin
+      mem_n[rollback_pointer_q].issued       = 1'b0;
+      mem_n[rollback_pointer_q].cancelled    = 1'b0;
+      mem_n[rollback_pointer_q].sbe.valid    = 1'b0;
+      mem_n[rollback_pointer_q].sbe.ex.valid = 1'b0;
+    end
+
   end
 
   assign bmiss = resolved_branch_i.valid && resolved_branch_i.is_mispredict;
@@ -318,10 +330,10 @@ module scoreboard
     assign fwd_o.sbe[i] = mem_q[i].sbe;
   end
 
-
   always_comb begin : rollback
     state_n        = state_q;
     rollback_pointer_n = rollback_pointer_q;
+    bmiss_trans_id_n    = bmiss_trans_id_q;
     rollback_rd_o = '0;
     rollback_we_o = 1'b0;
     rollback_old_phys_o = '0;
@@ -329,20 +341,23 @@ module scoreboard
 
     case (state_q)
       NORMAL : begin
-        if (flush_i) begin
+        if (bmiss) begin
+          bmiss_trans_id_n = after_flu_wb;
+        end
+        if (flush_unissued_instr_i && !flush_i) begin
           state_n = WALKBACK;
           rollback_pointer_n = issue_pointer[0]-1;
         end
       end
       WALKBACK : begin
-        rollback_rd_o = mem_q[rollback_pointer_q].sbe.rd;
-        rollback_we_o = mem_q[rollback_pointer_q].issued;
-        rollback_old_phys_o = mem_q[rollback_pointer_q].sbe.old_phys;
-        rollback_op_o = mem_q[rollback_pointer_q].sbe.op;
-
-        if (rollback_pointer_q == commit_pointer_q[0]) begin
+        if (rollback_pointer_q == bmiss_trans_id_q) begin
           state_n = NORMAL;
+          rollback_we_o = 1'b0;
         end else begin
+          rollback_rd_o = mem_q[rollback_pointer_q].sbe.rd;
+          rollback_we_o = mem_q[rollback_pointer_q].issued;
+          rollback_old_phys_o = mem_q[rollback_pointer_q].sbe.old_phys;
+          rollback_op_o = mem_q[rollback_pointer_q].sbe.op;
           rollback_pointer_n = rollback_pointer_q - 1;
         end
       end
@@ -356,16 +371,16 @@ module scoreboard
       mem_q            <= '{default: sb_mem_t'(0)};
       commit_pointer_q <= '0;
       issue_pointer_q  <= '0;
+      bmiss_trans_id_q <= '0;
       state_q          <= NORMAL;
     end else begin
       issue_pointer_q <= issue_pointer_n;
       mem_q <= mem_n;
       mem_q[x_id_i].sbe.rd <= (x_transaction_accepted_i && ~x_issue_writeback_i) ? 5'b0 : mem_n[x_id_i].sbe.rd;
       commit_pointer_q <= commit_pointer_n;
-      if (state_n == WALKBACK) begin
-        state_q <= state_n;
-        rollback_pointer_q <= rollback_pointer_n;
-      end
+      state_q <= state_n;
+      bmiss_trans_id_q   <= bmiss_trans_id_n;
+      rollback_pointer_q <= rollback_pointer_n;
     end
   end
 

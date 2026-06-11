@@ -179,7 +179,7 @@ module instr_tracer #(
       // ----------------------
       // update shadow reg files here
       for (int i = 0; i < 2; i++) begin
-        if (we_gpr[i] && waddr[i] != 5'b0) begin
+        if (we_gpr[i] && waddr[i] != '0) begin
           gp_reg_file[waddr[i]] = wdata[i];
         end else if (we_fpr[i]) begin
           fp_reg_file[waddr[i]] = wdata[i];

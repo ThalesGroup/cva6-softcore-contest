@@ -156,6 +156,10 @@ module issue_stage
     input logic [CVA6Cfg.NrCommitPorts-1:0] commit_ack_i,
     // old physical register of committed instr - COMMIT_STAGE
     input logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] commit_old_phys_i,
+    // new physical register of committed instr - COMMIT_STAGE
+    input logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] commit_new_phys_i,
+    // architectural destination register of committed instr - COMMIT_STAGE
+    input logic [CVA6Cfg.NrCommitPorts-1:0][CVA6Cfg.RegAddrWidth-1:0] commit_rd_i,
     // Issue stall - PERF_COUNTERS
     output logic stall_issue_o,
     // Information dedicated to RVFI - RVFI
@@ -196,9 +200,10 @@ module issue_stage
   // 1. Renaming instructions
   // ---------------------------------------------------------
 
-  logic [CVA6Cfg.NrIssuePorts-1:0] we_i;
+  logic [CVA6Cfg.NrIssuePorts-1:0] issue_we_i, commit_we_i;
   scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] gpr_renamed_instr_i, fpr_renamed_instr_i;
   scoreboard_entry_t [CVA6Cfg.NrIssuePorts-1:0] renamed_instr_i;
+  rat_table_t                                   gpr_commit_rat, fpr_commit_rat;
   logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_rd_i;
   logic [CVA6Cfg.RegAddrWidth-1:0]              rollback_old_phys_i;
   logic                                         rollback_we_i;
@@ -207,66 +212,147 @@ module issue_stage
 
   assign rollback_en_o = rollback_we_i;
 
+  //commit rat never update during ex_stage
+  assign commit_we_i = '0;
+
   //We only modify the RAT corrsponding to the correct registers
   always_comb begin : gpr_we
     if (!CVA6Cfg.FpPresent) begin
-      we_i = '1;
-      gpr_rollback_we_i = rollback_we_i ? 1'b1 : 1'b0;
+      issue_we_i = '1;
+      gpr_rollback_we_i = rollback_we_i;
     end else begin
-      gpr_rollback_we_i = (rollback_we_i && is_rd_fpr(rollback_op_i)) ? 1'b0 : 1'b1;
+      gpr_rollback_we_i = is_rd_fpr(rollback_op_i) ? 1'b0 : rollback_we_i;
       for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
-        we_i[i] = !is_rd_fpr(decoded_instr_i[i].op);
+        issue_we_i[i] = !is_rd_fpr(decoded_instr_i[i].op);
       end
     end
   end
+
+  // ==========================================
+  // RAT GENERAL PURPOSE REGISTERS (GPR)
+  // ==========================================
 
   register_allocation_table #(
         .CVA6Cfg      (CVA6Cfg),
         .DATA_WIDTH   (CVA6Cfg.XLEN),
         .NR_READ_PORTS(CVA6Cfg.NrRgprPorts),
         .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth),
+        .RAT_TYPE     (1'b0),
         .scoreboard_entry_t ( scoreboard_entry_t )
-  ) i_register_allocation_table (
+  ) i_issue_register_allocation_table (
         .clk_i,
         .rst_ni,
-        .we_i                    (we_i),
+        .we_i                    (issue_we_i),
         .commit_valid_i          (commit_ack_i),
         .commit_old_phys_i       (commit_old_phys_i),
+        .commit_new_phys_i       (commit_new_phys_i),
+        .commit_rd_i             (commit_rd_i),
         .rollback_rd_i           (rollback_rd_i),
         .rollback_old_phys_i     (rollback_old_phys_i),
         .rollback_we_i           (gpr_rollback_we_i),
         .decoded_instr_i         (decoded_instr_i),
-        .renamed_instr_o         (gpr_renamed_instr_i)
+        .decoded_instr_valid_i   (decoded_instr_valid_i),
+        .renamed_instr_o         (gpr_renamed_instr_i),
+        .rat_state_o             (),
+        .rat_restore_state_i     (gpr_commit_rat),
+        .rat_restore_en_i        (flush_i)
+  );
+
+  register_allocation_table #(
+        .CVA6Cfg      (CVA6Cfg),
+        .DATA_WIDTH   (CVA6Cfg.XLEN),
+        .NR_READ_PORTS(CVA6Cfg.NrRgprPorts),
+        .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth),
+        .RAT_TYPE     (1'b1),
+        .scoreboard_entry_t ( scoreboard_entry_t )
+  ) i_commit_register_allocation_table (
+        .clk_i,
+        .rst_ni,
+        .we_i                    (commit_we_i),
+        .commit_valid_i          (commit_ack_i),
+        .commit_old_phys_i       (commit_old_phys_i),
+        .commit_new_phys_i       (commit_new_phys_i),
+        .commit_rd_i             (commit_rd_i),
+        .rollback_rd_i           (rollback_rd_i),
+        .rollback_old_phys_i     (rollback_old_phys_i),
+        .rollback_we_i           (1'b0),
+        .decoded_instr_i         (decoded_instr_i),
+        .decoded_instr_valid_i   (decoded_instr_valid_i),
+        .renamed_instr_o         (),
+        .rat_state_o             (gpr_commit_rat),
+        .rat_restore_state_i     ('0),
+        .rat_restore_en_i        ('0)
   );
 
   if (CVA6Cfg.FpPresent) begin
-    logic [CVA6Cfg.NrIssuePorts-1:0] fp_we_i;
+    logic [CVA6Cfg.NrIssuePorts-1:0] issue_fpr_we_i, commit_fpr_we_i;
     logic                                         fpr_rollback_we_i;
+
+    //commit rat never update during ex_stage
+    assign commit_fpr_we_i = '0;
 
     always_comb begin : fpr_we
       fpr_rollback_we_i = (rollback_we_i && is_rd_fpr(rollback_op_i)) ? 1'b1 : 1'b0;
       for (int unsigned i = 0; i<CVA6Cfg.NrIssuePorts; i++) begin
-        fp_we_i[i] = is_rd_fpr(decoded_instr_i[i].op);
+        issue_fpr_we_i[i] = is_rd_fpr(decoded_instr_i[i].op);
       end
     end
 
+    // ==========================================
+    // RAT FLOATING POINT REGISTERS (FPR)
+    // ==========================================
+
     register_allocation_table #(
-        .CVA6Cfg      (CVA6Cfg),
-        .DATA_WIDTH   (CVA6Cfg.FLen),
-        .NR_READ_PORTS(3), //from what i understand fp enabled means always 3 Operands
-        .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth),
-        .scoreboard_entry_t ( scoreboard_entry_t )
-    ) i_fp_register_allocation_table (
-        .clk_i,
-        .rst_ni,
-        .we_i                    (fp_we_i),
-        .commit_valid_i          (commit_ack_i),
-        .commit_old_phys_i       (commit_old_phys_i),
-        .rollback_rd_i           (rollback_rd_i),
-        .rollback_old_phys_i     (rollback_old_phys_i),
-        .rollback_we_i           (fpr_rollback_we_i),
-        .decoded_instr_i         (decoded_instr_i),
-        .renamed_instr_o         (fpr_renamed_instr_i)
+          .CVA6Cfg      (CVA6Cfg),
+          .DATA_WIDTH   (CVA6Cfg.XLEN),
+          .NR_READ_PORTS(CVA6Cfg.NrRgprPorts),
+          .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth),
+          .RAT_TYPE     (1'b0),
+          .scoreboard_entry_t ( scoreboard_entry_t )
+    ) i_issue_fp_register_allocation_table (
+          .clk_i,
+          .rst_ni,
+          .we_i                    (issue_fpr_we_i),
+          .commit_valid_i          (commit_ack_i),
+          .commit_old_phys_i       (commit_old_phys_i),
+          .commit_new_phys_i       (commit_new_phys_i),
+          .commit_rd_i             (commit_rd_i),
+          .rollback_rd_i           (rollback_rd_i),
+          .rollback_old_phys_i     (rollback_old_phys_i),
+          .rollback_we_i           (fpr_rollback_we_i),
+          .decoded_instr_i         (decoded_instr_i),
+          .decoded_instr_valid_i   (decoded_instr_valid_i),
+          .renamed_instr_o         (fpr_renamed_instr_i),
+          .rat_state_o             (),
+          .rat_restore_state_i     (fpr_commit_rat),
+          .rat_restore_en_i        (flush_i)
+    );
+
+
+    register_allocation_table #(
+          .CVA6Cfg      (CVA6Cfg),
+          .DATA_WIDTH   (CVA6Cfg.XLEN),
+          .NR_READ_PORTS(CVA6Cfg.NrRgprPorts),
+          .ADDR_WIDTH   (CVA6Cfg.RegAddrWidth),
+          .RAT_TYPE     (1'b1),
+          .scoreboard_entry_t ( scoreboard_entry_t )
+    ) i_commit_fp_register_allocation_table (
+          .clk_i,
+          .rst_ni,
+          .we_i                    (commit_fpr_we_i),
+          .commit_valid_i          (commit_ack_i),
+          .commit_old_phys_i       (commit_old_phys_i),
+          .commit_new_phys_i       (commit_new_phys_i),
+          .commit_rd_i             (commit_rd_i),
+          .rollback_rd_i           (rollback_rd_i),
+          .rollback_old_phys_i     (rollback_old_phys_i),
+          .rollback_we_i           (1'b0),
+          .decoded_instr_i         (decoded_instr_i),
+          .decoded_instr_valid_i   (decoded_instr_valid_i),
+          .renamed_instr_o         (),
+          .rat_state_o             (fpr_commit_rat),
+          .rat_restore_state_i     ('0),
+          .rat_restore_en_i        ('0)
     );
   end
 
