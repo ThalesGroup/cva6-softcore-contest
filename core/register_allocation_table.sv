@@ -100,11 +100,15 @@ module register_allocation_table
         renamed_instr_o[i].old_phys = decoded_instr_i[i].rd;
       end
 
-      // Renaming sources
-      renamed_instr_o[i].rs1 = rat_q.rat[decoded_instr_i[i].rs1];
-      renamed_instr_o[i].rs2 = rat_q.rat[decoded_instr_i[i].rs2];
+      // Renaming sources. In case of superscalar config, we check RAW hazard.
+      // Current method only work up to 2 issue port
+      renamed_instr_o[i].rs1 = (i == 0) ? rat_q.rat[decoded_instr_i[i].rs1] :
+        decoded_instr_i[i].rs1 != decoded_instr_i[i-1].rd ? rat_q.rat[decoded_instr_i[i].rs1] : alloc_idx[i-1];
+      renamed_instr_o[i].rs2 = (i == 0) ? rat_q.rat[decoded_instr_i[i].rs2] :
+        decoded_instr_i[i].rs2 != decoded_instr_i[i-1].rd ? rat_q.rat[decoded_instr_i[i].rs2] : alloc_idx[i-1];
       if (NR_READ_PORTS == 3 && !decoded_instr_i[i].use_imm) begin
-        renamed_instr_o[i].result = rat_q.rat[decoded_instr_i[i].result];
+        renamed_instr_o[i].result = (i == 0) ? rat_q.rat[decoded_instr_i[i].result] :
+          decoded_instr_i[i].result != decoded_instr_i[i-1].rd ? rat_q.rat[decoded_instr_i[i].result] : alloc_idx[i-1];
       end
     end
 
