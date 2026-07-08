@@ -27,7 +27,7 @@
 # Revisions  :
 # Date        Version  Author       Description
 # 2020-10-06  0.1      S.Jacq       Created
-# 2025-10-06  0.2      S.Jacq       Bugfix
+# 2025-10-06  0.2      J.Mallet     Bugfix
 # =========================================================================== #
 
 import sys

@@ -414,7 +414,7 @@ static void maxPropagate1(
             }
             else {
                 outputs[oPos] = (inputs[iOffset] > 0);
-		output_value = inputs[iOffset];
+		*output_value = inputs[iOffset];
             }
         }
     }

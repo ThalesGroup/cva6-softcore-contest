@@ -57,10 +57,10 @@ RUN mkdir -p /etc/udev/rules.d && \
 	echo "ATTRS{idVendor}==\"0403\", ATTRS{idProduct}==\"6014\", MODE=\"660\", GROUP=\"plugdev\", TAG+=\"uaccess\"" > /etc/udev/rules.d/60-openocd.rules
 
 
-RUN cd gcc-toolchain-builder && \
-	bash ./get-toolchain.sh && \
-	bash ./build-toolchain.sh riscv_toolchain
-ENV PATH="/util/gcc-toolchain-builder/riscv_toolchain/bin:${PATH}"
+#RUN cd gcc-toolchain-builder && \
+#	bash ./get-toolchain.sh && \
+#	bash ./build-toolchain.sh riscv_toolchain
+#ENV PATH="/util/gcc-toolchain-builder/riscv_toolchain/bin:${PATH}"
 
 
 RUN groupadd -g "${GID}" user || true && \

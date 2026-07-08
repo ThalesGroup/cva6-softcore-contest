@@ -56,7 +56,7 @@ int main(void)
 
 	printf("FFT finished\n");
 
-	printf("kiss_fft took %u instructions and %u cycles\n", instret, cycles, instret, cycles);
+	printf("kiss_fft took %u instructions and %u cycles\n", instret, cycles);
 
 	// compare gold and output
 	if (memcmp(cx_out, g_gold, 2 * N * sizeof(kiss_fft_scalar)) != 0)
