@@ -25,6 +25,11 @@
 # Paths in configuration files are relative to this directory.
 ROOT_DIR=$(dirname $(readlink -f $0))
 
+if [ -z "${JOBS}" ]; then
+    JOBS=$(nproc)
+fi
+
+
 # Assumptions:
 # - the required binutils source is in src/binutils-gdb
 # - the required GCC source is in src/gcc
@@ -163,7 +168,7 @@ cd $ROOT_DIR/build/binutils-gdb
 	      { echo "Could not configure binutils-gdb, bailing out!" ; \
 		exit 2 ; } ; } && \
     { [ -d gas/doc ] || mkdir -p gas/doc; } && \
-    make  && make install || \
+    make -j"${JOBS}" && make install || \
 	{ echo "*** Could not build binutils, bailing out!" ; exit 2; }
 cd -
 
@@ -182,8 +187,8 @@ cd $ROOT_DIR/build/gcc
 	  ../../$GCC_DIR/configure $GCC_CONFIGURE_OPTS || \
 	      { echo "Could not configure GCC, bailing out!" ; \
 		exit 2 ; } ; } && \
-	make  || { rm -rf $TARGET && \
-			     make  ; } && make install || \
+	make -j"${JOBS}" || { rm -rf $TARGET && \
+			     make -j"${JOBS}" ; } && make install || \
 	{ echo "*** Could not build GCC (even after removing target dirs), bailing out!" ; exit 2; }
 cd -
 
@@ -209,7 +214,7 @@ export CFLAGS="-mcmodel=medium"
 	  ../../$NEWLIB_DIR/configure $NEWLIB_CONFIGURE_OPTS || \
 	      { echo "Could not configure newlib, bailing out!" ; \
 		exit 2 ; } ; } && \
-    make  && make install || \
+    make -j"${JOBS}" && make install || \
 	{ echo "*** Could not build newlib, bailing out!" ; exit 2; }
 cd -
 

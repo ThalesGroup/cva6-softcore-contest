@@ -3,15 +3,18 @@ A set of software applications is available in `app` directory.
 
 ## Applications
 
-These applications are used to give an estimation of the computation performance of the CVA6 architecture. The jury will rank the results based on the number of cycles needed to compute the FFT in simulation.
+These applications are used to give an estimation of the computation performance of the CVA6 architecture. The jury will rank the results based on the number of cycles needed to encode the 4 second audio clip in simulation.
 
 **All applications must run correctly to validate your results in the contest.**
 
 These software applications are compiled in baremetal using the **BSP (Board Support Package)** in the bsp directory.
 
-- **Coremark** : Complete  benchmark for testing the computing power of a processor. It generates a score called Coremark.
+- **Helloworld** : Minimal application printing a string on the UART, without printf.
+- **Helloworld printf** : Same application using printf.
+- **Coremark** : Complete benchmark for testing the computing power of a processor. It generates a score called Coremark.
 - **Mnist** : Digit recognition application.
-- **FFT**: Application performing fast fourier transforms on signals.
+- **QOA encoder** : Application encoding a 4 second audio clip in QOA format. It is the application used for the contest.
+- **QOA encoder 1s** : Same application on a 1 second audio clip, provided to speed up simulations.
 
 The Makefile in app directory allows the compilation of these applications. It consists of several targets.
 If you want to compile an application and generate an executable file, you need to go into **app** directory and run:

@@ -10,10 +10,9 @@ git clone https://github.com/ThalesGroup/cva6-softcore-contest.git
 git submodule update --init --recursive
 ```
 
-Do not forget to check all the details of the contest in [Annonce RISC-V contest 2025-2026.pdf](./Annonce_RISC-V_contest_2025-2026_v1.3.pdf).
+Do not forget to check all the details of the contest in [Annonce RISC-V contest 2026-2027.pdf](./Annonce_RISC-V_contest_2026-2027_v1.0.pdf).
 
-This repository contains the files needed for the 2025-2026 contest focusing on fast fourier transform computation. The goal is to modify the CV32A6 architecture and/or add a coprocessor to accelerate the FFT algorithm provided as an 
-application written in C.
+This repository contains the files needed for the 2026-2027 contest focusing on QOA audio encoding. The goal is to modify the CV32A6 architecture and/or add a coprocessor to accelerate the QOA encoder provided as an application written in C.
 
 # Prerequisites
 
@@ -85,11 +84,11 @@ Now, the hardware is ready and the hyperterminal is connected to the UART output
 
 ## Get started with software environment
 
-This section describes how to build the software environment for the contest. To build any other application available in the **sw/app** folder, replace **mnist** with the name of the application folder : **fft**, **helloworld**, **coremark**...
+This section describes how to build the software environment for the contest. To build any other application available in the **sw/app** folder, replace **qoa_encoder** with the name of the application folder : **qoa_encoder_1s**, **helloworld**, **coremark**...
 
-**mnist** & **coremark** are usied to make sure nothing is broken. But they are not the app we are interested in speeding up.
+**mnist** & **coremark** are used to make sure nothing is broken. But they are not the app we are interested in speeding up.
 
-**The "fft" app is the only one we are interested in for the contest.**
+**The "qoa_encoder" and "qoa_encoder_1s" apps are the ones we are interested in for the contest. "qoa_encoder_1s" is provided to speed up simulations, it encodes a 1 second clip instead of 4 seconds. Only "qoa_encoder" is used for grading.**
 
 ### Building the docker image
 
@@ -110,10 +109,12 @@ the **sw-docker** Docker container consists of the entire RISC-V compilation cha
 2. To compile software applications in **sw/app**, you need to use Docker container with the following command:
 
 ```
-docker run -ti --privileged -v `realpath sw`:/workdir sw-docker:v1
+docker run -ti --privileged -v $XDG_RUNTIME_DIR/pulse/native:$XDG_RUNTIME_DIR/pulse/native -e PULSE_SERVER=unix:$XDG_RUNTIME_DIR/pulse/native -v $(realpath sw):/workdir sw-docker:v1
 ```
 
 The **sw** directory is mounted in the docker container.
+
+The PulseAudio socket of the host is also mounted in the container. It is used to play the audio encoded by **qoa_encoder**, see [Listen to the encoded audio](#listen-to-the-encoded-audio).
 ![alt text](./docs/pictures/docker_image.png)
 
 Once in the **sw-docker** Docker container, you are in the default directory **/workdir** which corresponds to the sw directory in the host OS.
@@ -129,19 +130,19 @@ drwxrwxr-x  5 user user 4096 Nov 23 10:57 bsp/
 drwxrwxr-x  2 user user 4096 Nov 23 10:57 utils/
 ```
 
-3. To compile fft application, run the following commands.
+3. To compile qoa_encoder application, run the following commands.
 ```
 user@[CONTAINER ID]:/workdir$ cd app
-user@[CONTAINER ID]:/workdir/app$ make fft
+user@[CONTAINER ID]:/workdir/app$ make qoa_encoder
 
 ```
-At the end of the compilation the fft.riscv executable file must be created.
+At the end of the compilation the qoa_encoder.riscv executable file must be created.
 
 4. Then, in the Docker container, launch **OpenOCD** in background:
 ```
 user@[CONTAINER ID]:/workdir/app$ openocd -f openocd_digilent_hs2.cfg &
-[1] 90
-user@[CONTAINER ID]:/workdir/app$ Open On-Chip Debugger 0.12.0-g9ea7f3d (2025-09-02-12:20)
+[1] 15
+user@[CONTAINER ID]:/workdir/app$ Open On-Chip Debugger 0.12.0-g9ea7f3d (2026-10-29-20:20)
 Licensed under GNU GPL v2
 For bug reports, read
         http://openocd.org/doc/doxygen/bugs.html
@@ -150,7 +151,7 @@ Info : clock speed 1000 kHz
 Info : JTAG tap: riscv.cpu tap/device found: 0x249511c3 (mfg: 0x0e1 (Wintec Industries), part: 0x4951, ver: 0x2)
 Info : datacount=2 progbufsize=8
 Info : Examined RISC-V core; found 1 harts
-Info :  hart 0: XLEN=32, misa=0x40141105
+Info :  hart 0: XLEN=32, misa=0x40001100
 Info : starting gdb server for riscv.cpu on 3333
 Info : Listening on port 3333 for gdb connections
 Ready for Remote Connections
@@ -160,7 +161,7 @@ Info : Listening on port 4444 for telnet connections
 
 5. In the Docker container (same terminal), launch **gdb** as following:
 ```
-user@[CONTAINER ID]:/workdir/app$ riscv-none-elf-gdb -ex 'target extended-remote :3333' fft.riscv
+user@[CONTAINER ID]:/workdir/app$ riscv-none-elf-gdb -ex 'target extended-remote :3333' qoa_encoder.riscv
 GNU gdb (GDB) 14.0.50.20230114-git
 Copyright (C) 2022 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -176,75 +177,130 @@ Find the GDB manual and other documentation resources online at:
 
 For help, type "help".
 Type "apropos word" to search for commands related to "word"...
-Reading symbols from fft.riscv...
+Reading symbols from qoa_encoder.riscv...
 Remote debugging using :3333
 Info : accepting 'gdb' connection on tcp/3333
 (gdb)
 ```
 
-6. In **gdb**, load **fft.riscv** to CV32A6 FPGA platform by the load command:
+6. In **gdb**, load **qoa_encoder.riscv** to CV32A6 FPGA platform by the load command:
 ```
 (gdb) load
 Loading section .vectors, size 0x80 lma 0x80000000
 Loading section .init, size 0x5c lma 0x80000080
-Loading section .text, size 0x10cb4 lma 0x800000e0
-Loading section .rodata, size 0x238c lma 0x80010d98
-Loading section .eh_frame, size 0x3c lma 0x80013124
-Loading section .data, size 0x6cc lma 0x80013160
-Loading section .got, size 0x18 lma 0x8001382c
-Loading section .sdata, size 0x60 lma 0x80013848
-Start address 0x80000080, load size 80028
-Transfer rate: 51 KB/sec, 6669 bytes/write.
+Loading section .text, size 0xfc78 lma 0x800000e0
+Loading section .rodata, size 0x2663c lma 0x8000fd58
+Loading section .eh_frame, size 0x3c lma 0x80036394
+Loading section .data, size 0x6cc lma 0x800363d0
+Loading section .sdata, size 0x60 lma 0x80036aa0
+Start address 0x80000080, load size 223992
+Transfer rate: 64 KB/sec, 11199 bytes/write.
 ```
 
-1. Finally, in **gdb**, you can run the **fft** application with **the continue** command :
+7. Finally, in **gdb**, you can run the **qoa_encoder** application with **the continue** command :
 ```
 (gdb) c
 Continuing.
 (gdb) 
 ```
 
-1. On the hyperterminal, you should see:
+8. On the hyperterminal, you should see:
 ```
-FFT running...
-FFT finished
-kiss_fft took 124142 instructions and 169253 cycles
-SUCCESS : fft result values correct
+clip: 25920 bytes, 21663580 cycles, 16842126 instr, encode OK
+SUCCESS: clip matches
 ```
 
 This result is obtained right after the FPGA bitstream loading.
-When fft is rerun, system is not at initial state. For instance, cache is preloaded.
+When qoa_encoder is rerun, system is not at initial state. For instance, cache is preloaded.
 
 
-If the fft failed, you would see:
+If the qoa_encoder failed, you would see:
 ```
-FFT running...
-FFT finished
-kiss_fft took 124142 instructions and 164674 cycles
-FAIL : fft result values incorrect
-Your out values:
-Real	Imag
--262	-519
--311	-507
--369	493
--439	471
--538	-432
--718	355
--1455	-9
-...
+clip: 25920 bytes, 21663580 cycles, 16842126 instr, encode FAIL
+FAIL: result values incorrect
 ```
+
+## Listen to the encoded audio
+
+The qoa_encoder application only prints the size of the encoded stream. To listen to it, you can dump the **out** buffer from gdb and play it with **qoaplay**.
+
+This is where the PulseAudio mount of the docker run command comes into play.
+
+1. In **gdb**, set a breakpoint on **qoa_encode** and run the application:
+```
+(gdb) b qoa_encode
+Breakpoint 1 at 0x80002390: file qoa_encoder/qoa.h, line 487.
+(gdb) continue
+Continuing.
+
+Breakpoint 1, qoa_encode (sample_data=sample_data@entry=0x800167f8 <corpus>, 
+    qoa=qoa@entry=0x8003fed4, out_len=out_len@entry=0x8003fed0) at qoa_encoder/qoa.h:487
+487             if (
+```
+
+2. Run until the end of **qoa_encode** with the **finish** command, the encoded stream is returned in **$a0**:
+```
+(gdb) finish
+Run till exit from #0  qoa_encode (sample_data=sample_data@entry=0x800167f8 <corpus>, 
+    qoa=qoa@entry=0x8003fed4, out_len=out_len@entry=0x8003fed0) at qoa_encoder/qoa.h:487
+0x80000148 in main () at qoa_encoder/main.c:32
+32              uint8_t *out = qoa_encode(corpus, &qoa, &len);
+Value returned is $1 = (void *) 0x80036e18
+```
+
+The dump must be done right after **finish**, before any other command that overwrites **$a0**.
+
+3. Store the address of the stream in a variable and dump **len** bytes to a file:
+```
+(gdb) set $p = (char *)$a0 
+(gdb) dump binary memory out.qoa $p $p+len
+```
+
+4. Play the file from gdb with **qoaplay**. You do not need to quit gdb to run terminal commands, prefix them with **!**:
+```
+(gdb) !qoaplay out.qoa 
+out.qoa: channels: 1, samplerate: 16000 hz, samples per channel: 64000, duration: 4 sec
+Controls: [x] rewind / [c] skip / [q] quit
+   2.30 / 4.00 sec
+(gdb) 
+```
+
+You can also play the file outside gdb:
+```
+user@[CONTAINER ID]:/workdir/app$ qoaplay out.qoa
+```
+
+The **app** directory is mounted in the container, so **out.qoa** is also available on your host machine. **qoaplay** is not installed there by default. If you want to play the file outside the docker container, you can build **qoaplay** from the qoa repository, using commit **f73b4a3**:
+```
+git clone https://github.com/phoboslab/qoa
+cd qoa
+git checkout f73b4a3
+curl -fsSL https://raw.githubusercontent.com/floooh/sokol/6f5f4b0/sokol_audio.h -o sokol_audio.h
+make CFLAGS_PLAY="-std=gnu99 -O3 -include unistd.h"
+```
+
+The **make** command builds both **qoaplay** and **qoaconv**.
+
+**qoaconv** converts QOA files to another format, it allows you to convert **out.qoa** to a **wav** file for instance:
+```
+user@[CONTAINER ID]:/workdir/app$ qoaconv out.qoa out.wav
+out.qoa: channels: 1, samplerate: 16000 hz, samples per channel: 64000, duration: 4 sec (took 0.00 seconds)
+out.wav: size: 125 kb (128036 bytes) = 250.07 kbit/s, psnr: inf db (took 0.00 seconds)
+```
+
+**qoaconv** is built without the MP3 and FLAC decoders in the **sw-docker** image, only **wav** and **qoa** are supported.
 
 # Simulation get started
 When the development environment is set up, it is now possible to run a simulation.
-Some software applications are available into the **sw/app** directory. Especially, there are benchmark applications such as Dhrystone and CoreMark and other test applications.
+Some software applications are available into the **sw/app** directory. Especially, there are benchmark and test applications such as CoreMark, MNIST and hello world.
 
 To simulate a software application on CVA6 processor, run the following command:
 ```
 make sim APP=’application to run’
 ```
-For instance, if you want to run the **fft** application, you will have to run :
+For instance, if you want to run the **qoa_encoder_1s** application, you will have to run :
 ```
-make sim APP=fft
+make sim APP=qoa_encoder_1s
 ```
 
 **This command:**
@@ -258,7 +314,7 @@ Moreover, all `printf` used in software application will be displayed into the *
 
 > Simulation may take a lot of time, you need to be patient to have results.
 
-Simulation is programmed to run 10000000 cycles but the result is displayed before the end of simulation.
+Simulation is programmed to run 1000000000 cycles but the result is displayed before the end of simulation.
 
 CVA6 software environment is detailed into `sw/app` directory.
 

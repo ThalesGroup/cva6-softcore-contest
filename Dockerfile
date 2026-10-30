@@ -11,15 +11,16 @@
 
 # Author:         Julien Mallet -  J-Mallet on github.com
 
-# Description:    FFT running on a predefined signal with predefined twiddles.
+# Description:    Dockerfile to build the dev environment for the student contest 26-27
 
 # ===========================================================================
 # Revisions  :
 # Date        Version  Author		Description
 # 2025-10-06  0.1      J.Mallet 	Created
+# 2026-10-22  0.2      J.Mallet 	Adapted for the 26-27 edition
 # ===========================================================================
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ARG UID=1000
 ARG GID=1000
@@ -34,7 +35,7 @@ RUN apt-get update && apt-get install -y  \
 	libmpc-dev libmpfr-dev libgmp-dev gawk bison flex gperf \
 	texinfo zlib1g-dev pkg-config ninja-build bc \
 	python3 python3-pip python3-dev python3-setuptools python3-ply \
-	openssh-client sudo make net-tools locales vim nano\
+	openssh-client sudo make net-tools locales vim nano libasound2-dev libasound2-plugins \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8
@@ -53,20 +54,32 @@ RUN git clone --branch v0.12.0 --depth 1 https://github.com/openocd-org/openocd 
 	cd .. && rm -rf openocd
 ENV PATH="/util/riscv-openocd/build/bin:${PATH}"
 
+
+RUN git clone https://github.com/phoboslab/qoa /util/qoa && \
+	git -C /util/qoa checkout f73b4a3 && \
+	curl -fsSL https://raw.githubusercontent.com/floooh/sokol/6f5f4b0/sokol_audio.h -o /util/qoa/sokol_audio.h && \
+	make -C /util/qoa CFLAGS_PLAY="-std=gnu99 -O3 -include unistd.h" && \
+	rm -rf /util/qoa/.git
+ENV PATH="/util/qoa:${PATH}"
+
+
 RUN mkdir -p /etc/udev/rules.d && \
 	echo "ATTRS{idVendor}==\"0403\", ATTRS{idProduct}==\"6014\", MODE=\"660\", GROUP=\"plugdev\", TAG+=\"uaccess\"" > /etc/udev/rules.d/60-openocd.rules
 
 
-#RUN cd gcc-toolchain-builder && \
-#	bash ./get-toolchain.sh && \
-#	bash ./build-toolchain.sh riscv_toolchain
-#ENV PATH="/util/gcc-toolchain-builder/riscv_toolchain/bin:${PATH}"
+RUN cd gcc-toolchain-builder && \
+	./get-toolchain.sh && \
+	./build-toolchain.sh riscv_toolchain > build.log 2>&1
+ENV PATH="/util/gcc-toolchain-builder/riscv_toolchain/bin:${PATH}"
 
 
 RUN groupadd -g "${GID}" user || true && \
 	getent group plugdev >/dev/null || groupadd -r plugdev && \
-	useradd -u "${UID}" -m -g user -G plugdev -s /bin/bash user && \
+	getent group audio >/dev/null || groupadd -r audio && \
+	useradd -u "${UID}" -m -g user -G plugdev,audio -s /bin/bash user && \
 	echo 'user ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/user && chmod 0440 /etc/sudoers.d/user
+
+RUN echo 'pcm.!default { type pulse }' >> /home/user/.asoundrc
 
 RUN mkdir -p /workdir && chown -R "${UID}:${GID}" /workdir
 WORKDIR /workdir

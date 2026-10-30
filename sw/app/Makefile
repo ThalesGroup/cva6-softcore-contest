@@ -27,16 +27,14 @@
 # 2020-10-06  0.1      S.Jacq		Created
 # 2020-10-06  0.1      k.Eyssartier	Created
 # 2025-10-06  0.2      J.Mallet 	Updated
+# 2026-10-22  0.3      J.Mallet 	Adapted for the 26-27 edition
 # ===========================================================================
-
-XLEN ?= 32
 
 default: all
 
-utils_dir= ../utils
+utils_dir = ../utils
 src_dir = $(abspath .)
 bsp_dir = ../bsp
-
 
 #--------------------------------------------------------------------
 # Sources
@@ -47,7 +45,8 @@ bmarks = \
 	helloworld \
 	helloworld_printf \
 	mnist \
-	fft
+	qoa_encoder \
+	qoa_encoder_1s
 
 #--------------------------------------------------------------------
 # Build rules
@@ -59,17 +58,10 @@ RISCV_OBJCOPY ?= $(RISCV_PREFIX)objcopy
 RISCV_AR ?= $(RISCV_PREFIX)ar
 RISCV_OBJDUMP ?= $(RISCV_PREFIX)objdump
 
+SRC_BSP_C = $(wildcard $(bsp_dir)/hal/*.c) $(wildcard $(bsp_dir)/drivers/uart/*.c)
+SRC_BSP_S = $(wildcard $(bsp_dir)/hal/*.S)
 
-SRC_BSP_C=$(wildcard $(bsp_dir)/hal/*.c) $(wildcard $(bsp_dir)/drivers/uart/*.c) 
-SRC_BSP_S=$(wildcard $(bsp_dir)/hal/*.S)
-
-
-OBJ_BSP_C=$(SRC_BSP_C:.c=.o)
-OBJ_BSP_S=$(SRC_BSP_S:.S=.o)
-OBJ_BSP= $(OBJ_BSP_S) $(OBJ_BSP_C)
-
-
-OBJ_APP=$(wildcard $(src_dir)/*.o) 
+OBJ_BSP = $(SRC_BSP_C:.c=.o) $(SRC_BSP_S:.S=.o)
 
 INCS += -I$(src_dir)/../bsp/config \
 	-I$(src_dir)/../bsp/drivers/uart \
@@ -78,72 +70,42 @@ INCS += -I$(src_dir)/../bsp/config \
 	-I$(src_dir)/common \
 	$(addprefix -I$(src_dir)/, $(bmarks))
 
-FLAGS_STR:="$(RISCV_CFLAGS)  $(RISCV_LDFLAGS) "
-
-
-CFLAGS  ?=	-march=rv32im_zicsr \
+RISCV_CFLAGS := -march=rv32im_zicsr \
 		-mabi=ilp32 \
-		-DPREALLOCATE=1 \
 		-fvisibility=hidden \
-		-DSTDIO_THRU_UART \
 		-O3 \
+		-g \
 		-mcmodel=medany \
-		-fno-tree-loop-distribute-patterns\
+		-fno-tree-loop-distribute-patterns \
 		-funroll-all-loops \
 		-falign-jumps=4 \
 		-falign-functions=16 \
 		-static \
 		-Wall \
-		-pedantic 
-
-RISCV_CFLAGS :=-DPERFORMANCE_RUN=1 \
-		-DITERATIONS=3 \
-		-DFLAGS_STR=\"$(FLAGS_STR)\" \
-		-march=rv32im_zicsr \
-		-mabi=ilp32 \
-		-DPREALLOCATE=1 \
-		-fvisibility=hidden \
-		-DSTDIO_THRU_UART \
-		-O3 \
-		-mcmodel=medany \
-		-fno-tree-loop-distribute-patterns\
-		-funroll-all-loops \
-		-falign-jumps=4 \
-		-falign-functions=16 \
-		-static \
-		-Wall \
-		-pedantic 
-
+		-DSTDIO_THRU_UART
 
 RISCV_LDFLAGS=-L./ -lcva6 -static -nostartfiles -T $(src_dir)/../bsp/config/link.ld
 
+FLAGS_STR:="$(RISCV_CFLAGS)  $(RISCV_LDFLAGS) "
 
-fft_EXTRA_OBJS = fft/kissfft_lib/libkissfft-int16_t.a
-fft_EXTRA_LDFLAGS = -Lfft/kissfft_lib -lkissfft-int16_t -lm
-fft/fft_int16_main.o: RISCV_CFLAGS += -DFIXED_POINT
+coremark/%.o: RISCV_CFLAGS += -DPERFORMANCE_RUN=1 -DITERATIONS=3 -DFLAGS_STR=\"$(FLAGS_STR)\"
+
+qoa_encoder/main.o: qoa_encoder/corpus.h qoa_encoder/golden.h
+qoa_encoder_1s/main.o: qoa_encoder_1s/corpus.h qoa_encoder_1s/golden.h
 
 define generate_rules =
 $(1)_SRC_DIR = ./$(1)/
-ifeq ($(1),fft)
-  $(1)_SRC_FILES = fft/fft_int16_main.c
-else
-  $(1)_SRC_FILES = $$(shell find $$($(1)_SRC_DIR) -name "*.c")
-endif
+$(1)_SRC_FILES = $$(shell find $$($(1)_SRC_DIR) -name "*.c")
 $(1)_OBJ_FILES = $$($(1)_SRC_FILES:.c=.o)
 ALL_OBJ += $$($(1)_OBJ_FILES)
-$(1): $(1).D $(1).riscv
-$(1): $(1).hex $(1).riscv
-$(1): $(1).bin $(1).riscv
-$(1): $(1).mem $(1).bin
-$(1): $(1).coe $(1).mem
-$(1).riscv: libcva6.a $$($(1)_OBJ_FILES) $$($(1)_EXTRA_OBJS)
-	# LINKING
-	$$(RISCV_GCC) $$(RISCV_CFLAGS) $$($(1)_EXTRA_CFLAGS) -o $$@ $$^ $$(RISCV_LDFLAGS) $$($(1)_EXTRA_LDFLAGS)
+$(1): $(1).riscv $(1).D $(1).hex $(1).bin $(1).mem $(1).coe
+$(1).riscv: libcva6.a $$($(1)_OBJ_FILES)
+	$$(RISCV_GCC) $$(RISCV_CFLAGS) -o $$@ $$^ $$(RISCV_LDFLAGS)
 endef
 
 $(foreach bmark,$(bmarks),$(eval $(call generate_rules,$(bmark))))
 
-%.D: %.riscv  
+%.D: %.riscv
 	$(RISCV_OBJDUMP) -D $< > $@
 
 %.hex: %.riscv
@@ -159,7 +121,7 @@ libcva6.a: $(OBJ_BSP)
 	$(RISCV_GCC) $(INCS) -o $@ -c $< $(RISCV_CFLAGS)
 
 %.o: %.S
-	$(RISCV_GCC) -o $@ -c $< $(CFLAGS)
+	$(RISCV_GCC) -o $@ -c $< $(RISCV_CFLAGS)
 
 %.mem: %.bin
 	$(utils_dir)/bin2mem.py $(src_dir)/$<
@@ -167,12 +129,7 @@ libcva6.a: $(OBJ_BSP)
 %.coe: %.mem
 	$(utils_dir)/mem2coe.py $(src_dir)/$<
 
-fft/kissfft_lib/libkissfft-int16_t.a:
-	make -C fft/kissfft_lib CC=$(RISCV_GCC) CFLAGS='$(RISCV_CFLAGS)' $(INCS) KISSFFT_DATATYPE=int16_t KISSFFT_STATIC=1 KISSFFT_TOOLS=0
-
-
 all: $(bmarks)
 
 clean:
 	rm -rf $(OBJ_BSP) $(ALL_OBJ) libcva6.a *.riscv *.o *.D *.mem *.bin *.coe *.hex
-	make -C fft/kissfft_lib clean

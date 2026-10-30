@@ -28,7 +28,7 @@ if {$::env(FPGA)} {
                          CONFIG.Use_AXI_ID {true} \
                          CONFIG.Use_Byte_Write_Enable {true} \
                          CONFIG.Use_RSTB_Pin {true} \
-                         CONFIG.Write_Depth_A {24576} \
+                         CONFIG.Write_Depth_A {32768} \
                          CONFIG.Write_Width_A {64} \
                          CONFIG.Write_Width_B {64}] [get_ips $ipName]
    
