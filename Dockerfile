@@ -22,8 +22,13 @@
 
 FROM ubuntu:24.04
 
-ARG UID=1000
-ARG GID=1000
+ARG UID
+ARG GID
+
+RUN if [ -z "${UID}" ] || [ -z "${GID}" ]; then \
+		echo "Pass your host ids: --build-arg UID=\$(id -u) --build-arg GID=\$(id -g)" >&2; \
+		exit 1; \
+	fi
 
 SHELL ["/bin/bash", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive
@@ -69,7 +74,7 @@ RUN mkdir -p /etc/udev/rules.d && \
 
 RUN cd gcc-toolchain-builder && \
 	./get-toolchain.sh && \
-	./build-toolchain.sh riscv_toolchain > build.log 2>&1
+	./build-toolchain.sh riscv_toolchain
 ENV PATH="/util/gcc-toolchain-builder/riscv_toolchain/bin:${PATH}"
 
 
